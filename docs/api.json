@@ -1,0 +1,530 @@
+{
+    "info": {
+      "name": "NexaProperty API",
+      "description": "Real Estate Management System API Collection",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "auth": {
+      "type": "bearer",
+      "bearer": [
+        {
+          "key": "token",
+          "value": "{{access_token}}",
+          "type": "string"
+        }
+      ]
+    },
+    "variable": [
+      {
+        "key": "base_url",
+        "value": "http://localhost:8000/api/v1",
+        "type": "string"
+      },
+      {
+        "key": "access_token",
+        "value": "",
+        "type": "string"
+      }
+    ],
+    "item": [
+      {
+        "name": "Auth",
+        "auth": { "type": "noauth" },
+        "item": [
+          {
+            "name": "Obtain Token (Login)",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "if (pm.response.code === 200) {",
+                    "    const json = pm.response.json();",
+                    "    pm.collectionVariables.set('access_token', json.access);",
+                    "}"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/auth/token/",
+                "host": ["{{base_url}}"],
+                "path": ["auth", "token", ""]
+              }
+            }
+          },
+          {
+            "name": "Refresh Token",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"refresh\": \"<paste_refresh_token_here>\"\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/auth/token/refresh/",
+                "host": ["{{base_url}}"],
+                "path": ["auth", "token", "refresh", ""]
+              }
+            }
+          },
+          {
+            "name": "Verify Token",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"token\": \"{{access_token}}\"\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/auth/token/verify/",
+                "host": ["{{base_url}}"],
+                "path": ["auth", "token", "verify", ""]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "Owners",
+        "item": [
+          {
+            "name": "List Owners",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/owners/",
+                "host": ["{{base_url}}"],
+                "path": ["owners", ""]
+              }
+            }
+          },
+          {
+            "name": "Create Owner",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"owner_type\": \"individual\",\n  \"name\": \"John Doe\",\n  \"phone\": \"+1234567890\",\n  \"email\": \"john@example.com\",\n  \"address\": \"123 Main St\"\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/owners/",
+                "host": ["{{base_url}}"],
+                "path": ["owners", ""]
+              }
+            }
+          },
+          {
+            "name": "Get Owner",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/owners/1/",
+                "host": ["{{base_url}}"],
+                "path": ["owners", "1", ""]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "Locations",
+        "item": [
+          {
+            "name": "List Locations",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/locations/",
+                "host": ["{{base_url}}"],
+                "path": ["locations", ""]
+              }
+            }
+          },
+          {
+            "name": "Create Location",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"country\": \"USA\",\n  \"region\": \"California\",\n  \"city\": \"Los Angeles\",\n  \"area\": \"Downtown\"\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/locations/",
+                "host": ["{{base_url}}"],
+                "path": ["locations", ""]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "Properties",
+        "item": [
+          {
+            "name": "List Properties",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/properties/?owner=1",
+                "host": ["{{base_url}}"],
+                "path": ["properties", ""],
+                "query": [
+                  {
+                    "key": "owner",
+                    "value": "1"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "name": "Create Property",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"owner\": 1,\n  \"location\": 1,\n  \"property_name\": \"Sunset Apartments\",\n  \"property_type\": \"residential\",\n  \"address\": \"789 Sunset Blvd\",\n  \"description\": \"Modern apartment complex\"\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/properties/",
+                "host": ["{{base_url}}"],
+                "path": ["properties", ""]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "Units",
+        "item": [
+          {
+            "name": "List Units",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/units/?property=1&status=vacant",
+                "host": ["{{base_url}}"],
+                "path": ["units", ""],
+                "query": [
+                  {
+                    "key": "property",
+                    "value": "1"
+                  },
+                  {
+                    "key": "status",
+                    "value": "vacant"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "name": "Create Unit",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"property\": 1,\n  \"unit_number\": \"101\",\n  \"floor\": \"1\",\n  \"unit_type\": \"apartment\",\n  \"rent_amount\": \"1500.00\",\n  \"deposit_amount\": \"1500.00\",\n  \"status\": \"vacant\"\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/units/",
+                "host": ["{{base_url}}"],
+                "path": ["units", ""]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "Tenants",
+        "item": [
+          {
+            "name": "List Tenants",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/tenants/",
+                "host": ["{{base_url}}"],
+                "path": ["tenants", ""]
+              }
+            }
+          },
+          {
+            "name": "Create Tenant",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"full_name\": \"Alice Johnson\",\n  \"phone\": \"+1987654321\",\n  \"email\": \"alice@example.com\",\n  \"id_number\": \"ID123456\",\n  \"emergency_contact\": \"Bob Johnson +1987654322\"\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/tenants/",
+                "host": ["{{base_url}}"],
+                "path": ["tenants", ""]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "Tenancies",
+        "item": [
+          {
+            "name": "List Tenancies",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/tenancies/?status=active",
+                "host": ["{{base_url}}"],
+                "path": ["tenancies", ""],
+                "query": [
+                  {
+                    "key": "status",
+                    "value": "active"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "name": "Create Tenancy (Move-In)",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"tenant\": 1,\n  \"unit\": 1,\n  \"move_in_date\": \"2026-01-01\",\n  \"rent_amount\": \"1500.00\",\n  \"deposit_amount\": \"1500.00\",\n  \"contract_start\": \"2026-01-01\",\n  \"contract_end\": \"2026-12-31\",\n  \"status\": \"active\"\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/tenancies/",
+                "host": ["{{base_url}}"],
+                "path": ["tenancies", ""]
+              }
+            }
+          },
+          {
+            "name": "Move-Out Tenant",
+            "request": {
+              "method": "PUT",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"move_out_date\": \"2026-02-13\"\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/tenancies/1/move-out/",
+                "host": ["{{base_url}}"],
+                "path": ["tenancies", "1", "move-out", ""]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "Billing",
+        "item": [
+          {
+            "name": "List Bills",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/bills/?status=unpaid",
+                "host": ["{{base_url}}"],
+                "path": ["bills", ""],
+                "query": [
+                  {
+                    "key": "status",
+                    "value": "unpaid"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "name": "Generate Monthly Bills",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"billing_period\": \"2026-03\",\n  \"due_day\": 5\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/bills/generate/",
+                "host": ["{{base_url}}"],
+                "path": ["bills", "generate", ""]
+              }
+            }
+          },
+          {
+            "name": "Mark Overdue Bills",
+            "request": {
+              "method": "POST",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/bills/mark-overdue/",
+                "host": ["{{base_url}}"],
+                "path": ["bills", "mark-overdue", ""]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "Payments",
+        "item": [
+          {
+            "name": "List Payments",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/payments/",
+                "host": ["{{base_url}}"],
+                "path": ["payments", ""]
+              }
+            }
+          },
+          {
+            "name": "Record Payment",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"bill\": 1,\n  \"tenancy\": 1,\n  \"amount_paid\": \"1500.00\",\n  \"payment_date\": \"2026-02-03\",\n  \"payment_method\": \"bank\",\n  \"reference_number\": \"TXN123456\",\n  \"notes\": \"Payment received via bank transfer\"\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/payments/",
+                "host": ["{{base_url}}"],
+                "path": ["payments", ""]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "Notifications",
+        "item": [
+          {
+            "name": "List Notifications",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/notifications/",
+                "host": ["{{base_url}}"],
+                "path": ["notifications", ""]
+              }
+            }
+          },
+          {
+            "name": "Create Notification",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"tenancy\": 1,\n  \"notification_type\": \"general\",\n  \"channel\": \"email\",\n  \"subject\": \"Important Notice\",\n  \"message\": \"Your lease renewal is due next month.\",\n  \"status\": \"pending\"\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/notifications/",
+                "host": ["{{base_url}}"],
+                "path": ["notifications", ""]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+  
