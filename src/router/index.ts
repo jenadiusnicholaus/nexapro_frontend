@@ -3,7 +3,7 @@ import type { RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
 import AuthLayout from '@/layouts/AuthLayout.vue'
-import AppLayout from '@/layouts/MainLayout.vue'
+import AppLayout from '@/layouts/AppLayout.vue'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -62,6 +62,11 @@ const routes: RouteRecordRaw[] = [
         path: 'notifications',
         name: 'notifications',
         component: () => import('@/views/Notifications.vue'),
+      },
+      {
+        path: 'profiles',
+        name: 'profiles',
+        component: () => import('@/views/Profiles.vue'),
       },
     ],
   },

@@ -26,10 +26,10 @@
           />
         </div>
 
-        <VaDataTable
-          :items="properties"
+        <AppDataTable
+          :items="propertiesStore.items"
           :columns="columns"
-          :loading="loading"
+          :loading="propertiesStore.loading"
         >
           <template #cell(actions)="{ rowData }">
             <VaButton
@@ -43,15 +43,15 @@
               icon="delete"
               size="small"
               color="danger"
-              @click="deleteProperty(rowData.id)"
+              @click="deleteProperty(Number(rowData.id))"
             />
           </template>
-        </VaDataTable>
+        </AppDataTable>
       </VaCardContent>
     </VaCard>
 
     <!-- Add/Edit Modal -->
-    <VaModal v-model="showModal" :title="editingId ? 'Edit Property' : 'Add Property'">
+    <VaModal v-model="showModal" :title="editingId ? 'Edit Property' : 'Add Property'" hide-default-actions size="medium">
       <VaForm ref="propertyForm" @submit.prevent="saveProperty">
         <VaSelect
           v-model="formData.owner"
@@ -99,25 +99,36 @@
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted, computed } from 'vue'
-import { propertiesAPI, ownersAPI, locationsAPI } from '@/services/api'
+<script setup lang="ts">
+import { ref, onMounted, watch, computed } from 'vue'
+import AppDataTable from '@/components/AppDataTable.vue'
+import { useAppToast } from '@/composables/useAppToast'
+import { usePropertiesStore, useOwnersStore, useLocationsStore } from '@/stores'
+import { buildPayload } from '@/utils/apiPayload'
 import { validators } from '@/utils/validators'
 
-const loading = ref(false)
+const { success, error } = useAppToast()
+const propertiesStore = usePropertiesStore()
+const ownersStore = useOwnersStore()
+const locationsStore = useLocationsStore()
+
 const saving = ref(false)
-const properties = ref([])
-const owners = ref([])
-const locations = ref([])
 const showModal = ref(false)
-const editingId = ref(null)
+const editingId = ref<number | null>(null)
 const searchQuery = ref('')
 const filterType = ref('')
-const propertyForm = ref(null)
+const propertyForm = ref<{ validate: () => Promise<boolean> } | null>(null)
 
 const propertyTypes = ['residential', 'commercial', 'mixed']
 
-const formData = ref({
+const formData = ref<{
+  owner: number | null
+  location: number | null
+  property_name: string
+  property_type: string
+  address: string
+  description: string
+}>({
   owner: null,
   location: null,
   property_name: '',
@@ -136,84 +147,68 @@ const columns = [
 ]
 
 const ownerOptions = computed(() =>
-  owners.value.map((o) => ({ value: o.id, text: o.name }))
+  (ownersStore.items as Record<string, unknown>[]).map((o) => ({ value: o.id as number, text: String(o.name ?? '') }))
 )
 
 const locationOptions = computed(() =>
-  locations.value.map((l) => ({
-    value: l.id,
-    text: `${l.area}, ${l.city}, ${l.region}, ${l.country}`,
+  (locationsStore.items as Record<string, unknown>[]).map((l) => ({
+    value: (l as Record<string, unknown>).id,
+    text: `${(l as Record<string, unknown>).area}, ${(l as Record<string, unknown>).city}, ${(l as Record<string, unknown>).region}, ${(l as Record<string, unknown>).country}`,
   }))
 )
 
-const loadProperties = async () => {
-  loading.value = true
-  try {
-    const params = {}
-    if (searchQuery.value) params.search = searchQuery.value
-    if (filterType.value) params.property_type = filterType.value
-
-    const response = await propertiesAPI.list(params)
-    properties.value = response.data.results || response.data
-  } catch (error) {
-    console.error('Error loading properties:', error)
-  } finally {
-    loading.value = false
-  }
-}
-
-const loadOwners = async () => {
-  try {
-    const response = await ownersAPI.list()
-    owners.value = response.data.results || response.data
-  } catch (error) {
-    console.error('Error loading owners:', error)
-  }
-}
-
-const loadLocations = async () => {
-  try {
-    const response = await locationsAPI.list()
-    locations.value = response.data.results || response.data
-  } catch (error) {
-    console.error('Error loading locations:', error)
-  }
+const loadProperties = () => {
+  const params: Record<string, unknown> = {}
+  if (searchQuery.value) params.search = searchQuery.value
+  if (filterType.value) params.property_type = filterType.value
+  return propertiesStore.fetchList(params)
 }
 
 const saveProperty = async () => {
   const isValid = await propertyForm.value?.validate()
   if (!isValid) return
 
+  const payload = buildPayload(formData.value, ['owner', 'location'])
   saving.value = true
   try {
     if (editingId.value) {
-      await propertiesAPI.update(editingId.value, formData.value)
+      await propertiesStore.updateItem(editingId.value, payload)
     } else {
-      await propertiesAPI.create(formData.value)
+      await propertiesStore.createItem(payload)
     }
+    const wasEdit = !!editingId.value
     closeModal()
-    loadProperties()
-  } catch (error) {
-    console.error('Error saving property:', error)
+    success(wasEdit ? 'Property updated' : 'Property created')
+  } catch (err) {
+    console.error('Error saving property:', err)
+    error('Failed to save property')
   } finally {
     saving.value = false
   }
 }
 
-const editProperty = (property) => {
-  editingId.value = property.id
-  formData.value = { ...property }
+const editProperty = (property: Record<string, unknown>) => {
+  editingId.value = property.id as number
+  formData.value = {
+    owner: (property.owner as number) ?? null,
+    location: (property.location as number) ?? null,
+    property_name: String(property.property_name ?? ''),
+    property_type: String(property.property_type ?? 'residential'),
+    address: String(property.address ?? ''),
+    description: String(property.description ?? ''),
+  }
   showModal.value = true
 }
 
-const deleteProperty = async (id) => {
+const deleteProperty = async (id: number) => {
   if (!confirm('Are you sure you want to delete this property?')) return
 
   try {
-    await propertiesAPI.delete(id)
-    loadProperties()
-  } catch (error) {
-    console.error('Error deleting property:', error)
+    await propertiesStore.deleteItem(id)
+    success('Property deleted')
+  } catch (err) {
+    console.error('Error deleting property:', err)
+    error('Failed to delete property')
   }
 }
 
@@ -231,9 +226,18 @@ const closeModal = () => {
 }
 
 onMounted(() => {
-  loadProperties()
-  loadOwners()
-  loadLocations()
+  loadProperties().catch((err) => console.error('Error loading properties:', err))
+  ownersStore.fetchList().catch(() => {})
+  locationsStore.fetchList().catch(() => {})
+})
+
+let filterDebounce: ReturnType<typeof setTimeout> | null = null
+watch([searchQuery, filterType], () => {
+  if (filterDebounce) clearTimeout(filterDebounce)
+  filterDebounce = setTimeout(() => {
+    loadProperties().catch((err) => console.error('Error loading properties:', err))
+    filterDebounce = null
+  }, 300)
 })
 </script>
 

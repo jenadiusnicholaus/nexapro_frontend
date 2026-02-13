@@ -2,16 +2,18 @@
   <div class="app-layout">
     <!-- Top Header Bar -->
     <header class="app-bar">
-      <VaButton
-        preset="plain"
-        icon="menu"
+      <button
+        type="button"
         class="app-bar-menu-btn"
+        aria-label="Toggle menu"
         @click="toggleDrawer"
-      />
+      >
+        <VaIcon name="menu" size="small" class="app-bar-menu-icon" />
+      </button>
       <div class="app-bar-search">
         <VaInput
           v-model="searchQuery"
-          placeholder="Search..."
+          :placeholder="t('common.search')"
           preset="bordered"
           class="search-input"
           autocomplete="off"
@@ -22,44 +24,51 @@
         </VaInput>
       </div>
       <div class="app-bar-right">
-        <VaButton preset="plain" icon="notifications" class="app-bar-icon-btn">
+        <button
+          type="button"
+          class="app-bar-icon-btn"
+          :aria-label="t('common.notifications')"
+        >
+          <VaIcon name="notifications" size="small" class="app-bar-nav-icon" />
           <VaBadge
             v-if="notificationCount > 0"
             :text="String(notificationCount)"
             color="danger"
+            class="app-bar-badge"
           />
-        </VaButton>
+        </button>
+        <button
+          type="button"
+          class="app-bar-icon-btn"
+          :aria-label="t('common.signOut')"
+          @click="handleLogout"
+        >
+          <VaIcon name="logout" size="small" class="app-bar-nav-icon" />
+        </button>
+        <div class="locale-switcher">
+          <button
+            v-for="opt in localeOptions"
+            :key="opt.value"
+            type="button"
+            class="locale-btn"
+            :class="{ 'locale-btn--active': locale === opt.value }"
+            @click="setLocale(opt.value)"
+          >
+            {{ opt.label }}
+          </button>
+        </div>
         <div class="app-bar-user">
           <div class="user-avatar">
             <VaIcon name="person" size="small" class="user-avatar-icon" />
           </div>
-          <span class="user-name">Account</span>
+          <span class="user-name">{{ t('common.account') }}</span>
         </div>
-        <VaButton preset="plain" icon="logout" class="app-bar-icon-btn" @click="handleLogout" />
       </div>
     </header>
 
     <!-- Left Sidebar -->
     <aside class="sidebar" :class="{ 'sidebar--collapsed': !drawerVisible }">
       <div class="sidebar-inner">
-        <div class="sidebar-brand">
-          <div class="brand-logo">
-            <VaIcon name="home" size="large" class="brand-logo-icon" />
-          </div>
-          <span v-show="drawerVisible" class="brand-text">NexaProperty</span>
-        </div>
-
-        <VaButton
-          v-show="drawerVisible"
-          to="/tenancies"
-          block
-          class="sidebar-cta"
-          size="large"
-        >
-          <VaIcon name="login" class="mr-2" />
-          Move-in tenant +
-        </VaButton>
-
         <nav class="sidebar-nav">
           <router-link
             v-for="item in menuItems"
@@ -69,13 +78,13 @@
             :class="{ 'sidebar-link--active': isActive(item.path) }"
           >
             <VaIcon :name="item.meta?.icon" size="small" class="sidebar-link-icon" />
-            <span v-show="drawerVisible" class="sidebar-link-text">{{ item.displayName }}</span>
+            <span v-show="drawerVisible" class="sidebar-link-text">{{ t(item.displayName) }}</span>
           </router-link>
         </nav>
 
         <div v-show="drawerVisible" class="sidebar-footer-card">
-          <div class="footer-card-title">Property Management</div>
-          <div class="footer-card-subtitle">Manage units, tenants & bills in one place.</div>
+          <div class="footer-card-title">{{ t('sidebar.propertyManagement') }}</div>
+          <div class="footer-card-subtitle">{{ t('sidebar.propertyManagementSubtitle') }}</div>
         </div>
       </div>
     </aside>
@@ -94,15 +103,25 @@
 import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore, useGlobalStore } from '@/stores'
+import { setLocale as setI18nLocale, supportedLocales } from '@/i18n'
+import type { Locale } from '@/i18n'
 import NavigationRoutes from '@/components/sidebar/NavigationRoutes'
 import AppLayoutNavigation from '@/components/app-layout-navigation/AppLayoutNavigation.vue'
 
 const router = useRouter()
 const route = useRoute()
+const { t, locale } = useI18n()
 const authStore = useAuthStore()
 const globalStore = useGlobalStore()
 const { isSidebarMinimized } = storeToRefs(globalStore)
+
+const localeOptions = supportedLocales
+
+const setLocale = (value: Locale) => {
+  setI18nLocale(value)
+}
 
 const notificationCount = ref(0)
 const searchQuery = ref('')
@@ -152,18 +171,50 @@ const handleLogout = () => {
 }
 
 .app-bar-menu-btn {
-  color: #5f6368 !important;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin: 0 -4px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  color: #5f6368;
+}
+
+.app-bar-menu-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #202124;
+}
+
+.app-bar-menu-icon,
+.app-bar-nav-icon {
+  color: inherit !important;
 }
 
 .app-bar-search {
   flex: 1;
-  max-width: 480px;
-  min-width: 120px;
+  max-width: 400px;
+  min-width: 140px;
+  margin: 0 8px;
 }
 
 .search-input {
   width: 100%;
+}
+
+.search-input :deep(.va-input-wrapper) {
+  border-radius: 8px;
+  background: #f1f3f4;
+  border-color: transparent;
+}
+
+.search-input :deep(.va-input-wrapper:focus-within) {
+  background: #fff;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.08);
 }
 
 .search-icon {
@@ -173,11 +224,63 @@ const handleLogout = () => {
 .app-bar-right {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 4px;
+  margin-left: auto;
 }
 
 .app-bar-icon-btn {
-  color: #5f6368 !important;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  color: #5f6368;
+}
+
+.app-bar-icon-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #202124;
+}
+
+.app-bar-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+}
+
+.locale-switcher {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-right: 8px;
+  padding-right: 8px;
+  border-right: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.locale-btn {
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #5f6368;
+  cursor: pointer;
+}
+
+.locale-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #202124;
+}
+
+.locale-btn--active {
+  background: rgba(124, 58, 237, 0.12);
+  color: #7c3aed;
 }
 
 .app-bar-user {
@@ -238,57 +341,10 @@ const handleLogout = () => {
   overflow: hidden;
 }
 
-.sidebar-brand {
-  padding: 1.25rem 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  flex-shrink: 0;
-}
-
-.brand-logo {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #7c3aed 0%, #06b6d4 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.brand-logo-icon {
-  color: #ffffff !important;
-}
-
-.brand-text {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--va-text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.sidebar-cta {
-  margin: 1rem;
-  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%) !important;
-  border: none !important;
-  color: #ffffff !important;
-  font-weight: 600;
-  border-radius: 10px;
-  height: 48px;
-  flex-shrink: 0;
-}
-
-.mr-2 {
-  margin-right: 0.5rem;
-}
-
 .sidebar-nav {
   flex: 1;
   overflow-y: auto;
-  padding: 0.5rem 0;
+  padding: 1rem 0 0.5rem;
 }
 
 .sidebar-link {

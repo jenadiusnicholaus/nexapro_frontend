@@ -32,10 +32,10 @@
           />
         </div>
 
-        <VaDataTable
-          :items="units"
+        <AppDataTable
+          :items="unitsStore.items"
           :columns="columns"
-          :loading="loading"
+          :loading="unitsStore.loading"
         >
           <template #cell(status)="{ rowData }">
             <VaChip :color="getStatusColor(rowData.status)">
@@ -54,15 +54,15 @@
               icon="delete"
               size="small"
               color="danger"
-              @click="deleteUnit(rowData.id)"
+              @click="deleteUnit(Number(rowData.id))"
             />
           </template>
-        </VaDataTable>
+        </AppDataTable>
       </VaCardContent>
     </VaCard>
 
     <!-- Add/Edit Modal -->
-    <VaModal v-model="showModal" :title="editingId ? 'Edit Unit' : 'Add Unit'">
+    <VaModal v-model="showModal" :title="editingId ? 'Edit Unit' : 'Add Unit'" hide-default-actions size="medium">
       <VaForm ref="unitForm" @submit.prevent="saveUnit">
         <VaSelect
           v-model="formData.property"
@@ -119,26 +119,38 @@
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted, computed } from 'vue'
-import { unitsAPI, propertiesAPI } from '@/services/api'
+<script setup lang="ts">
+import { ref, onMounted, watch, computed } from 'vue'
+import AppDataTable from '@/components/AppDataTable.vue'
+import { useAppToast } from '@/composables/useAppToast'
+import { useUnitsStore, usePropertiesStore } from '@/stores'
+import { buildPayload } from '@/utils/apiPayload'
 import { validators } from '@/utils/validators'
 
-const loading = ref(false)
+const { success, error } = useAppToast()
+const unitsStore = useUnitsStore()
+const propertiesStore = usePropertiesStore()
+
 const saving = ref(false)
-const units = ref([])
-const properties = ref([])
 const showModal = ref(false)
-const editingId = ref(null)
+const editingId = ref<number | null>(null)
 const searchQuery = ref('')
 const filterProperty = ref('')
 const filterStatus = ref('')
-const unitForm = ref(null)
+const unitForm = ref<{ validate: () => Promise<boolean> } | null>(null)
 
 const unitTypes = ['apartment', 'studio', 'office', 'shop', 'warehouse', 'other']
 const statusOptions = ['vacant', 'occupied', 'maintenance']
 
-const formData = ref({
+const formData = ref<{
+  property: number | null
+  unit_number: string
+  floor: string
+  unit_type: string
+  rent_amount: string
+  deposit_amount: string
+  status: string
+}>({
   property: null,
   unit_number: '',
   floor: '',
@@ -159,78 +171,73 @@ const columns = [
 ]
 
 const propertyOptions = computed(() =>
-  properties.value.map((p) => ({ value: p.id, text: p.property_name }))
+  (propertiesStore.items as Record<string, unknown>[]).map((p) => ({ value: p.id, text: p.property_name }))
 )
 
-const getStatusColor = (status) => {
-  const colors = {
+const getStatusColor = (status: unknown) => {
+  const colors: Record<string, string> = {
     vacant: 'success',
     occupied: 'info',
     maintenance: 'warning',
   }
-  return colors[status] || 'secondary'
+  return colors[String(status)] || 'secondary'
 }
 
-const loadUnits = async () => {
-  loading.value = true
-  try {
-    const params = {}
-    if (searchQuery.value) params.search = searchQuery.value
-    if (filterProperty.value) params.property = filterProperty.value
-    if (filterStatus.value) params.status = filterStatus.value
-
-    const response = await unitsAPI.list(params)
-    units.value = response.data.results || response.data
-  } catch (error) {
-    console.error('Error loading units:', error)
-  } finally {
-    loading.value = false
-  }
-}
-
-const loadProperties = async () => {
-  try {
-    const response = await propertiesAPI.list()
-    properties.value = response.data.results || response.data
-  } catch (error) {
-    console.error('Error loading properties:', error)
-  }
+const loadUnits = () => {
+  const params: Record<string, unknown> = {}
+  if (searchQuery.value) params.search = searchQuery.value
+  if (filterProperty.value) params.property = filterProperty.value
+  if (filterStatus.value) params.status = filterStatus.value
+  return unitsStore.fetchList(params)
 }
 
 const saveUnit = async () => {
   const isValid = await unitForm.value?.validate()
   if (!isValid) return
 
+  const payload = buildPayload(formData.value, ['property'])
   saving.value = true
   try {
     if (editingId.value) {
-      await unitsAPI.update(editingId.value, formData.value)
+      await unitsStore.updateItem(editingId.value, payload)
     } else {
-      await unitsAPI.create(formData.value)
+      await unitsStore.createItem(payload)
     }
+    const wasEdit = !!editingId.value
     closeModal()
-    loadUnits()
-  } catch (error) {
-    console.error('Error saving unit:', error)
+    success(wasEdit ? 'Unit updated' : 'Unit created')
+  } catch (err) {
+    console.error('Error saving unit:', err)
+    error('Failed to save unit')
   } finally {
     saving.value = false
   }
 }
 
-const editUnit = (unit) => {
-  editingId.value = unit.id
-  formData.value = { ...unit }
+const editUnit = (unit: Record<string, unknown>) => {
+  editingId.value = unit.id as number
+  const propertyId = unit.property_id ?? (unit.property as Record<string, unknown>)?.id ?? unit.property
+  formData.value = {
+    property: (propertyId as number) ?? null,
+    unit_number: String(unit.unit_number ?? ''),
+    floor: String(unit.floor ?? ''),
+    unit_type: String(unit.unit_type ?? 'apartment'),
+    rent_amount: String(unit.rent_amount ?? ''),
+    deposit_amount: String(unit.deposit_amount ?? ''),
+    status: String(unit.status ?? 'vacant'),
+  }
   showModal.value = true
 }
 
-const deleteUnit = async (id) => {
+const deleteUnit = async (id: number) => {
   if (!confirm('Are you sure you want to delete this unit?')) return
 
   try {
-    await unitsAPI.delete(id)
-    loadUnits()
-  } catch (error) {
-    console.error('Error deleting unit:', error)
+    await unitsStore.deleteItem(id)
+    success('Unit deleted')
+  } catch (err) {
+    console.error('Error deleting unit:', err)
+    error('Failed to delete unit')
   }
 }
 
@@ -249,8 +256,17 @@ const closeModal = () => {
 }
 
 onMounted(() => {
-  loadUnits()
-  loadProperties()
+  loadUnits().catch((err) => console.error('Error loading units:', err))
+  propertiesStore.fetchList().catch(() => {})
+})
+
+let searchDebounce: ReturnType<typeof setTimeout> | null = null
+watch(searchQuery, () => {
+  if (searchDebounce) clearTimeout(searchDebounce)
+  searchDebounce = setTimeout(() => {
+    loadUnits().catch((err) => console.error('Error loading units:', err))
+    searchDebounce = null
+  }, 300)
 })
 </script>
 

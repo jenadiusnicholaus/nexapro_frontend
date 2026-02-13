@@ -26,20 +26,20 @@
           />
         </div>
 
-        <VaDataTable
-          :items="payments"
+        <AppDataTable
+          :items="paymentsStore.items"
           :columns="columns"
-          :loading="loading"
+          :loading="paymentsStore.loading"
         >
           <template #cell(amount_paid)="{ rowData }">
-            ${{ parseFloat(rowData.amount_paid || 0).toFixed(2) }}
+            ${{ Number(rowData.amount_paid || 0).toFixed(2) }}
           </template>
-        </VaDataTable>
+        </AppDataTable>
       </VaCardContent>
     </VaCard>
 
     <!-- Add Payment Modal -->
-    <VaModal v-model="showModal" title="Record Payment">
+    <VaModal v-model="showModal" title="Record Payment" hide-default-actions size="medium">
       <VaForm ref="paymentForm" @submit.prevent="savePayment">
         <VaSelect
           v-model="formData.bill"
@@ -95,20 +95,25 @@
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted, computed } from 'vue'
-import { paymentsAPI, billingAPI, tenanciesAPI } from '@/services/api'
+<script setup lang="ts">
+import { ref, onMounted, watch, computed } from 'vue'
+import AppDataTable from '@/components/AppDataTable.vue'
+import { useAppToast } from '@/composables/useAppToast'
+import { usePaymentsStore } from '@/stores'
+import { billingAPI, tenanciesAPI } from '@/services/api'
+import { buildPayload } from '@/utils/apiPayload'
 import { validators } from '@/utils/validators'
 
-const loading = ref(false)
+const { success, error } = useAppToast()
+const paymentsStore = usePaymentsStore()
+
 const saving = ref(false)
-const payments = ref([])
-const bills = ref([])
-const tenancies = ref([])
+const bills = ref<Record<string, unknown>[]>([])
+const tenancies = ref<Record<string, unknown>[]>([])
 const showModal = ref(false)
 const searchQuery = ref('')
 const filterMethod = ref('')
-const paymentForm = ref(null)
+const paymentForm = ref<{ validate: () => Promise<boolean> } | null>(null)
 
 const paymentMethods = ['cash', 'bank', 'mobile_money', 'cheque', 'other']
 
@@ -149,37 +154,30 @@ const tenancyOptions = computed(() =>
     }))
 )
 
-const loadPayments = async () => {
-  loading.value = true
-  try {
-    const params = { ordering: '-created_at' }
-    if (searchQuery.value) params.search = searchQuery.value
-    if (filterMethod.value) params.payment_method = filterMethod.value
-
-    const response = await paymentsAPI.list(params)
-    payments.value = response.data.results || response.data
-  } catch (error) {
-    console.error('Error loading payments:', error)
-  } finally {
-    loading.value = false
-  }
+const loadPayments = () => {
+  const params: Record<string, unknown> = { ordering: '-created_at' }
+  if (searchQuery.value) params.search = searchQuery.value
+  if (filterMethod.value) params.payment_method = filterMethod.value
+  return paymentsStore.fetchList(params)
 }
 
 const loadBills = async () => {
   try {
     const response = await billingAPI.list({ status: 'unpaid' })
-    bills.value = response.data.results || response.data
-  } catch (error) {
-    console.error('Error loading bills:', error)
+    const data = response.data as { results?: Record<string, unknown>[] }
+    bills.value = data.results ?? []
+  } catch (err) {
+    console.error('Error loading bills:', err)
   }
 }
 
 const loadTenancies = async () => {
   try {
     const response = await tenanciesAPI.list({ status: 'active' })
-    tenancies.value = response.data.results || response.data
-  } catch (error) {
-    console.error('Error loading tenancies:', error)
+    const data = response.data as { results?: Record<string, unknown>[] }
+    tenancies.value = data.results ?? []
+  } catch (err) {
+    console.error('Error loading tenancies:', err)
   }
 }
 
@@ -187,14 +185,16 @@ const savePayment = async () => {
   const isValid = await paymentForm.value?.validate()
   if (!isValid) return
 
+  const payload = buildPayload(formData.value, ['bill', 'tenancy'])
   saving.value = true
   try {
-    await paymentsAPI.create(formData.value)
+    await paymentsStore.createItem(payload)
     closeModal()
-    loadPayments()
-    loadBills() // Refresh bills to update status
-  } catch (error) {
-    console.error('Error saving payment:', error)
+    success('Payment recorded')
+    await loadBills()
+  } catch (err) {
+    console.error('Error saving payment:', err)
+    error('Failed to record payment')
   } finally {
     saving.value = false
   }
@@ -214,9 +214,18 @@ const closeModal = () => {
 }
 
 onMounted(() => {
-  loadPayments()
+  loadPayments().catch((err) => console.error('Error loading payments:', err))
   loadBills()
   loadTenancies()
+})
+
+let filterDebounce: ReturnType<typeof setTimeout> | null = null
+watch([searchQuery, filterMethod], () => {
+  if (filterDebounce) clearTimeout(filterDebounce)
+  filterDebounce = setTimeout(() => {
+    loadPayments().catch((err) => console.error('Error loading payments:', err))
+    filterDebounce = null
+  }, 300)
 })
 </script>
 

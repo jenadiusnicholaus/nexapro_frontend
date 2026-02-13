@@ -1,37 +1,40 @@
 /**
  * Central navigation config (ahadi-style).
- * Used by MainLayout sidebar and optionally by breadcrumbs.
+ * Used by sidebar and breadcrumbs.
  */
 
-export interface NavigationRoute {
+export interface INavigationRoute {
   name: string
   path: string
   displayName: string
+  displayNameKey?: string
   meta?: { icon?: string }
+  children?: INavigationRoute[]
 }
 
 export interface NavigationConfig {
-  root: { name: string; displayName: string }
-  routes: NavigationRoute[]
+  root: { name: string; displayNameKey: string }
+  routes: INavigationRoute[]
 }
 
 const config: NavigationConfig = {
   root: {
     name: '/',
-    displayName: 'Overview',
+    displayNameKey: 'menu.overview',
   },
   routes: [
-    { name: 'dashboard', path: '/', displayName: 'Overview', meta: { icon: 'dashboard' } },
-    { name: 'owners', path: '/owners', displayName: 'Owners', meta: { icon: 'person' } },
-    { name: 'locations', path: '/locations', displayName: 'Locations', meta: { icon: 'place' } },
-    { name: 'properties', path: '/properties', displayName: 'Properties', meta: { icon: 'home' } },
-    { name: 'units', path: '/units', displayName: 'Units', meta: { icon: 'apartment' } },
-    { name: 'tenants', path: '/tenants', displayName: 'Tenants', meta: { icon: 'people' } },
-    { name: 'tenancies', path: '/tenancies', displayName: 'Tenancies', meta: { icon: 'assignment' } },
-    { name: 'bills', path: '/bills', displayName: 'Bills', meta: { icon: 'receipt' } },
-    { name: 'payments', path: '/payments', displayName: 'Payments', meta: { icon: 'payment' } },
-    { name: 'notifications', path: '/notifications', displayName: 'Notifications', meta: { icon: 'notifications' } },
-  ],
+    { name: 'dashboard', path: '/', displayName: 'menu.overview', meta: { icon: 'dashboard' } },
+    { name: 'owners', path: '/owners', displayName: 'menu.owners', meta: { icon: 'person' } },
+    { name: 'locations', path: '/locations', displayName: 'menu.locations', meta: { icon: 'place' } },
+    { name: 'properties', path: '/properties', displayName: 'menu.properties', meta: { icon: 'home' } },
+    { name: 'units', path: '/units', displayName: 'menu.units', meta: { icon: 'apartment' } },
+    { name: 'tenants', path: '/tenants', displayName: 'menu.tenants', meta: { icon: 'people' } },
+    { name: 'tenancies', path: '/tenancies', displayName: 'menu.tenancies', meta: { icon: 'assignment' } },
+    { name: 'bills', path: '/bills', displayName: 'menu.bills', meta: { icon: 'receipt' } },
+    { name: 'payments', path: '/payments', displayName: 'menu.payments', meta: { icon: 'payment' } },
+    { name: 'notifications', path: '/notifications', displayName: 'menu.notifications', meta: { icon: 'notifications' } },
+    { name: 'profiles', path: '/profiles', displayName: 'menu.profiles', meta: { icon: 'person' } },
+  ] as INavigationRoute[],
 }
 
 export default config

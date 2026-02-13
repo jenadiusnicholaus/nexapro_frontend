@@ -148,4 +148,13 @@ export const notificationsAPI = {
   delete: (id: string | number) => apiClient.delete(`/notifications/${id}/`),
 }
 
+export const profilesAPI = {
+  list: (params: Record<string, unknown> = {}) => apiClient.get('/profiles/', { params }),
+  get: (id: string | number) => apiClient.get(`/profiles/${id}/`),
+  create: (data: Record<string, unknown>) => apiClient.post('/profiles/', data),
+  update: (id: string | number, data: Record<string, unknown>) => apiClient.put(`/profiles/${id}/`, data),
+  patch: (id: string | number, data: Record<string, unknown>) => apiClient.patch(`/profiles/${id}/`, data),
+  delete: (id: string | number) => apiClient.delete(`/profiles/${id}/`),
+}
+
 export default apiClient

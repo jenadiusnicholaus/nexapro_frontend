@@ -26,10 +26,10 @@
           />
         </div>
 
-        <VaDataTable
-          :items="tenancies"
+        <AppDataTable
+          :items="tenanciesStore.items"
           :columns="columns"
-          :loading="loading"
+          :loading="tenanciesStore.loading"
         >
           <template #cell(status)="{ rowData }">
             <VaChip :color="getStatusColor(rowData.status)">
@@ -48,12 +48,12 @@
               Move Out
             </VaButton>
           </template>
-        </VaDataTable>
+        </AppDataTable>
       </VaCardContent>
     </VaCard>
 
     <!-- Move-In Modal -->
-    <VaModal v-model="showMoveInModal" title="Move-In Tenant">
+    <VaModal v-model="showMoveInModal" title="Move-In Tenant" hide-default-actions size="medium">
       <VaForm ref="moveInForm" @submit.prevent="saveMoveIn">
         <VaSelect
           v-model="moveInData.tenant"
@@ -111,7 +111,7 @@
     </VaModal>
 
     <!-- Move-Out Modal -->
-    <VaModal v-model="moveOutModalOpen" title="Move-Out Tenant">
+    <VaModal v-model="moveOutModalOpen" title="Move-Out Tenant" hide-default-actions size="medium">
       <VaForm ref="moveOutForm" @submit.prevent="saveMoveOut">
         <VaInput
           v-model="moveOutDate"
@@ -129,23 +129,27 @@
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted, computed } from 'vue'
-import { tenanciesAPI, tenantsAPI, unitsAPI } from '@/services/api'
+<script setup lang="ts">
+import { ref, onMounted, watch, computed } from 'vue'
+import AppDataTable from '@/components/AppDataTable.vue'
+import { useAppToast } from '@/composables/useAppToast'
+import { useTenanciesStore, useTenantsStore, useUnitsStore } from '@/stores'
+import { buildPayload } from '@/utils/apiPayload'
 import { validators } from '@/utils/validators'
 
-const loading = ref(false)
+const { success, error } = useAppToast()
+const tenanciesStore = useTenanciesStore()
+const tenantsStore = useTenantsStore()
+const unitsStore = useUnitsStore()
+
 const saving = ref(false)
-const tenancies = ref([])
-const tenants = ref([])
-const units = ref([])
 const showMoveInModal = ref(false)
 const moveOutModalOpen = ref(false)
-const editingTenancyId = ref(null)
+const editingTenancyId = ref<number | null>(null)
 const searchQuery = ref('')
 const filterStatus = ref('')
-const moveInForm = ref(null)
-const moveOutForm = ref(null)
+const moveInForm = ref<{ validate: () => Promise<boolean> } | null>(null)
+const moveOutForm = ref<{ validate: () => Promise<boolean> } | null>(null)
 const moveOutDate = ref('')
 
 const statusOptions = ['active', 'completed', 'terminated']
@@ -172,77 +176,52 @@ const columns = [
 ]
 
 const tenantOptions = computed(() =>
-  tenants.value.map((t) => ({ value: t.id, text: t.full_name }))
+  (tenantsStore.items as Record<string, unknown>[]).map((t) => ({ value: t.id, text: t.full_name }))
 )
 
 const unitOptions = computed(() =>
-  units.value
-    .filter((u) => u.status === 'vacant')
-    .map((u) => ({ value: u.id, text: `${u.unit_number} - ${u.property_name}` }))
+  (unitsStore.items as Record<string, unknown>[])
+    .filter((u) => (u as Record<string, unknown>).status === 'vacant')
+    .map((u) => ({ value: (u as Record<string, unknown>).id, text: `${(u as Record<string, unknown>).unit_number} - ${(u as Record<string, unknown>).property_name}` }))
 )
 
-const getStatusColor = (status) => {
-  const colors = {
+const getStatusColor = (status: unknown) => {
+  const colors: Record<string, string> = {
     active: 'success',
     completed: 'info',
     terminated: 'danger',
   }
-  return colors[status] || 'secondary'
+  return colors[String(status)] || 'secondary'
 }
 
-const loadTenancies = async () => {
-  loading.value = true
-  try {
-    const params = {}
-    if (searchQuery.value) params.search = searchQuery.value
-    if (filterStatus.value) params.status = filterStatus.value
-
-    const response = await tenanciesAPI.list(params)
-    tenancies.value = response.data.results || response.data
-  } catch (error) {
-    console.error('Error loading tenancies:', error)
-  } finally {
-    loading.value = false
-  }
-}
-
-const loadTenants = async () => {
-  try {
-    const response = await tenantsAPI.list()
-    tenants.value = response.data.results || response.data
-  } catch (error) {
-    console.error('Error loading tenants:', error)
-  }
-}
-
-const loadUnits = async () => {
-  try {
-    const response = await unitsAPI.list({ status: 'vacant' })
-    units.value = response.data.results || response.data
-  } catch (error) {
-    console.error('Error loading units:', error)
-  }
+const loadTenancies = () => {
+  const params: Record<string, unknown> = {}
+  if (searchQuery.value) params.search = searchQuery.value
+  if (filterStatus.value) params.status = filterStatus.value
+  return tenanciesStore.fetchList(params)
 }
 
 const saveMoveIn = async () => {
   const isValid = await moveInForm.value?.validate()
   if (!isValid) return
 
+  const payload = buildPayload(moveInData.value, ['tenant', 'unit'])
   saving.value = true
   try {
-    await tenanciesAPI.create(moveInData.value)
+    await tenanciesStore.createItem(payload)
     closeMoveInModal()
-    loadTenancies()
-    loadUnits() // Refresh units to update vacant status
-  } catch (error) {
-    console.error('Error creating tenancy:', error)
+    success('Tenant moved in')
+    await unitsStore.fetchList({ status: 'vacant' })
+  } catch (err) {
+    console.error('Error creating tenancy:', err)
+    error('Failed to move in tenant')
   } finally {
     saving.value = false
   }
 }
 
-const openMoveOutModal = (tenancy) => {
-  editingTenancyId.value = tenancy.id
+const openMoveOutModal = (tenancy: Record<string, unknown>) => {
+  editingTenancyId.value = tenancy.id as number
   moveOutDate.value = ''
   moveOutModalOpen.value = true
 }
@@ -253,12 +232,13 @@ const saveMoveOut = async () => {
 
   saving.value = true
   try {
-    await tenanciesAPI.moveOut(editingTenancyId.value, moveOutDate.value)
+    await tenanciesStore.moveOut(editingTenancyId.value!, moveOutDate.value)
     closeMoveOutModal()
-    loadTenancies()
-    loadUnits() // Refresh units to update vacant status
-  } catch (error) {
-    console.error('Error moving out tenant:', error)
+    success('Tenant moved out')
+    await unitsStore.fetchList({ status: 'vacant' })
+  } catch (err) {
+    console.error('Error moving out tenant:', err)
+    error('Failed to move out tenant')
   } finally {
     saving.value = false
   }
@@ -285,9 +265,18 @@ const closeMoveOutModal = () => {
 }
 
 onMounted(() => {
-  loadTenancies()
-  loadTenants()
-  loadUnits()
+  loadTenancies().catch((err) => console.error('Error loading tenancies:', err))
+  tenantsStore.fetchList().catch(() => {})
+  unitsStore.fetchList({ status: 'vacant' }).catch(() => {})
+})
+
+let searchDebounce: ReturnType<typeof setTimeout> | null = null
+watch(searchQuery, () => {
+  if (searchDebounce) clearTimeout(searchDebounce)
+  searchDebounce = setTimeout(() => {
+    loadTenancies().catch((err) => console.error('Error loading tenancies:', err))
+    searchDebounce = null
+  }, 300)
 })
 </script>
 

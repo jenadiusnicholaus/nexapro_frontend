@@ -32,22 +32,22 @@
           />
         </div>
 
-        <VaDataTable
-          :items="notifications"
+        <AppDataTable
+          :items="notificationsStore.items"
           :columns="columns"
-          :loading="loading"
+          :loading="notificationsStore.loading"
         >
           <template #cell(status)="{ rowData }">
             <VaChip :color="getStatusColor(rowData.status)">
               {{ rowData.status }}
             </VaChip>
           </template>
-        </VaDataTable>
+        </AppDataTable>
       </VaCardContent>
     </VaCard>
 
     <!-- Create Notification Modal -->
-    <VaModal v-model="showModal" title="Create Notification">
+    <VaModal v-model="showModal" title="Create Notification" hide-default-actions size="medium">
       <VaForm ref="notificationForm" @submit.prevent="saveNotification">
         <VaSelect
           v-model="formData.tenancy"
@@ -91,20 +91,24 @@
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted, computed } from 'vue'
-import { notificationsAPI, tenanciesAPI } from '@/services/api'
+<script setup lang="ts">
+import { ref, onMounted, watch, computed } from 'vue'
+import AppDataTable from '@/components/AppDataTable.vue'
+import { useAppToast } from '@/composables/useAppToast'
+import { useNotificationsStore, useTenanciesStore } from '@/stores'
+import { buildPayload } from '@/utils/apiPayload'
 import { validators } from '@/utils/validators'
 
-const loading = ref(false)
+const { success, error } = useAppToast()
+const notificationsStore = useNotificationsStore()
+const tenanciesStore = useTenanciesStore()
+
 const saving = ref(false)
-const notifications = ref([])
-const tenancies = ref([])
 const showModal = ref(false)
 const searchQuery = ref('')
 const filterType = ref('')
 const filterStatus = ref('')
-const notificationForm = ref(null)
+const notificationForm = ref<{ validate: () => Promise<boolean> } | null>(null)
 
 const notificationTypes = [
   'upcoming_reminder',
@@ -135,58 +139,42 @@ const columns = [
 ]
 
 const tenancyOptions = computed(() =>
-  tenancies.value.map((t) => ({
+  (tenanciesStore.items as Record<string, unknown>[]).map((t) => ({
     value: t.id,
     text: `${t.tenant_name} - ${t.unit_number}`,
   }))
 )
 
-const getStatusColor = (status) => {
-  const colors = {
+const getStatusColor = (status: unknown) => {
+  const colors: Record<string, string> = {
     pending: 'warning',
     sent: 'success',
     failed: 'danger',
   }
-  return colors[status] || 'secondary'
+  return colors[String(status)] || 'secondary'
 }
 
-const loadNotifications = async () => {
-  loading.value = true
-  try {
-    const params = { ordering: '-created_at' }
-    if (searchQuery.value) params.search = searchQuery.value
-    if (filterType.value) params.notification_type = filterType.value
-    if (filterStatus.value) params.status = filterStatus.value
-
-    const response = await notificationsAPI.list(params)
-    notifications.value = response.data.results || response.data
-  } catch (error) {
-    console.error('Error loading notifications:', error)
-  } finally {
-    loading.value = false
-  }
-}
-
-const loadTenancies = async () => {
-  try {
-    const response = await tenanciesAPI.list()
-    tenancies.value = response.data.results || response.data
-  } catch (error) {
-    console.error('Error loading tenancies:', error)
-  }
+const loadNotifications = () => {
+  const params: Record<string, unknown> = { ordering: '-created_at' }
+  if (searchQuery.value) params.search = searchQuery.value
+  if (filterType.value) params.notification_type = filterType.value
+  if (filterStatus.value) params.status = filterStatus.value
+  return notificationsStore.fetchList(params)
 }
 
 const saveNotification = async () => {
   const isValid = await notificationForm.value?.validate()
   if (!isValid) return
 
+  const payload = buildPayload(formData.value, ['tenancy'])
   saving.value = true
   try {
-    await notificationsAPI.create(formData.value)
+    await notificationsStore.createItem(payload)
     closeModal()
-    loadNotifications()
-  } catch (error) {
-    console.error('Error saving notification:', error)
+    success('Notification created')
+  } catch (err) {
+    console.error('Error saving notification:', err)
+    error('Failed to create notification')
   } finally {
     saving.value = false
   }
@@ -205,8 +193,17 @@ const closeModal = () => {
 }
 
 onMounted(() => {
-  loadNotifications()
-  loadTenancies()
+  loadNotifications().catch((err) => console.error('Error loading notifications:', err))
+  tenanciesStore.fetchList().catch(() => {})
+})
+
+let filterDebounce: ReturnType<typeof setTimeout> | null = null
+watch([searchQuery, filterType, filterStatus], () => {
+  if (filterDebounce) clearTimeout(filterDebounce)
+  filterDebounce = setTimeout(() => {
+    loadNotifications().catch((err) => console.error('Error loading notifications:', err))
+    filterDebounce = null
+  }, 300)
 })
 </script>
 

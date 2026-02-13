@@ -36,12 +36,10 @@
           />
         </div>
 
-        <VaDataTable
-          :items="filteredOwners"
+        <AppDataTable
+          :items="ownersStore.items"
           :columns="columns"
-          :loading="loading"
-          :hoverable="true"
-          class="data-table"
+          :loading="ownersStore.loading"
         >
           <template #cell(actions)="{ rowData }">
             <VaButton
@@ -58,12 +56,12 @@
               @click="deleteOwner(rowData.id)"
             />
           </template>
-        </VaDataTable>
+        </AppDataTable>
       </VaCardContent>
     </VaCard>
 
     <!-- Add/Edit Modal -->
-    <VaModal v-model="showModal" :title="editingId ? 'Edit Owner' : 'Add Owner'">
+    <VaModal v-model="showModal" :title="editingId ? 'Edit Owner' : 'Add Owner'" hide-default-actions size="medium">
       <VaForm ref="ownerForm" @submit.prevent="saveOwner">
         <VaSelect
           v-model="formData.owner_type"
@@ -114,18 +112,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { ownersAPI } from '@/services/api'
+import { ref, onMounted, watch } from 'vue'
+import AppDataTable from '@/components/AppDataTable.vue'
+import { useAppToast } from '@/composables/useAppToast'
+import { useOwnersStore } from '@/stores'
 import { validators } from '@/utils/validators'
 
-const loading = ref(false)
+const { success, error } = useAppToast()
+const ownersStore = useOwnersStore()
+
 const saving = ref(false)
-const owners = ref([])
 const showModal = ref(false)
 const editingId = ref(null)
 const searchQuery = ref('')
 const filterType = ref('')
-const filteredCount = ref(0)
 const ownerForm = ref(null)
 
 const ownerTypes = ['individual', 'company']
@@ -148,40 +148,11 @@ const columns = [
   { key: 'actions', label: 'Actions', width: 100 },
 ]
 
-const filteredOwners = computed(() => {
-  let result = owners.value
-
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    result = result.filter(
-      (o) =>
-        o.name?.toLowerCase().includes(query) ||
-        o.email?.toLowerCase().includes(query) ||
-        o.phone?.includes(query)
-    )
-  }
-
-  if (filterType.value) {
-    result = result.filter((o) => o.owner_type === filterType.value)
-  }
-
-  return result
-})
-
-const loadOwners = async () => {
-  loading.value = true
-  try {
-    const params = {}
-    if (searchQuery.value) params.search = searchQuery.value
-    if (filterType.value) params.owner_type = filterType.value
-
-    const response = await ownersAPI.list(params)
-    owners.value = response.data.results || response.data
-  } catch (error) {
-    console.error('Error loading owners:', error)
-  } finally {
-    loading.value = false
-  }
+const loadOwners = () => {
+  const params = {}
+  if (searchQuery.value) params.search = searchQuery.value
+  if (filterType.value) params.owner_type = filterType.value
+  return ownersStore.fetchList(params)
 }
 
 const saveOwner = async () => {
@@ -191,14 +162,16 @@ const saveOwner = async () => {
   saving.value = true
   try {
     if (editingId.value) {
-      await ownersAPI.update(editingId.value, formData.value)
+      await ownersStore.updateItem(editingId.value, formData.value)
     } else {
-      await ownersAPI.create(formData.value)
+      await ownersStore.createItem(formData.value)
     }
+    const wasEdit = !!editingId.value
     closeModal()
-    loadOwners()
-  } catch (error) {
-    console.error('Error saving owner:', error)
+    success(wasEdit ? 'Owner updated' : 'Owner created')
+  } catch (err) {
+    console.error('Error saving owner:', err)
+    error('Failed to save owner')
   } finally {
     saving.value = false
   }
@@ -214,10 +187,11 @@ const deleteOwner = async (id) => {
   if (!confirm('Are you sure you want to delete this owner?')) return
 
   try {
-    await ownersAPI.delete(id)
-    loadOwners()
-  } catch (error) {
-    console.error('Error deleting owner:', error)
+    await ownersStore.deleteItem(id)
+    success('Owner deleted')
+  } catch (err) {
+    console.error('Error deleting owner:', err)
+    error('Failed to delete owner')
   }
 }
 
@@ -235,7 +209,16 @@ const closeModal = () => {
 }
 
 onMounted(() => {
-  loadOwners()
+  loadOwners().catch((err) => console.error('Error loading owners:', err))
+})
+
+let filterDebounce: ReturnType<typeof setTimeout> | null = null
+watch([searchQuery, filterType], () => {
+  if (filterDebounce) clearTimeout(filterDebounce)
+  filterDebounce = setTimeout(() => {
+    loadOwners().catch((err) => console.error('Error loading owners:', err))
+    filterDebounce = null
+  }, 300)
 })
 </script>
 

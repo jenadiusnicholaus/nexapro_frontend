@@ -18,10 +18,10 @@
           </template>
         </VaInput>
 
-        <VaDataTable
-          :items="locations"
+        <AppDataTable
+          :items="locationsStore.items"
           :columns="columns"
-          :loading="loading"
+          :loading="locationsStore.loading"
         >
           <template #cell(actions)="{ rowData }">
             <VaButton
@@ -38,12 +38,17 @@
               @click="deleteLocation(rowData.id)"
             />
           </template>
-        </VaDataTable>
+        </AppDataTable>
       </VaCardContent>
     </VaCard>
 
     <!-- Add/Edit Modal -->
-    <VaModal v-model="showModal" :title="editingId ? 'Edit Location' : 'Add Location'">
+    <VaModal
+      v-model="showModal"
+      :title="editingId ? 'Edit Location' : 'Add Location'"
+      hide-default-actions
+      size="medium"
+    >
       <VaForm ref="locationForm" @submit.prevent="saveLocation">
         <VaInput
           v-model="formData.country"
@@ -79,13 +84,16 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { locationsAPI } from '@/services/api'
+import { ref, onMounted, watch } from 'vue'
+import AppDataTable from '@/components/AppDataTable.vue'
+import { useAppToast } from '@/composables/useAppToast'
+import { useLocationsStore } from '@/stores'
 import { validators } from '@/utils/validators'
 
-const loading = ref(false)
+const { success, error } = useAppToast()
+const locationsStore = useLocationsStore()
+
 const saving = ref(false)
-const locations = ref([])
 const showModal = ref(false)
 const editingId = ref(null)
 const searchQuery = ref('')
@@ -106,19 +114,9 @@ const columns = [
   { key: 'actions', label: 'Actions', width: 100 },
 ]
 
-const loadLocations = async () => {
-  loading.value = true
-  try {
-    const params = {}
-    if (searchQuery.value) params.search = searchQuery.value
-
-    const response = await locationsAPI.list(params)
-    locations.value = response.data.results || response.data
-  } catch (error) {
-    console.error('Error loading locations:', error)
-  } finally {
-    loading.value = false
-  }
+const loadLocations = () => {
+  const params = searchQuery.value ? { search: searchQuery.value } : {}
+  return locationsStore.fetchList(params)
 }
 
 const saveLocation = async () => {
@@ -128,14 +126,16 @@ const saveLocation = async () => {
   saving.value = true
   try {
     if (editingId.value) {
-      await locationsAPI.update(editingId.value, formData.value)
+      await locationsStore.updateItem(editingId.value, formData.value)
     } else {
-      await locationsAPI.create(formData.value)
+      await locationsStore.createItem(formData.value)
     }
+    const wasEdit = !!editingId.value
     closeModal()
-    loadLocations()
-  } catch (error) {
-    console.error('Error saving location:', error)
+    success(wasEdit ? 'Location updated' : 'Location created')
+  } catch (err) {
+    console.error('Error saving location:', err)
+    error('Failed to save location')
   } finally {
     saving.value = false
   }
@@ -151,10 +151,11 @@ const deleteLocation = async (id) => {
   if (!confirm('Are you sure you want to delete this location?')) return
 
   try {
-    await locationsAPI.delete(id)
-    loadLocations()
-  } catch (error) {
-    console.error('Error deleting location:', error)
+    await locationsStore.deleteItem(id)
+    success('Location deleted')
+  } catch (err) {
+    console.error('Error deleting location:', err)
+    error('Failed to delete location')
   }
 }
 
@@ -170,7 +171,16 @@ const closeModal = () => {
 }
 
 onMounted(() => {
-  loadLocations()
+  loadLocations().catch((err) => console.error('Error loading locations:', err))
+})
+
+let searchDebounce: ReturnType<typeof setTimeout> | null = null
+watch(searchQuery, () => {
+  if (searchDebounce) clearTimeout(searchDebounce)
+  searchDebounce = setTimeout(() => {
+    loadLocations().catch((err) => console.error('Error loading locations:', err))
+    searchDebounce = null
+  }, 300)
 })
 </script>
 

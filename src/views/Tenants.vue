@@ -29,12 +29,10 @@
           </VaInput>
         </div>
 
-        <VaDataTable
-          :items="tenants"
+        <AppDataTable
+          :items="tenantsStore.items"
           :columns="columns"
-          :loading="loading"
-          hoverable
-          class="data-table"
+          :loading="tenantsStore.loading"
         >
           <template #cell(actions)="{ rowData }">
             <VaButton
@@ -51,12 +49,12 @@
               @click="deleteTenant(rowData.id)"
             />
           </template>
-        </VaDataTable>
+        </AppDataTable>
       </VaCardContent>
     </VaCard>
 
     <!-- Add/Edit Modal -->
-    <VaModal v-model="showModal" :title="editingId ? 'Edit Tenant' : 'Add Tenant'">
+    <VaModal v-model="showModal" :title="editingId ? 'Edit Tenant' : 'Add Tenant'" hide-default-actions size="medium">
       <VaForm ref="tenantForm" @submit.prevent="saveTenant">
         <VaInput
           v-model="formData.full_name"
@@ -99,13 +97,16 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { tenantsAPI } from '@/services/api'
+import { ref, onMounted, watch } from 'vue'
+import AppDataTable from '@/components/AppDataTable.vue'
+import { useAppToast } from '@/composables/useAppToast'
+import { useTenantsStore } from '@/stores'
 import { validators } from '@/utils/validators'
 
-const loading = ref(false)
+const { success, error } = useAppToast()
+const tenantsStore = useTenantsStore()
+
 const saving = ref(false)
-const tenants = ref([])
 const showModal = ref(false)
 const editingId = ref(null)
 const searchQuery = ref('')
@@ -128,19 +129,9 @@ const columns = [
   { key: 'actions', label: 'Actions', width: 100 },
 ]
 
-const loadTenants = async () => {
-  loading.value = true
-  try {
-    const params = {}
-    if (searchQuery.value) params.search = searchQuery.value
-
-    const response = await tenantsAPI.list(params)
-    tenants.value = response.data.results || response.data
-  } catch (error) {
-    console.error('Error loading tenants:', error)
-  } finally {
-    loading.value = false
-  }
+const loadTenants = () => {
+  const params = searchQuery.value ? { search: searchQuery.value } : {}
+  return tenantsStore.fetchList(params)
 }
 
 const saveTenant = async () => {
@@ -150,14 +141,16 @@ const saveTenant = async () => {
   saving.value = true
   try {
     if (editingId.value) {
-      await tenantsAPI.update(editingId.value, formData.value)
+      await tenantsStore.updateItem(editingId.value, formData.value)
     } else {
-      await tenantsAPI.create(formData.value)
+      await tenantsStore.createItem(formData.value)
     }
+    const wasEdit = !!editingId.value
     closeModal()
-    loadTenants()
-  } catch (error) {
-    console.error('Error saving tenant:', error)
+    success(wasEdit ? 'Tenant updated' : 'Tenant created')
+  } catch (err) {
+    console.error('Error saving tenant:', err)
+    error('Failed to save tenant')
   } finally {
     saving.value = false
   }
@@ -173,10 +166,11 @@ const deleteTenant = async (id) => {
   if (!confirm('Are you sure you want to delete this tenant?')) return
 
   try {
-    await tenantsAPI.delete(id)
-    loadTenants()
-  } catch (error) {
-    console.error('Error deleting tenant:', error)
+    await tenantsStore.deleteItem(id)
+    success('Tenant deleted')
+  } catch (err) {
+    console.error('Error deleting tenant:', err)
+    error('Failed to delete tenant')
   }
 }
 
@@ -193,7 +187,16 @@ const closeModal = () => {
 }
 
 onMounted(() => {
-  loadTenants()
+  loadTenants().catch((err) => console.error('Error loading tenants:', err))
+})
+
+let searchDebounce: ReturnType<typeof setTimeout> | null = null
+watch(searchQuery, () => {
+  if (searchDebounce) clearTimeout(searchDebounce)
+  searchDebounce = setTimeout(() => {
+    loadTenants().catch((err) => console.error('Error loading tenants:', err))
+    searchDebounce = null
+  }, 300)
 })
 </script>
 
