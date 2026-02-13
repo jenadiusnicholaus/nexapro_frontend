@@ -177,14 +177,14 @@ onMounted(() => {
   loadBills().catch((err) => console.error('Error loading bills:', err))
 })
 
-let filterDebounce: ReturnType<typeof setTimeout> | null = null
+let filterDebounce: ReturnType<typeof setTimeout> | null = null;
 watch([searchQuery, filterStatus, filterPeriod], () => {
-  if (filterDebounce) clearTimeout(filterDebounce)
+  if (filterDebounce) clearTimeout(filterDebounce);
   filterDebounce = setTimeout(() => {
-    loadBills().catch((err) => console.error('Error loading bills:', err))
-    filterDebounce = null
-  }, 300)
-})
+    loadBills().catch((err) => console.error('Error loading bills:', err));
+    filterDebounce = null;
+  }, 300);
+});
 </script>
 
 <style scoped>

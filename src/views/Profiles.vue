@@ -186,14 +186,14 @@ onMounted(() => {
   loadProfiles().catch((err) => console.error('Error loading profiles:', err))
 })
 
-let searchDebounce: ReturnType<typeof setTimeout> | null = null
+let searchDebounce: ReturnType<typeof setTimeout> | null = null;
 watch(searchQuery, () => {
-  if (searchDebounce) clearTimeout(searchDebounce)
+  if (searchDebounce) clearTimeout(searchDebounce);
   searchDebounce = setTimeout(() => {
-    loadProfiles().catch((err) => console.error('Error loading profiles:', err))
-    searchDebounce = null
-  }, 300)
-})
+    loadProfiles().catch((err) => console.error('Error loading profiles:', err));
+    searchDebounce = null;
+  }, 300);
+});
 </script>
 
 <style scoped>

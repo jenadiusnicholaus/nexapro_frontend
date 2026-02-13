@@ -190,12 +190,12 @@ onMounted(() => {
   loadTenants().catch((err) => console.error('Error loading tenants:', err))
 })
 
-let searchDebounce: ReturnType<typeof setTimeout> | null = null
+const searchDebounce = ref(null)
 watch(searchQuery, () => {
-  if (searchDebounce) clearTimeout(searchDebounce)
-  searchDebounce = setTimeout(() => {
+  if (searchDebounce.value) clearTimeout(searchDebounce.value)
+  searchDebounce.value = setTimeout(() => {
     loadTenants().catch((err) => console.error('Error loading tenants:', err))
-    searchDebounce = null
+    searchDebounce.value = null
   }, 300)
 })
 </script>

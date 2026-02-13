@@ -219,14 +219,14 @@ onMounted(() => {
   loadTenancies()
 })
 
-let filterDebounce: ReturnType<typeof setTimeout> | null = null
+let filterDebounce: ReturnType<typeof setTimeout> | null = null;
 watch([searchQuery, filterMethod], () => {
-  if (filterDebounce) clearTimeout(filterDebounce)
+  if (filterDebounce) clearTimeout(filterDebounce);
   filterDebounce = setTimeout(() => {
-    loadPayments().catch((err) => console.error('Error loading payments:', err))
-    filterDebounce = null
-  }, 300)
-})
+    loadPayments().catch((err) => console.error('Error loading payments:', err));
+    filterDebounce = null;
+  }, 300);
+});
 </script>
 
 <style scoped>

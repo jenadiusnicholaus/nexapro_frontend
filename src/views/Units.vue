@@ -260,14 +260,14 @@ onMounted(() => {
   propertiesStore.fetchList().catch(() => {})
 })
 
-let searchDebounce: ReturnType<typeof setTimeout> | null = null
+let searchDebounce: ReturnType<typeof setTimeout> | null = null;
 watch(searchQuery, () => {
-  if (searchDebounce) clearTimeout(searchDebounce)
+  if (searchDebounce) clearTimeout(searchDebounce);
   searchDebounce = setTimeout(() => {
-    loadUnits().catch((err) => console.error('Error loading units:', err))
-    searchDebounce = null
-  }, 300)
-})
+    loadUnits().catch((err) => console.error('Error loading units:', err));
+    searchDebounce = null;
+  }, 300);
+});
 </script>
 
 <style scoped>

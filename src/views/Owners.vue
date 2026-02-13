@@ -212,12 +212,12 @@ onMounted(() => {
   loadOwners().catch((err) => console.error('Error loading owners:', err))
 })
 
-let filterDebounce: ReturnType<typeof setTimeout> | null = null
+const filterDebounce = ref(null)
 watch([searchQuery, filterType], () => {
-  if (filterDebounce) clearTimeout(filterDebounce)
-  filterDebounce = setTimeout(() => {
+  if (filterDebounce.value) clearTimeout(filterDebounce.value)
+  filterDebounce.value = setTimeout(() => {
     loadOwners().catch((err) => console.error('Error loading owners:', err))
-    filterDebounce = null
+    filterDebounce.value = null
   }, 300)
 })
 </script>

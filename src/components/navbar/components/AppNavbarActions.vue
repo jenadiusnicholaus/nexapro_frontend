@@ -58,14 +58,13 @@
       </VaDropdownContent>
     </VaDropdown>
 
-    <!-- Account dropdown: avatar + current lang flag + actions -->
+    <!-- Account dropdown: avatar + actions -->
     <VaDropdown placement="bottom-end" :offset="[0, 8]" class="app-navbar-actions__account-dropdown">
       <template #anchor>
         <button type="button" class="account-trigger" aria-haspopup="true" :aria-label="t('common.account')">
           <div class="account-trigger__avatar">
             <VaIcon name="person" size="small" class="account-trigger__icon" />
           </div>
-          <span v-if="!isMobile" class="account-trigger__flag" :title="currentLocaleLabel">{{ currentLocaleFlag }}</span>
           <span v-if="!isMobile" class="account-trigger__name">{{ t('common.account') }}</span>
           <VaIcon name="angle_down" size="small" class="account-trigger__chevron" />
         </button>
@@ -263,11 +262,6 @@ const handleLogout = () => {
 
 .account-trigger__icon {
   color: #fff !important;
-}
-
-.account-trigger__flag {
-  font-size: 1rem;
-  line-height: 1;
 }
 
 .account-trigger__name {

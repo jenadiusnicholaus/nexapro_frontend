@@ -197,14 +197,14 @@ onMounted(() => {
   tenanciesStore.fetchList().catch(() => {})
 })
 
-let filterDebounce: ReturnType<typeof setTimeout> | null = null
+let filterDebounce: ReturnType<typeof setTimeout> | null = null;
 watch([searchQuery, filterType, filterStatus], () => {
-  if (filterDebounce) clearTimeout(filterDebounce)
+  if (filterDebounce) clearTimeout(filterDebounce);
   filterDebounce = setTimeout(() => {
-    loadNotifications().catch((err) => console.error('Error loading notifications:', err))
-    filterDebounce = null
-  }, 300)
-})
+    loadNotifications().catch((err) => console.error('Error loading notifications:', err));
+    filterDebounce = null;
+  }, 300);
+});
 </script>
 
 <style scoped>

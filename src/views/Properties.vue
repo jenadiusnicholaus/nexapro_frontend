@@ -231,14 +231,14 @@ onMounted(() => {
   locationsStore.fetchList().catch(() => {})
 })
 
-let filterDebounce: ReturnType<typeof setTimeout> | null = null
+let filterDebounce: ReturnType<typeof setTimeout> | null = null;
 watch([searchQuery, filterType], () => {
-  if (filterDebounce) clearTimeout(filterDebounce)
+  if (filterDebounce) clearTimeout(filterDebounce);
   filterDebounce = setTimeout(() => {
-    loadProperties().catch((err) => console.error('Error loading properties:', err))
-    filterDebounce = null
-  }, 300)
-})
+    loadProperties().catch((err) => console.error('Error loading properties:', err));
+    filterDebounce = null;
+  }, 300);
+});
 </script>
 
 <style scoped>

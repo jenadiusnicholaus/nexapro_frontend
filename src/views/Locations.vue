@@ -174,12 +174,12 @@ onMounted(() => {
   loadLocations().catch((err) => console.error('Error loading locations:', err))
 })
 
-let searchDebounce: ReturnType<typeof setTimeout> | null = null
+const searchDebounce = ref(null)
 watch(searchQuery, () => {
-  if (searchDebounce) clearTimeout(searchDebounce)
-  searchDebounce = setTimeout(() => {
+  if (searchDebounce.value) clearTimeout(searchDebounce.value)
+  searchDebounce.value = setTimeout(() => {
     loadLocations().catch((err) => console.error('Error loading locations:', err))
-    searchDebounce = null
+    searchDebounce.value = null
   }, 300)
 })
 </script>
