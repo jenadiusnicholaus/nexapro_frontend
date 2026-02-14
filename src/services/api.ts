@@ -150,11 +150,13 @@ export const notificationsAPI = {
 
 export const profilesAPI = {
   list: (params: Record<string, unknown> = {}) => apiClient.get('/profiles/', { params }),
-  get: (id: string | number) => apiClient.get(`/profiles/${id}/`),
+  get: () => apiClient.get(`/profiles/`),
   create: (data: Record<string, unknown>) => apiClient.post('/profiles/', data),
   update: (id: string | number, data: Record<string, unknown>) => apiClient.put(`/profiles/${id}/`, data),
   patch: (id: string | number, data: Record<string, unknown>) => apiClient.patch(`/profiles/${id}/`, data),
   delete: (id: string | number) => apiClient.delete(`/profiles/${id}/`),
+  updateOwner: (ownerId: string | number, data: Record<string, unknown>) =>
+    apiClient.put(`/profiles/update-owner/${ownerId}/`, data),
 }
 
 export default apiClient

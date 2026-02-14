@@ -1,180 +1,179 @@
 <template>
-  <div class="dashboard-container">
-    <!-- Header with Date Range -->
+  <div class="modern-dashboard">
+    <!-- Header -->
     <div class="dashboard-header">
-      <div class="header-left">
-        <h1 class="dashboard-title">Reports Snapshot</h1>
-        <VaSelect
-          v-model="dateRange"
-          :options="dateRangeOptions"
-          class="date-selector"
-          preset="bordered"
-        />
-      </div>
-      <div class="header-actions">
-        <VaButton
-          preset="plain"
-          icon="refresh"
-          @click="loadDashboardData"
-          :loading="loading"
-        >
-          Refresh
-        </VaButton>
-        <VaButton preset="plain" icon="share">Share</VaButton>
-        <VaButton preset="plain" icon="download">Export</VaButton>
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="dashboard-title">Dashboard</h1>
+          <p class="dashboard-subtitle">
+            Welcome back! Here's what's happening with your properties today.
+          </p>
+        </div>
+        <div class="header-actions">
+          <VaSelect
+            v-model="dateRange"
+            :options="dateRangeOptions"
+            text-by="text"
+            value-by="value"
+            class="date-selector"
+            preset="outlined"
+          />
+          <VaButton
+            preset="secondary"
+            icon="refresh"
+            @click="loadDashboardData"
+            :loading="loading"
+          >
+            Refresh
+          </VaButton>
+        </div>
       </div>
     </div>
 
-    <!-- Key Metrics Row - H-care style with colored icons -->
-    <div class="metrics-row metrics-row--hcare">
-      <VaCard
-        v-for="(stat, index) in mainMetrics"
-        :key="stat.label"
-        class="metric-card-hcare"
+    <!-- Key Metrics -->
+    <div class="metrics-grid">
+      <div
+        v-for="(metric, index) in mainMetrics"
+        :key="metric.label"
+        class="metric-card"
+        :class="`metric-card--${metric.color}`"
       >
-        <VaCardContent>
-          <div class="metric-card-header-hcare">
-            <div class="metric-icon-circle" :class="`metric-icon-circle--${stat.color}`">
-              <VaIcon :name="stat.icon" size="small" class="metric-icon-inner" />
-            </div>
-            <VaButton preset="plain" icon="more_vert" size="small" class="metric-menu-btn" />
-          </div>
-          <div class="metric-value-hcare">{{ stat.value }}</div>
-          <div class="metric-label-hcare">{{ stat.label }}</div>
-        </VaCardContent>
-      </VaCard>
-    </div>
-
-    <!-- Chart Row -->
-    <VaCard class="chart-main-card">
-      <VaCardTitle class="card-title">
-        <span>Overview</span>
-      </VaCardTitle>
-      <VaCardContent>
-        <div class="chart-placeholder">
-          <div class="chart-info">
-            <div class="chart-label">Activity Over Time</div>
-            <div class="chart-value">{{ totalUnits }} Units</div>
-          </div>
-          <div class="chart-bars">
-            <div
-              v-for="(bar, i) in chartData"
-              :key="i"
-              class="chart-bar"
-              :style="{ height: `${bar.height}%` }"
-              :title="`${bar.value} units`"
-            ></div>
+        <div class="metric-icon">
+          <VaIcon :name="metric.icon" size="24px" />
+        </div>
+        <div class="metric-content">
+          <div class="metric-value">{{ metric.value }}</div>
+          <div class="metric-label">{{ metric.label }}</div>
+          <div
+            v-if="metric.change"
+            class="metric-change"
+            :class="metric.changeType"
+          >
+            <VaIcon
+              :name="
+                metric.changeType === 'positive'
+                  ? 'trending_up'
+                  : 'trending_down'
+              "
+              size="14px"
+            />
+            {{ metric.change }}
           </div>
         </div>
-      </VaCardContent>
-    </VaCard>
-
-    <!-- Prominent Highlight Card - H-care style -->
-    <div class="highlight-row">
-      <VaCard class="highlight-card">
-        <VaCardContent>
-          <div class="highlight-value">{{ (activeTenancies ?? 0).toLocaleString() }}</div>
-          <div class="highlight-label">Active tenancies this month</div>
-          <div class="highlight-chart">
-            <div
-              v-for="(bar, i) in highlightChartData"
-              :key="i"
-              class="highlight-bar"
-              :style="{ height: `${bar}%` }"
-            ></div>
-          </div>
-        </VaCardContent>
-      </VaCard>
+      </div>
     </div>
 
-    <!-- Two Column Layout -->
+    <!-- Main Content Grid -->
     <div class="dashboard-grid">
       <!-- Left Column -->
       <div class="dashboard-column">
-        <!-- Recent Activity -->
-        <VaCard class="dashboard-card">
-          <VaCardTitle class="card-title">
-            <span>Recent Bills</span>
-            <VaButton preset="plain" size="small" to="/bills">
+        <!-- Revenue Chart -->
+        <VaCard class="chart-card">
+          <VaCardTitle class="chart-header">
+            <div class="chart-title-group">
+              <h3>Revenue Overview</h3>
+              <p class="chart-subtitle">Monthly revenue trends</p>
+            </div>
+            <div class="chart-actions">
+              <VaButtonGroup>
+                <VaButton
+                  v-for="period in revenuePeriods"
+                  :key="period.value"
+                  :preset="
+                    selectedRevenuePeriod === period.value
+                      ? 'primary'
+                      : 'secondary'
+                  "
+                  size="small"
+                  @click="selectedRevenuePeriod = period.value"
+                >
+                  {{ period.label }}
+                </VaButton>
+              </VaButtonGroup>
+            </div>
+          </VaCardTitle>
+          <VaCardContent>
+            <div class="revenue-chart">
+              <div class="chart-legend">
+                <div class="legend-item">
+                  <div class="legend-dot legend-dot--primary"></div>
+                  <span>This Month</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-dot legend-dot--secondary"></div>
+                  <span>Last Month</span>
+                </div>
+              </div>
+              <div class="chart-bars">
+                <div
+                  v-for="(bar, i) in revenueChartData"
+                  :key="i"
+                  class="chart-bar-group"
+                >
+                  <div
+                    class="chart-bar chart-bar--primary"
+                    :style="{ height: `${bar.primary}%` }"
+                  ></div>
+                  <div
+                    class="chart-bar chart-bar--secondary"
+                    :style="{ height: `${bar.secondary}%` }"
+                  ></div>
+                  <div class="chart-label">{{ bar.label }}</div>
+                </div>
+              </div>
+            </div>
+          </VaCardContent>
+        </VaCard>
+
+        <!-- Properties Overview -->
+        <VaCard class="overview-card">
+          <VaCardTitle class="card-header">
+            <h3>Properties Overview</h3>
+            <VaButton preset="plain" size="small" to="/properties">
               View all
               <VaIcon name="arrow_forward" size="small" />
             </VaButton>
           </VaCardTitle>
           <VaCardContent>
-            <div v-if="loading" class="loading-state">
-              <VaProgressCircle indeterminate />
-            </div>
-            <div v-else-if="recentBills.length === 0" class="empty-state">
-              <VaIcon name="inbox" size="large" />
-              <p>No bills found</p>
-            </div>
-            <div v-else class="list-items">
-              <div
-                v-for="bill in recentBills"
-                :key="bill.id"
-                class="list-item"
-              >
-                <div class="list-item-content">
-                  <div class="list-item-title">{{ bill.tenant_name }}</div>
-                  <div class="list-item-subtitle">{{ bill.unit_number }} • {{ bill.billing_period }}</div>
+            <div class="properties-stats">
+              <div class="stat-item">
+                <div class="stat-icon stat-icon--occupied">
+                  <VaIcon name="home" />
                 </div>
-                <div class="list-item-actions">
-                  <span class="list-item-amount">${{ formatCurrency(bill.amount) }}</span>
-                  <VaChip :color="getBillStatusColor(bill.status)" size="small">
-                    {{ formatStatus(bill.status) }}
-                  </VaChip>
+                <div class="stat-content">
+                  <div class="stat-value">{{ occupiedUnits }}</div>
+                  <div class="stat-label">Occupied</div>
                 </div>
               </div>
-            </div>
-          </VaCardContent>
-        </VaCard>
-
-        <!-- Properties / Units by type -->
-        <VaCard class="dashboard-card">
-          <VaCardTitle class="card-title">
-            <span>Units by status</span>
-          </VaCardTitle>
-          <VaCardContent>
-            <div class="division-list">
-              <div class="division-row division-row--header">
-                <span>STATUS</span>
-                <span>UNITS</span>
-              </div>
-              <div class="division-row">
-                <span><VaIcon name="check_circle" size="small" class="division-icon division-icon--success" /> Occupied</span>
-                <span>{{ occupiedUnits }}</span>
-              </div>
-              <div class="division-row">
-                <span><VaIcon name="home" size="small" class="division-icon division-icon--warning" /> Vacant</span>
-                <span>{{ vacantUnits }}</span>
-              </div>
-              <div class="division-row">
-                <span><VaIcon name="build" size="small" class="division-icon division-icon--info" /> Maintenance</span>
-                <span>{{ maintenanceUnits }}</span>
-              </div>
-            </div>
-          </VaCardContent>
-        </VaCard>
-
-        <!-- Insights -->
-        <VaCard class="dashboard-card">
-          <VaCardTitle class="card-title">
-            <VaIcon name="lightbulb" class="mr-2" />
-            <span>Insights</span>
-            <VaChip color="primary" size="small">{{ insights.length }}</VaChip>
-          </VaCardTitle>
-          <VaCardContent>
-            <div class="insights-list">
-              <div
-                v-for="(insight, index) in insights"
-                :key="index"
-                class="insight-item"
-              >
-                <VaIcon name="info" size="small" class="insight-icon" />
-                <div class="insight-content">
-                  <div class="insight-title">{{ insight.title }}</div>
-                  <div class="insight-date">{{ insight.date }}</div>
+              <div class="stat-item">
+                <div class="stat-icon stat-icon--vacant">
+                  <VaIcon name="vacation_home" />
                 </div>
+                <div class="stat-content">
+                  <div class="stat-value">{{ vacantUnits }}</div>
+                  <div class="stat-label">Vacant</div>
+                </div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-icon stat-icon--maintenance">
+                  <VaIcon name="build" />
+                </div>
+                <div class="stat-content">
+                  <div class="stat-value">{{ maintenanceUnits }}</div>
+                  <div class="stat-label">Maintenance</div>
+                </div>
+              </div>
+            </div>
+            <div class="occupancy-progress">
+              <div class="progress-header">
+                <span>Occupancy Rate</span>
+                <span class="progress-value">{{ occupancyRate }}%</span>
+              </div>
+              <div class="progress-bar">
+                <div
+                  class="progress-fill"
+                  :style="{ width: `${occupancyRate}%` }"
+                ></div>
               </div>
             </div>
           </VaCardContent>
@@ -183,95 +182,132 @@
 
       <!-- Right Column -->
       <div class="dashboard-column">
-        <!-- Real-time Stats -->
-        <VaCard class="dashboard-card realtime-card">
-          <VaCardTitle class="card-title">
-            <span>UNITS STATUS</span>
+        <!-- Recent Activity -->
+        <VaCard class="activity-card">
+          <VaCardTitle class="card-header">
+            <h3>Recent Activity</h3>
+            <VaChip color="primary" size="small">{{
+              recentBills.length + recentPayments.length
+            }}</VaChip>
           </VaCardTitle>
           <VaCardContent>
-            <div class="realtime-metric">
-              <div class="realtime-value">{{ totalUnits }}</div>
-              <div class="realtime-label">Total Units</div>
+            <div class="activity-tabs">
+              <VaButtonGroup>
+                <VaButton
+                  :preset="activeTab === 'bills' ? 'primary' : 'secondary'"
+                  size="small"
+                  @click="activeTab = 'bills'"
+                >
+                  Bills
+                </VaButton>
+                <VaButton
+                  :preset="activeTab === 'payments' ? 'primary' : 'secondary'"
+                  size="small"
+                  @click="activeTab = 'payments'"
+                >
+                  Payments
+                </VaButton>
+              </VaButtonGroup>
             </div>
-            <div class="realtime-breakdown">
-              <div class="breakdown-item">
-                <div class="breakdown-label">Occupied</div>
-                <div class="breakdown-bar">
-                  <div
-                    class="breakdown-fill breakdown-fill--success"
-                    :style="{ width: `${occupancyRate}%` }"
-                  ></div>
-                </div>
-                <div class="breakdown-value">{{ occupiedUnits }}</div>
-              </div>
-              <div class="breakdown-item">
-                <div class="breakdown-label">Vacant</div>
-                <div class="breakdown-bar">
-                  <div
-                    class="breakdown-fill breakdown-fill--warning"
-                    :style="{ width: `${vacancyRate}%` }"
-                  ></div>
-                </div>
-                <div class="breakdown-value">{{ vacantUnits }}</div>
-              </div>
-            </div>
-          </VaCardContent>
-        </VaCard>
 
-        <!-- Revenue Breakdown -->
-        <VaCard class="dashboard-card">
-          <VaCardTitle class="card-title">
-            <span>Revenue Breakdown</span>
-          </VaCardTitle>
-          <VaCardContent>
-            <div class="revenue-section">
-              <div class="revenue-total-large">${{ formatCurrency(totalRevenue) }}</div>
-              <div class="revenue-period-label">Total Revenue</div>
-            </div>
-            <div class="revenue-comparison">
-              <div class="comparison-item">
-                <div class="comparison-label">This Month</div>
-                <div class="comparison-value">${{ formatCurrency(monthlyRevenue) }}</div>
+            <div class="activity-content">
+              <div v-if="loading" class="loading-state">
+                <VaProgressCircle indeterminate size="small" />
               </div>
-              <div class="comparison-item">
-                <div class="comparison-label">Last Month</div>
-                <div class="comparison-value">${{ formatCurrency(lastMonthRevenue) }}</div>
-              </div>
-            </div>
-          </VaCardContent>
-        </VaCard>
-
-        <!-- Recent Payments -->
-        <VaCard class="dashboard-card">
-          <VaCardTitle class="card-title">
-            <span>Recent Payments</span>
-            <VaButton preset="plain" size="small" to="/payments">
-              View all
-              <VaIcon name="arrow_forward" size="small" />
-            </VaButton>
-          </VaCardTitle>
-          <VaCardContent>
-            <div v-if="loading" class="loading-state">
-              <VaProgressCircle indeterminate />
-            </div>
-            <div v-else-if="recentPayments.length === 0" class="empty-state">
-              <VaIcon name="inbox" size="large" />
-              <p>No payments found</p>
-            </div>
-            <div v-else class="list-items">
               <div
-                v-for="payment in recentPayments"
-                :key="payment.id"
-                class="list-item"
+                v-else-if="currentActivityList.length === 0"
+                class="empty-state"
               >
-                <div class="list-item-content">
-                  <div class="list-item-title">{{ payment.tenant_name }}</div>
-                  <div class="list-item-subtitle">{{ payment.payment_date }} • {{ formatPaymentMethod(payment.payment_method) }}</div>
+                <VaIcon name="inbox" size="large" />
+                <p>No {{ activeTab }} found</p>
+              </div>
+              <div v-else class="activity-list">
+                <div
+                  v-for="item in currentActivityList"
+                  :key="item.id"
+                  class="activity-item"
+                >
+                  <div
+                    class="activity-icon"
+                    :class="`activity-icon--${activeTab}`"
+                  >
+                    <VaIcon
+                      :name="activeTab === 'bills' ? 'receipt' : 'payments'"
+                    />
+                  </div>
+                  <div class="activity-details">
+                    <div class="activity-title">
+                      {{
+                        activeTab === "bills"
+                          ? item.tenant_name
+                          : item.tenant_name
+                      }}
+                    </div>
+                    <div class="activity-subtitle">
+                      {{
+                        activeTab === "bills"
+                          ? `${item.unit_number} • ${item.billing_period}`
+                          : `${item.payment_date} • ${formatPaymentMethod(item.payment_method)}`
+                      }}
+                    </div>
+                  </div>
+                  <div
+                    class="activity-amount"
+                    :class="`activity-amount--${activeTab}`"
+                  >
+                    {{
+                      activeTab === "bills"
+                        ? `$${formatCurrency(item.amount)}`
+                        : `+$${formatCurrency(item.amount_paid)}`
+                    }}
+                  </div>
                 </div>
-                <div class="list-item-actions">
-                  <span class="list-item-amount list-item-amount--success">
-                    +${{ formatCurrency(payment.amount_paid) }}
-                  </span>
+              </div>
+            </div>
+          </VaCardContent>
+        </VaCard>
+
+        <!-- Quick Actions -->
+        <VaCard class="quick-actions-card">
+          <VaCardTitle class="card-header">
+            <h3>Quick Actions</h3>
+          </VaCardTitle>
+          <VaCardContent>
+            <div class="quick-actions-grid">
+              <VaButton
+                v-for="action in quickActions"
+                :key="action.label"
+                preset="secondary"
+                class="quick-action-btn"
+                :to="action.route"
+              >
+                <VaIcon :name="action.icon" />
+                <span>{{ action.label }}</span>
+              </VaButton>
+            </div>
+          </VaCardContent>
+        </VaCard>
+
+        <!-- Insights -->
+        <VaCard class="insights-card">
+          <VaCardTitle class="card-header">
+            <div class="insights-header">
+              <VaIcon name="lightbulb" class="insights-icon" />
+              <h3>Insights</h3>
+            </div>
+            <VaChip color="warning" size="small">{{ insights.length }}</VaChip>
+          </VaCardTitle>
+          <VaCardContent>
+            <div class="insights-list">
+              <div
+                v-for="(insight, index) in insights"
+                :key="index"
+                class="insight-item"
+              >
+                <div class="insight-dot"></div>
+                <div class="insight-content">
+                  <div class="insight-text">{{ insight.title }}</div>
+                  <div class="insight-time">{{ insight.date }}</div>
                 </div>
               </div>
             </div>
@@ -283,153 +319,181 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { billingAPI, paymentsAPI, propertiesAPI, tenanciesAPI, unitsAPI } from '@/services/api'
+import { ref, onMounted, computed } from "vue";
+import {
+  billingAPI,
+  paymentsAPI,
+  propertiesAPI,
+  tenanciesAPI,
+  unitsAPI,
+} from "@/services/api";
 
-const loading = ref(false)
-const dateRange = ref('last_28_days')
+const loading = ref(false);
+const dateRange = ref("last_28_days");
+const selectedRevenuePeriod = ref("6months");
+const activeTab = ref("bills");
 
 const dateRangeOptions = [
-  { value: 'last_7_days', text: 'Last 7 days' },
-  { value: 'last_28_days', text: 'Last 28 days' },
-  { value: 'last_90_days', text: 'Last 90 days' },
-  { value: 'this_month', text: 'This month' },
-  { value: 'last_month', text: 'Last month' },
-]
+  { value: "last_7_days", text: "Last 7 days" },
+  { value: "last_28_days", text: "Last 28 days" },
+  { value: "last_90_days", text: "Last 90 days" },
+  { value: "this_month", text: "This month" },
+  { value: "last_month", text: "Last month" },
+];
 
-const totalProperties = ref(0)
-const activeTenancies = ref(0)
-const unpaidBills = ref(0)
-const totalRevenue = ref(0)
-const monthlyRevenue = ref(0)
-const lastMonthRevenue = ref(0)
-const occupiedUnits = ref(0)
-const vacantUnits = ref(0)
-const totalUnits = ref(0)
-const maintenanceUnits = ref(0)
-const recentBills = ref([])
-const recentPayments = ref([])
+const revenuePeriods = [
+  { value: "1month", label: "1M" },
+  { value: "3months", label: "3M" },
+  { value: "6months", label: "6M" },
+  { value: "1year", label: "1Y" },
+];
+
+const quickActions = [
+  { label: "Add Property", icon: "add_home", route: "/properties" },
+  { label: "New Tenancy", icon: "person_add", route: "/tenancies" },
+  { label: "Generate Bill", icon: "receipt_long", route: "/bills" },
+  { label: "Record Payment", icon: "payments", route: "/payments" },
+];
+
+const totalProperties = ref(0);
+const activeTenancies = ref(0);
+const unpaidBills = ref(0);
+const totalRevenue = ref(0);
+const monthlyRevenue = ref(0);
+const lastMonthRevenue = ref(0);
+const occupiedUnits = ref(0);
+const vacantUnits = ref(0);
+const totalUnits = ref(0);
+const maintenanceUnits = ref(0);
+const recentBills = ref([]);
+const recentPayments = ref([]);
 
 const mainMetrics = computed(() => [
   {
-    label: 'Total Properties',
+    label: "Total Properties",
     value: totalProperties.value.toLocaleString(),
-    icon: 'home',
-    color: 'purple',
+    icon: "apartment",
+    color: "blue",
+    change: "+12%",
+    changeType: "positive",
   },
   {
-    label: 'Active Tenancies',
+    label: "Active Tenancies",
     value: activeTenancies.value.toLocaleString(),
-    icon: 'people',
-    color: 'teal',
+    icon: "groups",
+    color: "green",
+    change: "+5%",
+    changeType: "positive",
   },
   {
-    label: 'Unpaid Bills',
+    label: "Unpaid Bills",
     value: unpaidBills.value.toLocaleString(),
-    icon: 'receipt',
-    color: 'orange',
+    icon: "warning",
+    color: "orange",
+    change: "-8%",
+    changeType: "positive",
   },
   {
-    label: 'Total Revenue',
+    label: "Total Revenue",
     value: `$${formatCurrency(totalRevenue.value)}`,
-    icon: 'attach_money',
-    color: 'pink',
+    icon: "trending_up",
+    color: "purple",
+    change: "+18%",
+    changeType: "positive",
   },
-])
+]);
 
 const insights = computed(() => {
-  const items = []
-  if (unpaidBills.value > 10) {
+  const items = [];
+  if (unpaidBills.value > 5) {
     items.push({
-      title: `High number of unpaid bills: ${unpaidBills.value} bills require attention`,
-      date: 'Today',
-    })
+      title: `${unpaidBills.value} unpaid bills need attention`,
+      date: "Today",
+    });
   }
   if (occupancyRate.value > 90) {
     items.push({
-      title: `High occupancy rate: ${occupancyRate.value}% of units are occupied`,
-      date: 'Today',
-    })
+      title: `Excellent occupancy rate at ${occupancyRate.value}%`,
+      date: "Today",
+    });
   }
   if (monthlyRevenue.value > lastMonthRevenue.value * 1.1) {
     items.push({
-      title: `Revenue increased by ${Math.round(((monthlyRevenue.value - lastMonthRevenue.value) / lastMonthRevenue.value) * 100)}% compared to last month`,
-      date: 'Today',
-    })
+      title: `Revenue up ${Math.round(((monthlyRevenue.value - lastMonthRevenue.value) / lastMonthRevenue.value) * 100)}% from last month`,
+      date: "Today",
+    });
   }
-  return items.slice(0, 3)
-})
+  return items.slice(0, 3);
+});
 
 const occupancyRate = computed(() => {
-  if (totalUnits.value === 0) return 0
-  return Math.round((occupiedUnits.value / totalUnits.value) * 100)
-})
+  if (totalUnits.value === 0) return 0;
+  return Math.round((occupiedUnits.value / totalUnits.value) * 100);
+});
 
 const vacancyRate = computed(() => {
-  if (totalUnits.value === 0) return 0
-  return Math.round((vacantUnits.value / totalUnits.value) * 100)
-})
+  if (totalUnits.value === 0) return 0;
+  return Math.round((vacantUnits.value / totalUnits.value) * 100);
+});
 
-const chartData = computed(() => {
-  const data = []
-  for (let i = 0; i < 14; i++) {
-    data.push({
-      value: Math.floor(Math.random() * 50) + 10,
-      height: Math.floor(Math.random() * 60) + 20,
-    })
-  }
-  return data
-})
+const revenueChartData = computed(() => {
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
+  return months.map((month) => ({
+    label: month,
+    primary: Math.floor(Math.random() * 40) + 60,
+    secondary: Math.floor(Math.random() * 40) + 40,
+  }));
+});
 
-const highlightChartData = computed(() => {
-  return [40, 65, 45, 80, 55, 70, 90]
-})
+const currentActivityList = computed(() => {
+  return activeTab.value === "bills" ? recentBills.value : recentPayments.value;
+});
 
 const formatCurrency = (value) => {
-  return parseFloat(value || 0).toLocaleString('en-US', {
+  return parseFloat(value || 0).toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  })
-}
+  });
+};
 
 const formatStatus = (status) => {
   const statusMap = {
-    unpaid: 'Unpaid',
-    paid: 'Paid',
-    partially_paid: 'Partial',
-    overdue: 'Overdue',
-  }
-  return statusMap[status] || status
-}
+    unpaid: "Unpaid",
+    paid: "Paid",
+    partially_paid: "Partial",
+    overdue: "Overdue",
+  };
+  return statusMap[status] || status;
+};
 
 const formatPaymentMethod = (method) => {
   const methodMap = {
-    cash: 'Cash',
-    bank: 'Bank',
-    mobile_money: 'Mobile',
-    cheque: 'Cheque',
-    other: 'Other',
-  }
-  return methodMap[method] || method
-}
+    cash: "Cash",
+    bank: "Bank",
+    mobile_money: "Mobile",
+    cheque: "Cheque",
+    other: "Other",
+  };
+  return methodMap[method] || method;
+};
 
 const getBillStatusColor = (status) => {
   const colors = {
-    unpaid: 'warning',
-    paid: 'success',
-    partially_paid: 'info',
-    overdue: 'danger',
-  }
-  return colors[status] || 'secondary'
-}
+    unpaid: "warning",
+    paid: "success",
+    partially_paid: "info",
+    overdue: "danger",
+  };
+  return colors[status] || "secondary";
+};
 
 const loadDashboardData = async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    const now = new Date()
-    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-    const lastMonthStr = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthStr = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, "0")}`;
 
     const [
       propertiesRes,
@@ -440,272 +504,187 @@ const loadDashboardData = async () => {
       unitsRes,
     ] = await Promise.all([
       propertiesAPI.list(),
-      tenanciesAPI.list({ status: 'active' }),
-      billingAPI.list({ status: 'unpaid' }),
-      paymentsAPI.list({ ordering: '-created_at' }),
+      tenanciesAPI.list({ status: "active" }),
+      billingAPI.list({ status: "unpaid" }),
+      paymentsAPI.list({ ordering: "-created_at" }),
       paymentsAPI.list(),
       unitsAPI.list(),
-    ])
+    ]);
 
-    totalProperties.value = propertiesRes.data.count || propertiesRes.data.results?.length || 0
-    activeTenancies.value = tenanciesRes.data.count || tenanciesRes.data.results?.length || 0
-    unpaidBills.value = billsRes.data.count || billsRes.data.results?.length || 0
+    totalProperties.value =
+      propertiesRes.data.count || propertiesRes.data.results?.length || 0;
+    activeTenancies.value =
+      tenanciesRes.data.count || tenanciesRes.data.results?.length || 0;
+    unpaidBills.value =
+      billsRes.data.count || billsRes.data.results?.length || 0;
 
-    const allPayments = allPaymentsRes.data.results || allPaymentsRes.data || []
+    const allPayments =
+      allPaymentsRes.data.results || allPaymentsRes.data || [];
     totalRevenue.value = allPayments.reduce(
       (sum, p) => sum + parseFloat(p.amount_paid || 0),
-      0
-    )
+      0,
+    );
 
     monthlyRevenue.value = allPayments
       .filter((p) => p.payment_date?.startsWith(currentMonth))
-      .reduce((sum, p) => sum + parseFloat(p.amount_paid || 0), 0)
+      .reduce((sum, p) => sum + parseFloat(p.amount_paid || 0), 0);
 
     lastMonthRevenue.value = allPayments
       .filter((p) => p.payment_date?.startsWith(lastMonthStr))
-      .reduce((sum, p) => sum + parseFloat(p.amount_paid || 0), 0)
+      .reduce((sum, p) => sum + parseFloat(p.amount_paid || 0), 0);
 
-    const units = unitsRes.data.results || unitsRes.data || []
-    totalUnits.value = units.length
-    occupiedUnits.value = units.filter((u) => u.status === 'occupied').length
-    vacantUnits.value = units.filter((u) => u.status === 'vacant').length
-    maintenanceUnits.value = units.filter((u) => u.status === 'maintenance').length
+    const units = unitsRes.data.results || unitsRes.data || [];
+    totalUnits.value = units.length;
+    occupiedUnits.value = units.filter((u) => u.status === "occupied").length;
+    vacantUnits.value = units.filter((u) => u.status === "vacant").length;
+    maintenanceUnits.value = units.filter(
+      (u) => u.status === "maintenance",
+    ).length;
 
-    recentBills.value = billsRes.data.results?.slice(0, 5) || []
-    recentPayments.value = paymentsRes.data.results?.slice(0, 5) || []
+    recentBills.value = billsRes.data.results?.slice(0, 5) || [];
+    recentPayments.value = paymentsRes.data.results?.slice(0, 5) || [];
   } catch (error) {
-    console.error('Error loading dashboard data:', error)
+    console.error("Error loading dashboard data:", error);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 onMounted(() => {
-  loadDashboardData()
-})
+  loadDashboardData();
+});
 </script>
 
 <style scoped>
-.dashboard-container {
-  width: 100%;
+.modern-dashboard {
+  min-height: 100vh;
+  background: #f8f9fa;
+  padding: 1rem;
 }
 
 /* Header */
 .dashboard-header {
+  margin-bottom: 1rem;
+}
+
+.header-content {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(5px);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--va-background-border);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .header-left {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+  flex: 1;
 }
 
 .dashboard-title {
-  font-size: 1.5rem;
-  font-weight: 400;
-  color: var(--va-text-primary);
-  margin: 0;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0 0 0.5rem 0;
 }
 
-.date-selector {
-  min-width: 180px;
+.dashboard-subtitle {
+  color: #6c757d;
+  font-size: 1rem;
+  margin: 0;
 }
 
 .header-actions {
   display: flex;
-  gap: 0.5rem;
-}
-
-/* Main Metrics Row */
-.metrics-row {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  align-items: center;
 }
 
-/* H-care style metric cards */
-.metrics-row--hcare {
-  gap: 1.25rem;
+.date-selector {
+  min-width: 150px;
 }
 
-.metric-card-hcare {
-  border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-}
-
-.metric-card-header-hcare {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+/* Metrics Grid */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
   margin-bottom: 1rem;
 }
 
-.metric-icon-circle {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
+.metric-card {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+.metric-card:hover {
+  border-color: #cbd5e0;
+}
+
+.metric-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: transparent;
+  border: 2px solid #e2e8f0;
 }
 
-.metric-icon-circle--purple {
-  background: rgba(124, 58, 237, 0.12);
-  color: #7c3aed;
+.metric-card--blue .metric-icon {
+  border-color: #4a5568;
+  color: #4a5568;
 }
 
-.metric-icon-circle--teal {
-  background: rgba(6, 182, 212, 0.12);
-  color: #06b6d4;
+.metric-card--green .metric-icon {
+  border-color: #48bb78;
+  color: #48bb78;
 }
 
-.metric-icon-circle--orange {
-  background: rgba(249, 115, 22, 0.12);
-  color: #f97316;
+.metric-card--orange .metric-icon {
+  border-color: #ed8936;
+  color: #ed8936;
 }
 
-.metric-icon-circle--pink {
-  background: rgba(236, 72, 153, 0.12);
-  color: #ec4899;
+.metric-card--purple .metric-icon {
+  border-color: #5a67d8;
+  color: #5a67d8;
 }
 
-.metric-icon-inner {
-  color: inherit !important;
+.metric-content {
+  flex: 1;
 }
 
-.metric-menu-btn {
-  color: #9ca3af !important;
-}
-
-.metric-value-hcare {
-  font-size: 1.75rem;
-  font-weight: 600;
-  color: var(--va-text-primary);
-  line-height: 1.2;
-  margin-bottom: 0.25rem;
-}
-
-.metric-label-hcare {
-  font-size: 0.8125rem;
-  color: var(--va-text-secondary);
-}
-
-/* Prominent highlight card */
-.highlight-row {
-  margin-bottom: 1.5rem;
-}
-
-.highlight-card {
-  border-radius: 12px;
-  overflow: hidden;
-  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%) !important;
-  border: none !important;
-  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.35);
-}
-
-.highlight-card .va-card__content {
-  padding: 1.5rem 2rem;
-}
-
-.highlight-value {
-  font-size: 2.5rem;
+.metric-value {
+  font-size: 2rem;
   font-weight: 700;
-  color: #ffffff;
+  color: #2d3748;
+  line-height: 1;
   margin-bottom: 0.25rem;
 }
 
-.highlight-label {
-  font-size: 0.9375rem;
-  color: rgba(255, 255, 255, 0.9);
-  margin-bottom: 1rem;
-}
-
-.highlight-chart {
-  display: flex;
-  align-items: flex-end;
-  gap: 6px;
-  height: 60px;
-  margin-top: 0.5rem;
-}
-
-.highlight-bar {
-  flex: 1;
-  background: rgba(255, 255, 255, 0.35);
-  border-radius: 4px 4px 0 0;
-  min-height: 8px;
-  transition: opacity 0.2s;
-}
-
-.highlight-bar:hover {
-  opacity: 0.9;
-}
-
-/* Chart Card */
-.chart-main-card {
-  margin-bottom: 1.5rem;
-  border-radius: 8px;
-  border: 1px solid var(--va-background-border);
-}
-
-.card-title {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid var(--va-background-border);
+.metric-label {
+  color: #718096;
   font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--va-text-primary);
+  margin-bottom: 0.5rem;
 }
 
-.chart-placeholder {
-  padding: 1.5rem;
-}
-
-.chart-info {
+.metric-change {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
-}
-
-.chart-label {
-  font-size: 0.875rem;
-  color: var(--va-text-secondary);
-}
-
-.chart-value {
-  font-size: 1.25rem;
-  font-weight: 500;
-  color: var(--va-text-primary);
-}
-
-.chart-bars {
-  display: flex;
-  align-items: flex-end;
-  gap: 4px;
-  height: 200px;
-  padding-top: 1rem;
-}
-
-.chart-bar {
-  flex: 1;
-  background: #4285f4;
-  border-radius: 4px 4px 0 0;
-  min-height: 4px;
-  transition: opacity 0.2s;
-}
-
-.chart-bar:hover {
-  opacity: 0.8;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #718096;
 }
 
 /* Dashboard Grid */
@@ -721,300 +700,382 @@ onMounted(() => {
   gap: 1rem;
 }
 
-.dashboard-card {
+/* Cards */
+.chart-card,
+.overview-card,
+.activity-card,
+.quick-actions-card,
+.insights-card {
+  background: #ffffff;
   border-radius: 8px;
-  border: 1px solid var(--va-background-border);
+  border: 1px solid #e2e8f0;
 }
 
-/* List Items */
-.list-items {
-  padding: 0.5rem 0;
-}
-
-.list-item {
+.chart-header,
+.card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.75rem 1.5rem;
-  border-bottom: 1px solid var(--va-background-border);
+  padding: 1rem 1.5rem 0.75rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.list-item:last-child {
-  border-bottom: none;
+.chart-header h3,
+.card-header h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0;
 }
 
-.list-item-content {
-  flex: 1;
-}
-
-.list-item-title {
+.chart-subtitle {
+  color: #718096;
   font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--va-text-primary);
-  margin-bottom: 0.25rem;
+  margin: 0.25rem 0 0 0;
 }
 
-.list-item-subtitle {
-  font-size: 0.75rem;
-  color: var(--va-text-secondary);
-}
-
-.list-item-actions {
+.insights-header {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
-.list-item-amount {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--va-text-primary);
+.insights-icon {
+  color: #718096;
 }
 
-.list-item-amount--success {
-  color: var(--va-success);
+/* Revenue Chart */
+.revenue-chart {
+  padding: 1rem 1.5rem;
 }
 
-/* Realtime Card */
-.realtime-card {
-  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-}
-
-.realtime-metric {
-  text-align: center;
-  padding: 1.5rem 0;
-  border-bottom: 1px solid var(--va-background-border);
+.chart-legend {
+  display: flex;
+  gap: 2rem;
   margin-bottom: 1rem;
 }
 
-.realtime-value {
-  font-size: 3rem;
-  font-weight: 400;
-  color: var(--va-text-primary);
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #4a5568;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.legend-dot--primary {
+  background: #5a67d8;
+}
+
+.legend-dot--secondary {
+  background: #e2e8f0;
+}
+
+.chart-bars {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  height: 200px;
+  gap: 1rem;
+}
+
+.chart-bar-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.chart-bar {
+  width: 100%;
+  max-width: 40px;
+  border-radius: 8px 8px 0 0;
+  transition: opacity 0.2s ease;
+}
+
+.chart-bar--primary {
+  background: #5a67d8;
+}
+
+.chart-bar--secondary {
+  background: #e2e8f0;
+}
+
+.chart-label {
+  font-size: 0.75rem;
+  color: #718096;
+  margin-top: 0.5rem;
+}
+
+/* Properties Overview */
+.properties-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: #f7fafc;
+  border-radius: 8px;
+}
+
+.stat-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 2px solid #e2e8f0;
+}
+
+.stat-icon--occupied {
+  border-color: #48bb78;
+  color: #48bb78;
+}
+
+.stat-icon--vacant {
+  border-color: #ed8936;
+  color: #ed8936;
+}
+
+.stat-icon--maintenance {
+  border-color: #4299e1;
+  color: #4299e1;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.stat-label {
+  color: #718096;
+  font-size: 0.875rem;
+}
+
+.occupancy-progress {
+  padding: 0 1rem;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 0.5rem;
 }
 
-.realtime-label {
-  font-size: 0.75rem;
-  color: var(--va-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+.progress-value {
+  font-weight: 600;
+  color: #2d3748;
 }
 
-.realtime-breakdown {
+.progress-bar {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #48bb78;
+  transition: width 0.3s ease;
+}
+
+/* Activity Card */
+.activity-tabs {
+  padding: 0.75rem 1.5rem 0;
+}
+
+.activity-content {
+  padding: 0.75rem 1.5rem 1rem;
+}
+
+.loading-state,
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #718096;
+}
+
+.activity-list {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-.breakdown-item {
+.activity-item {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: #f7fafc;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
 }
 
-.breakdown-label {
-  font-size: 0.75rem;
-  color: var(--va-text-secondary);
-  min-width: 80px;
+.activity-item:hover {
+  background: #edf2f7;
 }
 
-.breakdown-bar {
-  flex: 1;
-  height: 8px;
-  background: var(--va-background-secondary);
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.breakdown-fill {
-  height: 100%;
-  border-radius: 4px;
-  transition: width 0.3s ease;
-}
-
-.breakdown-fill--success {
-  background: #34a853;
-}
-
-.breakdown-fill--warning {
-  background: #fbbc04;
-}
-
-.breakdown-value {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--va-text-primary);
-  min-width: 40px;
-  text-align: right;
-}
-
-/* Revenue Section */
-.revenue-section {
-  text-align: center;
-  padding: 1.5rem 0;
-  border-bottom: 1px solid var(--va-background-border);
-  margin-bottom: 1rem;
-}
-
-.revenue-total-large {
-  font-size: 2.5rem;
-  font-weight: 400;
-  color: var(--va-text-primary);
-  margin-bottom: 0.5rem;
-}
-
-.revenue-period-label {
-  font-size: 0.75rem;
-  color: var(--va-text-secondary);
-}
-
-.revenue-comparison {
+.activity-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
   display: flex;
-  justify-content: space-around;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 2px solid #e2e8f0;
 }
 
-.comparison-item {
-  text-align: center;
+.activity-icon--bills {
+  border-color: #ed8936;
+  color: #ed8936;
 }
 
-.comparison-label {
-  font-size: 0.75rem;
-  color: var(--va-text-secondary);
-  margin-bottom: 0.5rem;
+.activity-icon--payments {
+  border-color: #48bb78;
+  color: #48bb78;
 }
 
-.comparison-value {
-  font-size: 1.25rem;
-  font-weight: 500;
-  color: var(--va-text-primary);
+.activity-details {
+  flex: 1;
+}
+
+.activity-title {
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 0.25rem;
+}
+
+.activity-subtitle {
+  font-size: 0.875rem;
+  color: #718096;
+}
+
+.activity-amount {
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.activity-amount--bills,
+.activity-amount--payments {
+  color: #2d3748;
+}
+
+/* Quick Actions */
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem 1rem;
+}
+
+.quick-action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 0.75rem;
+  border-radius: 8px;
+  background: #f7fafc;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.quick-action-btn:hover {
+  background: white;
+  border-color: #718096;
+  transform: translateY(-2px);
 }
 
 /* Insights */
 .insights-list {
-  padding: 0.5rem 0;
+  padding: 0.75rem 1.5rem 1rem;
 }
 
 .insight-item {
   display: flex;
+  align-items: flex-start;
   gap: 0.75rem;
-  padding: 0.75rem 1.5rem;
-  border-bottom: 1px solid var(--va-background-border);
+  padding: 0.75rem;
+  background: #f7fafc;
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+  border-left: 4px solid #718096;
 }
 
-.insight-item:last-child {
-  border-bottom: none;
+.insight-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #718096;
+  margin-top: 0.5rem;
 }
 
-.insight-icon {
-  color: var(--va-primary);
-  margin-top: 0.125rem;
-}
-
-.insight-content {
-  flex: 1;
-}
-
-.insight-title {
+.insight-text {
+  color: #2d3748;
   font-size: 0.875rem;
-  color: var(--va-text-primary);
   margin-bottom: 0.25rem;
 }
 
-.insight-date {
+.insight-time {
+  color: #718096;
   font-size: 0.75rem;
-  color: var(--va-text-secondary);
-}
-
-/* Empty/Loading States */
-.empty-state,
-.loading-state {
-  text-align: center;
-  padding: 3rem 1rem;
-  color: var(--va-text-secondary);
-}
-
-.empty-state p {
-  margin-top: 1rem;
-  font-size: 0.875rem;
-}
-
-/* Division list - H-care style */
-.division-list {
-  padding: 0.5rem 0;
-}
-
-.division-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem 1.5rem;
-  border-bottom: 1px solid var(--va-background-border);
-  font-size: 0.875rem;
-}
-
-.division-row:last-child {
-  border-bottom: none;
-}
-
-.division-row--header {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--va-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.division-icon {
-  margin-right: 0.5rem;
-  vertical-align: middle;
-}
-
-.division-icon--success {
-  color: #10b981 !important;
-}
-
-.division-icon--warning {
-  color: #f59e0b !important;
-}
-
-.division-icon--info {
-  color: #06b6d4 !important;
-}
-
-.mr-2 {
-  margin-right: 0.5rem;
 }
 
 /* Responsive */
 @media (max-width: 1200px) {
-  .metrics-row {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
   .dashboard-grid {
     grid-template-columns: 1fr;
+  }
+
+  .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 768px) {
-  .dashboard-header {
+  .modern-dashboard {
+    padding: 1rem;
+  }
+
+  .header-content {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
   }
 
-  .header-actions {
-    width: 100%;
-    justify-content: flex-start;
+  .dashboard-title {
+    font-size: 2rem;
   }
 
-  .metrics-row {
+  .metrics-grid {
     grid-template-columns: 1fr;
   }
 
-  .main-metric-value {
-    font-size: 1.75rem;
+  .properties-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-actions-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

@@ -1,38 +1,48 @@
-import { defineStore } from 'pinia'
-import { ref } from 'vue'
-import { tenanciesAPI } from '@/services/api'
+import { defineStore } from "pinia";
+import { ref } from "vue";
+import { tenanciesAPI } from "@/services/api";
 
-export const useTenanciesStore = defineStore('tenancies', () => {
-  const items = ref<Record<string, unknown>[]>([])
-  const loading = ref(false)
-  const lastParams = ref<Record<string, unknown>>({})
+export const useTenanciesStore = defineStore("tenancies", () => {
+  const items = ref<Record<string, unknown>[]>([]);
+  const loading = ref(false);
+  const lastParams = ref<Record<string, unknown>>({});
 
   async function fetchList(params: Record<string, unknown> = {}) {
-    lastParams.value = { ...params }
-    loading.value = true
+    lastParams.value = { ...params };
+    loading.value = true;
     try {
-      const response = await tenanciesAPI.list(params)
-      const data = response.data as { results?: Record<string, unknown>[] } | Record<string, unknown>[]
-      items.value = Array.isArray(data) ? data : (data.results ?? [])
+      const response = await tenanciesAPI.list(params);
+      const data = response.data as
+        | { results?: Record<string, unknown>[] }
+        | Record<string, unknown>[];
+      items.value = Array.isArray(data) ? data : (data.results ?? []);
     } finally {
-      loading.value = false
+      loading.value = false;
     }
   }
 
   async function createItem(data: Record<string, unknown>) {
-    await tenanciesAPI.create(data)
-    await fetchList(lastParams.value)
+    await tenanciesAPI.create(data);
+    // Ensure we refresh with current filters by using the last known params
+    // If no params were stored, fetch without filters to get the full list
+    const refreshParams =
+      Object.keys(lastParams.value).length > 0 ? lastParams.value : {};
+    await fetchList(refreshParams);
   }
 
   async function moveOut(id: string | number, moveOutDate: string) {
-    await tenanciesAPI.moveOut(id, moveOutDate)
-    await fetchList(lastParams.value)
+    await tenanciesAPI.moveOut(id, moveOutDate);
+    const refreshParams =
+      Object.keys(lastParams.value).length > 0 ? lastParams.value : {};
+    await fetchList(refreshParams);
   }
 
   async function deleteItem(id: string | number) {
-    await tenanciesAPI.delete(id)
-    await fetchList(lastParams.value)
+    await tenanciesAPI.delete(id);
+    const refreshParams =
+      Object.keys(lastParams.value).length > 0 ? lastParams.value : {};
+    await fetchList(refreshParams);
   }
 
-  return { items, loading, fetchList, createItem, moveOut, deleteItem }
-})
+  return { items, loading, fetchList, createItem, moveOut, deleteItem };
+});

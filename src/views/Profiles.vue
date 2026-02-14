@@ -1,248 +1,340 @@
 <template>
-  <div class="page-container">
-    <div class="page-header">
+  <div class="profile-page">
+    <!-- Header -->
+    <div class="profile-header">
       <div>
-        <h1 class="page-title">Profiles</h1>
-        <p class="page-subtitle">Manage user profiles</p>
+        <h1 class="title">My Profile</h1>
+        <p class="subtitle">Account and owner information</p>
       </div>
-      <VaButton
-        icon="add"
-        @click="showModal = true"
-        size="large"
-      >
-        Add Profile
+      <VaButton icon="edit" @click="showEditModal = true">
+        Edit Profile
       </VaButton>
     </div>
 
-    <VaCard class="page-card">
+    <!-- Main Profile Card -->
+    <VaCard class="profile-card">
       <VaCardContent>
-        <VaInput
-          v-model="searchQuery"
-          placeholder="Search profiles..."
-          class="mb-4 search-input"
-          preset="bordered"
-        >
-          <template #prependInner>
-            <VaIcon name="search" size="small" />
-          </template>
-        </VaInput>
+        <div class="profile-content">
+          <!-- Left: Avatar and Basic Info -->
+          <div class="profile-main">
+            <div class="avatar-section">
+              <div class="avatar">{{ initials }}</div>
+              <div class="user-info">
+                <h2 class="user-name">{{ profile?.owner?.name }}</h2>
+                <p class="user-email">{{ profile?.user?.email }}</p>
+                <VaBadge :text="profile?.role?.toUpperCase()" color="primary" />
+              </div>
+            </div>
+          </div>
 
-        <AppDataTable
-          :items="profilesStore.items"
-          :columns="columns"
-          :loading="profilesStore.loading"
-        >
-          <template #cell(actions)="{ rowData }">
-            <VaButton
-              preset="plain"
-              icon="edit"
-              size="small"
-              @click="editProfile(rowData)"
-            />
-            <VaButton
-              preset="plain"
-              icon="delete"
-              size="small"
-              color="danger"
-              @click="deleteProfile(Number(rowData.id))"
-            />
-          </template>
-        </AppDataTable>
+          <!-- Right: Details Grid -->
+          <div class="profile-details">
+            <div class="detail-row">
+              <div class="detail-item">
+                <VaIcon name="business" class="detail-icon" />
+                <div>
+                  <span class="detail-label">Owner Type</span>
+                  <span class="detail-value">{{
+                    profile?.owner?.owner_type || "N/A"
+                  }}</span>
+                </div>
+              </div>
+              <div class="detail-item">
+                <VaIcon name="phone" class="detail-icon" />
+                <div>
+                  <span class="detail-label">Phone</span>
+                  <span class="detail-value">{{
+                    profile?.owner?.phone || "N/A"
+                  }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-item">
+                <VaIcon name="person" class="detail-icon" />
+                <div>
+                  <span class="detail-label">Username</span>
+                  <span class="detail-value">{{
+                    profile?.user?.username || "N/A"
+                  }}</span>
+                </div>
+              </div>
+              <div class="detail-item">
+                <VaIcon name="mail" class="detail-icon" />
+                <div>
+                  <span class="detail-label">Email</span>
+                  <span class="detail-value">{{
+                    profile?.owner?.email || "N/A"
+                  }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </VaCardContent>
     </VaCard>
 
-    <!-- Add/Edit Modal -->
-    <VaModal
-      v-model="showModal"
-      :title="editingId ? 'Edit Profile' : 'Add Profile'"
-      hide-default-actions
-      size="medium"
-    >
-      <VaForm ref="profileForm" @submit.prevent="saveProfile">
+    <!-- Edit Profile Modal -->
+    <VaModal v-model="showEditModal" title="Edit Profile" size="small">
+      <VaForm ref="formRef" @submit.prevent="saveProfile">
         <VaInput
-          v-model="formData.display_name"
-          label="Display Name"
-          :rules="[validators.required]"
+          v-model="formData.name"
+          label="Name"
+          placeholder="Enter your name"
           class="mb-4"
+          required
         />
         <VaInput
           v-model="formData.email"
           label="Email"
+          placeholder="Enter your email"
           type="email"
-          :rules="[validators.required, validators.email]"
           class="mb-4"
+          required
         />
         <VaInput
           v-model="formData.phone"
           label="Phone"
+          placeholder="Enter your phone"
           class="mb-4"
         />
-        <VaTextarea
-          v-model="formData.bio"
-          label="Bio"
-          class="mb-4"
-        />
-        <div class="modal-actions">
-          <VaButton preset="secondary" @click="closeModal">Cancel</VaButton>
-          <VaButton type="submit" :loading="saving">Save</VaButton>
-        </div>
       </VaForm>
+
+      <template #footer>
+        <VaButton preset="secondary" @click="showEditModal = false">
+          Cancel
+        </VaButton>
+        <VaButton :loading="saving" @click="saveProfile">
+          Save Changes
+        </VaButton>
+      </template>
     </VaModal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
-import AppDataTable from '@/components/AppDataTable.vue'
-import { useAppToast } from '@/composables/useAppToast'
-import { useProfilesStore } from '@/stores'
-import { validators } from '@/utils/validators'
+import { ref, onMounted, computed } from "vue";
+import { useAppToast } from "@/composables/useAppToast";
+import { useProfilesStore } from "@/stores";
 
-const { success, error } = useAppToast()
-const profilesStore = useProfilesStore()
+const { success, error } = useAppToast();
+const profilesStore = useProfilesStore();
 
-const saving = ref(false)
-const showModal = ref(false)
-const editingId = ref<number | null>(null)
-const searchQuery = ref('')
-const profileForm = ref<{ validate: () => Promise<boolean> } | null>(null)
+const profile = ref<any>(null);
+const showEditModal = ref(false);
+const saving = ref(false);
+const formRef = ref();
 
 const formData = ref({
-  display_name: '',
-  email: '',
-  phone: '',
-  bio: '',
-})
+  name: "",
+  email: "",
+  phone: "",
+});
 
-const columns = [
-  { key: 'display_name', label: 'Display Name', sortable: true },
-  { key: 'email', label: 'Email', sortable: true },
-  { key: 'phone', label: 'Phone', sortable: true },
-  { key: 'actions', label: 'Actions', width: 100 },
-]
+const initials = computed(() => {
+  const name = profile.value?.owner?.name || "";
+  return name
+    .split(" ")
+    .map((n: string) => n[0])
+    .join("")
+    .toUpperCase();
+});
 
-const loadProfiles = () => {
-  const params = searchQuery.value ? { search: searchQuery.value } : {}
-  return profilesStore.fetchList(params)
-}
+const loadProfile = async () => {
+  try {
+    const data: any = await profilesStore.fetchCurrentProfile();
+    profile.value = data;
+
+    formData.value = {
+      name: data.owner.name,
+      email: data.owner.email,
+      phone: data.owner.phone,
+    };
+  } catch (err) {
+    error("Failed to load profile");
+  }
+};
 
 const saveProfile = async () => {
-  const isValid = await profileForm.value?.validate()
-  if (!isValid) return
-
-  saving.value = true
+  saving.value = true;
   try {
-    if (editingId.value) {
-      await profilesStore.updateItem(editingId.value, formData.value)
-    } else {
-      await profilesStore.createItem(formData.value)
-    }
-    const wasEdit = !!editingId.value
-    closeModal()
-    success(wasEdit ? 'Profile updated' : 'Profile created')
+    await profilesStore.updateOwner(formData.value);
+    success("Profile updated successfully");
+    showEditModal.value = false;
+    loadProfile();
   } catch (err) {
-    console.error('Error saving profile:', err)
-    error('Failed to save profile')
+    error("Failed to update profile");
   } finally {
-    saving.value = false
+    saving.value = false;
   }
-}
+};
 
-const editProfile = (profile: Record<string, unknown>) => {
-  editingId.value = profile.id as number
-  formData.value = {
-    display_name: String(profile.display_name ?? ''),
-    email: String(profile.email ?? ''),
-    phone: String(profile.phone ?? ''),
-    bio: String(profile.bio ?? ''),
-  }
-  showModal.value = true
-}
-
-const deleteProfile = async (id: number) => {
-  if (!confirm('Are you sure you want to delete this profile?')) return
-
-  try {
-    await profilesStore.deleteItem(id)
-    success('Profile deleted')
-  } catch (err) {
-    console.error('Error deleting profile:', err)
-    error('Failed to delete profile')
-  }
-}
-
-const closeModal = () => {
-  showModal.value = false
-  editingId.value = null
-  formData.value = {
-    display_name: '',
-    email: '',
-    phone: '',
-    bio: '',
-  }
-}
-
-onMounted(() => {
-  loadProfiles().catch((err) => console.error('Error loading profiles:', err))
-})
-
-let searchDebounce: ReturnType<typeof setTimeout> | null = null;
-watch(searchQuery, () => {
-  if (searchDebounce) clearTimeout(searchDebounce);
-  searchDebounce = setTimeout(() => {
-    loadProfiles().catch((err) => console.error('Error loading profiles:', err));
-    searchDebounce = null;
-  }, 300);
-});
+onMounted(loadProfile);
 </script>
 
 <style scoped>
-.page-container {
-  max-width: 1600px;
+.profile-page {
+  padding: 0 1rem;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
-.page-header {
+/* Header */
+.profile-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
   gap: 1rem;
 }
 
-.page-title {
+.title {
   margin: 0;
-  font-size: 1.5rem;
-  color: var(--va-primary);
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #2d3748;
 }
 
-.page-subtitle {
+.subtitle {
   margin: 0.25rem 0 0;
   font-size: 0.875rem;
-  color: var(--va-secondary);
+  color: #718096;
 }
 
-.page-card {
-  margin-bottom: 1rem;
+/* Profile Card */
+.profile-card {
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
 }
 
-.search-input {
-  max-width: 320px;
+.profile-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  padding: 1rem;
 }
 
-.data-table {
-  width: 100%;
-}
-
-.modal-actions {
+/* Avatar Section */
+.profile-main {
   display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 1.5rem;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
-.mb-4 {
-  margin-bottom: 1rem;
+.avatar-section {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #5a67d8;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.user-name {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.user-email {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #718096;
+}
+
+/* Details Grid */
+.profile-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.detail-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.detail-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #f7fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.detail-icon {
+  color: #718096;
+  font-size: 1.25rem;
+  margin-top: 0.25rem;
+}
+
+.detail-item > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.detail-label {
+  font-size: 0.75rem;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.detail-value {
+  font-size: 0.9375rem;
+  color: #2d3748;
+  font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 968px) {
+  .profile-content {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .profile-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .avatar-section {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .user-info {
+    align-items: center;
+  }
 }
 </style>

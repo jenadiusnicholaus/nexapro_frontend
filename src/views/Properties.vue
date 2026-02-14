@@ -23,6 +23,7 @@
             :options="propertyTypes"
             placeholder="Filter by type"
             style="max-width: 200px"
+            text-by="(option) => option.charAt(0).toUpperCase() + option.slice(1)"
           />
         </div>
 
@@ -51,12 +52,19 @@
     </VaCard>
 
     <!-- Add/Edit Modal -->
-    <VaModal v-model="showModal" :title="editingId ? 'Edit Property' : 'Add Property'" hide-default-actions size="medium">
+    <VaModal
+      v-model="showModal"
+      :title="editingId ? 'Edit Property' : 'Add Property'"
+      hide-default-actions
+      size="medium"
+    >
       <VaForm ref="propertyForm" @submit.prevent="saveProperty">
         <VaSelect
           v-model="formData.owner"
           label="Owner"
           :options="ownerOptions"
+          text-by="text"
+          value-by="value"
           :rules="[validators.required]"
           class="mb-4"
         />
@@ -64,6 +72,8 @@
           v-model="formData.location"
           label="Location"
           :options="locationOptions"
+          text-by="text"
+          value-by="value"
           class="mb-4"
         />
         <VaInput
@@ -76,6 +86,7 @@
           v-model="formData.property_type"
           label="Property Type"
           :options="propertyTypes"
+          text-by="(option) => option.charAt(0).toUpperCase() + option.slice(1)"
           :rules="[validators.required]"
           class="mb-4"
         />
@@ -100,142 +111,153 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue'
-import AppDataTable from '@/components/AppDataTable.vue'
-import { useAppToast } from '@/composables/useAppToast'
-import { usePropertiesStore, useOwnersStore, useLocationsStore } from '@/stores'
-import { buildPayload } from '@/utils/apiPayload'
-import { validators } from '@/utils/validators'
+import { ref, onMounted, watch, computed } from "vue";
+import AppDataTable from "@/components/AppDataTable.vue";
+import { useAppToast } from "@/composables/useAppToast";
+import {
+  usePropertiesStore,
+  useOwnersStore,
+  useLocationsStore,
+} from "@/stores";
+import { buildPayload } from "@/utils/apiPayload";
+import { validators } from "@/utils/validators";
 
-const { success, error } = useAppToast()
-const propertiesStore = usePropertiesStore()
-const ownersStore = useOwnersStore()
-const locationsStore = useLocationsStore()
+const { success, error } = useAppToast();
+const propertiesStore = usePropertiesStore();
+const ownersStore = useOwnersStore();
+const locationsStore = useLocationsStore();
 
-const saving = ref(false)
-const showModal = ref(false)
-const editingId = ref<number | null>(null)
-const searchQuery = ref('')
-const filterType = ref('')
-const propertyForm = ref<{ validate: () => Promise<boolean> } | null>(null)
+const saving = ref(false);
+const showModal = ref(false);
+const editingId = ref<number | null>(null);
+const searchQuery = ref("");
+const filterType = ref("");
+const propertyForm = ref<{ validate: () => Promise<boolean> } | null>(null);
 
-const propertyTypes = ['residential', 'commercial', 'mixed']
+const propertyTypes = ["residential", "commercial", "mixed"];
 
 const formData = ref<{
-  owner: number | null
-  location: number | null
-  property_name: string
-  property_type: string
-  address: string
-  description: string
+  owner: number | null;
+  location: number | null;
+  property_name: string;
+  property_type: string;
+  address: string;
+  description: string;
 }>({
   owner: null,
   location: null,
-  property_name: '',
-  property_type: 'residential',
-  address: '',
-  description: '',
-})
+  property_name: "",
+  property_type: "residential",
+  address: "",
+  description: "",
+});
 
 const columns = [
-  { key: 'property_name', label: 'Name', sortable: true },
-  { key: 'owner_name', label: 'Owner', sortable: true },
-  { key: 'property_type', label: 'Type', sortable: true },
-  { key: 'location_display', label: 'Location' },
-  { key: 'address', label: 'Address' },
-  { key: 'actions', label: 'Actions', width: 100 },
-]
+  { key: "property_name", label: "Name", sortable: true },
+  { key: "owner_name", label: "Owner", sortable: true },
+  { key: "property_type", label: "Type", sortable: true },
+  { key: "location_display", label: "Location" },
+  { key: "address", label: "Address" },
+  { key: "actions", label: "Actions", width: 100 },
+];
 
 const ownerOptions = computed(() =>
-  (ownersStore.items as Record<string, unknown>[]).map((o) => ({ value: o.id as number, text: String(o.name ?? '') }))
-)
+  (ownersStore.items as Record<string, unknown>[]).map((o) => ({
+    value: o.id as number,
+    text: String(o.name ?? ""),
+  })),
+);
 
 const locationOptions = computed(() =>
   (locationsStore.items as Record<string, unknown>[]).map((l) => ({
     value: (l as Record<string, unknown>).id,
     text: `${(l as Record<string, unknown>).area}, ${(l as Record<string, unknown>).city}, ${(l as Record<string, unknown>).region}, ${(l as Record<string, unknown>).country}`,
-  }))
-)
+  })),
+);
 
 const loadProperties = () => {
-  const params: Record<string, unknown> = {}
-  if (searchQuery.value) params.search = searchQuery.value
-  if (filterType.value) params.property_type = filterType.value
-  return propertiesStore.fetchList(params)
-}
+  const params: Record<string, unknown> = {};
+  if (searchQuery.value) params.search = searchQuery.value;
+  if (filterType.value) params.property_type = filterType.value;
+  return propertiesStore.fetchList(params);
+};
 
 const saveProperty = async () => {
-  const isValid = await propertyForm.value?.validate()
-  if (!isValid) return
+  const isValid = await propertyForm.value?.validate();
+  if (!isValid) return;
 
-  const payload = buildPayload(formData.value, ['owner', 'location'])
-  saving.value = true
+  const payload = buildPayload(formData.value, ["owner", "location"]);
+  saving.value = true;
   try {
     if (editingId.value) {
-      await propertiesStore.updateItem(editingId.value, payload)
+      await propertiesStore.updateItem(editingId.value, payload);
     } else {
-      await propertiesStore.createItem(payload)
+      await propertiesStore.createItem(payload);
     }
-    const wasEdit = !!editingId.value
-    closeModal()
-    success(wasEdit ? 'Property updated' : 'Property created')
+    const wasEdit = !!editingId.value;
+    closeModal();
+    success(wasEdit ? "Property updated" : "Property created");
   } catch (err) {
-    console.error('Error saving property:', err)
-    error('Failed to save property')
+    console.error("Error saving property:", err);
+    error("Failed to save property");
   } finally {
-    saving.value = false
+    saving.value = false;
   }
-}
+};
 
 const editProperty = (property: Record<string, unknown>) => {
-  editingId.value = property.id as number
+  editingId.value = property.id as number;
   formData.value = {
     owner: (property.owner as number) ?? null,
     location: (property.location as number) ?? null,
-    property_name: String(property.property_name ?? ''),
-    property_type: String(property.property_type ?? 'residential'),
-    address: String(property.address ?? ''),
-    description: String(property.description ?? ''),
-  }
-  showModal.value = true
-}
+    property_name: String(property.property_name ?? ""),
+    property_type: String(property.property_type ?? "residential"),
+    address: String(property.address ?? ""),
+    description: String(property.description ?? ""),
+  };
+  showModal.value = true;
+};
 
 const deleteProperty = async (id: number) => {
-  if (!confirm('Are you sure you want to delete this property?')) return
+  if (!confirm("Are you sure you want to delete this property?")) return;
 
   try {
-    await propertiesStore.deleteItem(id)
-    success('Property deleted')
+    await propertiesStore.deleteItem(id);
+    success("Property deleted");
   } catch (err) {
-    console.error('Error deleting property:', err)
-    error('Failed to delete property')
+    console.error("Error deleting property:", err);
+    error("Failed to delete property");
   }
-}
+};
 
 const closeModal = () => {
-  showModal.value = false
-  editingId.value = null
+  showModal.value = false;
+  editingId.value = null;
   formData.value = {
     owner: null,
     location: null,
-    property_name: '',
-    property_type: 'residential',
-    address: '',
-    description: '',
-  }
-}
+    property_name: "",
+    property_type: "residential",
+    address: "",
+    description: "",
+  };
+};
 
 onMounted(() => {
-  loadProperties().catch((err) => console.error('Error loading properties:', err))
-  ownersStore.fetchList().catch(() => {})
-  locationsStore.fetchList().catch(() => {})
-})
+  loadProperties().catch((err) =>
+    console.error("Error loading properties:", err),
+  );
+  ownersStore.fetchList().catch(() => {});
+  locationsStore.fetchList().catch(() => {});
+});
 
 let filterDebounce: ReturnType<typeof setTimeout> | null = null;
 watch([searchQuery, filterType], () => {
   if (filterDebounce) clearTimeout(filterDebounce);
   filterDebounce = setTimeout(() => {
-    loadProperties().catch((err) => console.error('Error loading properties:', err));
+    loadProperties().catch((err) =>
+      console.error("Error loading properties:", err),
+    );
     filterDebounce = null;
   }, 300);
 });
