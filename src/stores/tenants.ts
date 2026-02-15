@@ -22,12 +22,13 @@ export const useTenantsStore = defineStore("tenants", () => {
   }
 
   async function createItem(data: Record<string, unknown>) {
-    await tenantsAPI.create(data);
+    const response = await tenantsAPI.create(data);
     // Ensure we refresh with current filters by using the last known params
     // If no params were stored, fetch without filters to get the full list
     const refreshParams =
       Object.keys(lastParams.value).length > 0 ? lastParams.value : {};
     await fetchList(refreshParams);
+    return response.data;
   }
 
   async function updateItem(

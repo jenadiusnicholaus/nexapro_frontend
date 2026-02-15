@@ -47,17 +47,34 @@
             </VaChip>
           </template>
           <template #cell(amount)="{ rowData }">
-            ${{ Number(rowData.amount || 0).toFixed(2) }}
+            {{ rowData.currency || "TZS" }}
+            {{
+              Number(rowData.amount || 0).toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })
+            }}
           </template>
           <template #cell(balance)="{ rowData }">
-            ${{ Number(rowData.balance || 0).toFixed(2) }}
+            {{ rowData.currency || "TZS" }}
+            {{
+              Number(rowData.balance || 0).toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })
+            }}
           </template>
         </AppDataTable>
       </VaCardContent>
     </VaCard>
 
     <!-- Generate Bills Modal -->
-    <VaModal v-model="showGenerateModal" title="Generate Monthly Bills" hide-default-actions size="medium">
+    <VaModal
+      v-model="showGenerateModal"
+      title="Generate Monthly Bills"
+      hide-default-actions
+      size="medium"
+    >
       <VaForm ref="generateForm" @submit.prevent="generateBills">
         <VaInput
           v-model="generateData.billing_period"
@@ -87,101 +104,101 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
-import AppDataTable from '@/components/AppDataTable.vue'
-import { useAppToast } from '@/composables/useAppToast'
-import { useBillsStore } from '@/stores'
-import { validators } from '@/utils/validators'
+import { ref, onMounted, watch } from "vue";
+import AppDataTable from "@/components/AppDataTable.vue";
+import { useAppToast } from "@/composables/useAppToast";
+import { useBillsStore } from "@/stores";
+import { validators } from "@/utils/validators";
 
-const { success, error } = useAppToast()
-const billsStore = useBillsStore()
+const { success, error } = useAppToast();
+const billsStore = useBillsStore();
 
-const generating = ref(false)
-const showGenerateModal = ref(false)
-const searchQuery = ref('')
-const filterStatus = ref('')
-const filterPeriod = ref('')
-const generateForm = ref<{ validate: () => Promise<boolean> } | null>(null)
+const generating = ref(false);
+const showGenerateModal = ref(false);
+const searchQuery = ref("");
+const filterStatus = ref("");
+const filterPeriod = ref("");
+const generateForm = ref<{ validate: () => Promise<boolean> } | null>(null);
 
-const statusOptions = ['unpaid', 'paid', 'partially_paid', 'overdue']
+const statusOptions = ["unpaid", "paid", "partially_paid", "overdue"];
 
 const generateData = ref({
-  billing_period: '',
+  billing_period: "",
   due_day: 5,
-})
+});
 
 const columns = [
-  { key: 'tenant_name', label: 'Tenant', sortable: true },
-  { key: 'unit_number', label: 'Unit', sortable: true },
-  { key: 'property_name', label: 'Property', sortable: true },
-  { key: 'billing_period', label: 'Period', sortable: true },
-  { key: 'amount', label: 'Amount', sortable: true },
-  { key: 'due_date', label: 'Due Date', sortable: true },
-  { key: 'balance', label: 'Balance', sortable: true },
-  { key: 'status', label: 'Status', sortable: true },
-]
+  { key: "tenant_name", label: "Tenant", sortable: true },
+  { key: "unit_number", label: "Unit", sortable: true },
+  { key: "property_name", label: "Property", sortable: true },
+  { key: "billing_period", label: "Period", sortable: true },
+  { key: "amount", label: "Amount", sortable: true },
+  { key: "due_date", label: "Due Date", sortable: true },
+  { key: "balance", label: "Balance", sortable: true },
+  { key: "status", label: "Status", sortable: true },
+];
 
 const getStatusColor = (status: unknown) => {
   const colors: Record<string, string> = {
-    unpaid: 'warning',
-    paid: 'success',
-    partially_paid: 'info',
-    overdue: 'danger',
-  }
-  return colors[String(status)] || 'secondary'
-}
+    unpaid: "warning",
+    paid: "success",
+    partially_paid: "info",
+    overdue: "danger",
+  };
+  return colors[String(status)] || "secondary";
+};
 
 const loadBills = () => {
-  const params: Record<string, unknown> = {}
-  if (searchQuery.value) params.search = searchQuery.value
-  if (filterStatus.value) params.status = filterStatus.value
-  if (filterPeriod.value) params.billing_period = filterPeriod.value
-  return billsStore.fetchList(params)
-}
+  const params: Record<string, unknown> = {};
+  if (searchQuery.value) params.search = searchQuery.value;
+  if (filterStatus.value) params.status = filterStatus.value;
+  if (filterPeriod.value) params.billing_period = filterPeriod.value;
+  return billsStore.fetchList(params);
+};
 
 const generateBills = async () => {
-  const isValid = await generateForm.value?.validate()
-  if (!isValid) return
+  const isValid = await generateForm.value?.validate();
+  if (!isValid) return;
 
-  generating.value = true
+  generating.value = true;
   try {
     const response = await billsStore.generate(
       generateData.value.billing_period,
-      generateData.value.due_day
-    )
-    const data = response.data as { created: number; skipped: number }
-    success(`Generated ${data.created} bills, skipped ${data.skipped}`)
-    showGenerateModal.value = false
-    generateData.value = { billing_period: '', due_day: 5 }
+      generateData.value.due_day,
+    );
+    const data = response.data as { created: number; skipped: number };
+    success(`Generated ${data.created} bills, skipped ${data.skipped}`);
+    showGenerateModal.value = false;
+    generateData.value = { billing_period: "", due_day: 5 };
   } catch (err) {
-    console.error('Error generating bills:', err)
-    error('Failed to generate bills')
+    console.error("Error generating bills:", err);
+    error("Failed to generate bills");
   } finally {
-    generating.value = false
+    generating.value = false;
   }
-}
+};
 
 const markOverdue = async () => {
-  if (!confirm('Mark all unpaid bills past due date as overdue?')) return
+  if (!confirm("Mark all unpaid bills past due date as overdue?")) return;
 
   try {
-    await billsStore.markOverdue()
-    success('Bills marked as overdue')
+    await billsStore.markOverdue();
+    success("Bills marked as overdue");
   } catch (err) {
-    console.error('Error marking overdue:', err)
-    error('Failed to mark bills as overdue')
+    console.error("Error marking overdue:", err);
+    error("Failed to mark bills as overdue");
   }
-}
+};
 
 onMounted(() => {
-  loadBills().catch((err) => console.error('Error loading bills:', err))
-})
+  loadBills().catch((err) => console.error("Error loading bills:", err));
+});
 
 let filterDebounce: ReturnType<typeof setTimeout> | null = null;
 watch([searchQuery, filterStatus, filterPeriod], () => {
   if (filterDebounce) clearTimeout(filterDebounce);
   filterDebounce = setTimeout(() => {
-    loadBills().catch((err) => console.error('Error loading bills:', err));
+    loadBills().catch((err) => console.error("Error loading bills:", err));
     filterDebounce = null;
   }, 300);
 });

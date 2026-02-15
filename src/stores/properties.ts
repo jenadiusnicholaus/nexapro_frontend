@@ -22,7 +22,7 @@ export const usePropertiesStore = defineStore("properties", () => {
     }
   }
 
-  async function createItem(data: Record<string, unknown>) {
+  async function createItem(data: Record<string, unknown> | FormData) {
     await propertiesAPI.create(data);
     // Ensure we refresh with current filters by using the last known params
     // If no params were stored, fetch without filters to get the full list
@@ -33,7 +33,7 @@ export const usePropertiesStore = defineStore("properties", () => {
 
   async function updateItem(
     id: string | number,
-    data: Record<string, unknown>,
+    data: Record<string, unknown> | FormData,
   ) {
     await propertiesAPI.update(id, data);
     const refreshParams =

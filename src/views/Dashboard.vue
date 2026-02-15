@@ -257,8 +257,8 @@
                   >
                     {{
                       activeTab === "bills"
-                        ? `$${formatCurrency(item.amount)}`
-                        : `+$${formatCurrency(item.amount_paid)}`
+                        ? `${item.currency || "TZS"} ${formatCurrency(item.amount)}`
+                        : `+${item.currency || "TZS"} ${formatCurrency(item.amount_paid)}`
                     }}
                   </div>
                 </div>
@@ -395,7 +395,7 @@ const mainMetrics = computed(() => [
   },
   {
     label: "Total Revenue",
-    value: `$${formatCurrency(totalRevenue.value)}`,
+    value: `TZS ${formatCurrency(totalRevenue.value)}`,
     icon: "trending_up",
     color: "purple",
     change: "+18%",

@@ -18,7 +18,24 @@
           <!-- Left: Avatar and Basic Info -->
           <div class="profile-main">
             <div class="avatar-section">
-              <div class="avatar">{{ initials }}</div>
+              <div class="avatar-wrapper">
+                <img
+                  v-if="profile?.image"
+                  :src="profile.image"
+                  alt="Profile avatar"
+                  class="avatar-image"
+                />
+                <div v-else class="avatar">{{ initials }}</div>
+                <label class="avatar-upload">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    @change="handleAvatarUpload"
+                    style="display: none"
+                  />
+                  <VaIcon name="camera_alt" size="small" />
+                </label>
+              </div>
               <div class="user-info">
                 <h2 class="user-name">{{ profile?.owner?.name }}</h2>
                 <p class="user-email">{{ profile?.user?.email }}</p>
@@ -123,7 +140,6 @@ const profilesStore = useProfilesStore();
 const profile = ref<any>(null);
 const showEditModal = ref(false);
 const saving = ref(false);
-const formRef = ref();
 
 const formData = ref({
   name: "",
@@ -164,6 +180,39 @@ const saveProfile = async () => {
     loadProfile();
   } catch (err) {
     error("Failed to update profile");
+  } finally {
+    saving.value = false;
+  }
+};
+
+const handleAvatarUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+
+  if (!file) return;
+
+  // Validate file type
+  if (!file.type.startsWith("image/")) {
+    error("Please select an image file");
+    return;
+  }
+
+  // Validate file size (max 5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    error("Image size must be less than 5MB");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("avatar", file);
+
+  saving.value = true;
+  try {
+    await profilesStore.updateAvatar(formData);
+    success("Profile picture updated successfully");
+    await loadProfile();
+  } catch (err) {
+    error("Failed to update profile picture");
   } finally {
     saving.value = false;
   }
@@ -228,6 +277,13 @@ onMounted(loadProfile);
   gap: 1.5rem;
 }
 
+.avatar-wrapper {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+}
+
 .avatar {
   width: 80px;
   height: 80px;
@@ -239,7 +295,33 @@ onMounted(loadProfile);
   justify-content: center;
   font-size: 2rem;
   font-weight: 600;
-  flex-shrink: 0;
+}
+
+.avatar-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatar-upload {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #5a67d8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 2px solid white;
+  transition: background 0.2s ease;
+}
+
+.avatar-upload:hover {
+  background: #4c51bf;
 }
 
 .user-info {

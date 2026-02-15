@@ -5,11 +5,7 @@
         <h1 class="page-title">Tenants</h1>
         <p class="page-subtitle">Manage tenant contacts and emergency info</p>
       </div>
-      <VaButton
-        icon="add"
-        @click="showModal = true"
-        size="large"
-      >
+      <VaButton icon="add" @click="showModal = true" size="large">
         Add Tenant
       </VaButton>
     </div>
@@ -27,6 +23,24 @@
               <VaIcon name="search" size="small" />
             </template>
           </VaInput>
+          <VaSelect
+            v-model="filterProperty"
+            :options="propertyOptions"
+            text-by="text"
+            value-by="value"
+            placeholder="Filter by property"
+            style="max-width: 250px"
+            clearable
+          />
+          <VaSelect
+            v-model="filterUnit"
+            :options="unitOptions"
+            text-by="text"
+            value-by="value"
+            placeholder="Filter by unit"
+            style="max-width: 200px"
+            clearable
+          />
         </div>
 
         <AppDataTable
@@ -54,7 +68,12 @@
     </VaCard>
 
     <!-- Add/Edit Modal -->
-    <VaModal v-model="showModal" :title="editingId ? 'Edit Tenant' : 'Add Tenant'" hide-default-actions size="medium">
+    <VaModal
+      v-model="showModal"
+      :title="editingId ? 'Edit Tenant' : 'Add Tenant'"
+      hide-default-actions
+      size="medium"
+    >
       <VaForm ref="tenantForm" @submit.prevent="saveTenant">
         <VaInput
           v-model="formData.full_name"
@@ -97,107 +116,134 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
-import AppDataTable from '@/components/AppDataTable.vue'
-import { useAppToast } from '@/composables/useAppToast'
-import { useTenantsStore } from '@/stores'
-import { validators } from '@/utils/validators'
+import { ref, onMounted, watch, computed } from "vue";
+import AppDataTable from "@/components/AppDataTable.vue";
+import { useAppToast } from "@/composables/useAppToast";
+import { useTenantsStore, usePropertiesStore, useUnitsStore } from "@/stores";
+import { validators } from "@/utils/validators";
 
-const { success, error } = useAppToast()
-const tenantsStore = useTenantsStore()
+const { success, error } = useAppToast();
+const tenantsStore = useTenantsStore();
+const propertiesStore = usePropertiesStore();
+const unitsStore = useUnitsStore();
 
-const saving = ref(false)
-const showModal = ref(false)
-const editingId = ref(null)
-const searchQuery = ref('')
-const tenantForm = ref(null)
+const saving = ref(false);
+const showModal = ref(false);
+const editingId = ref(null);
+const searchQuery = ref("");
+const filterProperty = ref("");
+const filterUnit = ref("");
+const tenantForm = ref(null);
 
 const formData = ref({
-  full_name: '',
-  phone: '',
-  email: '',
-  id_number: '',
-  emergency_contact: '',
-})
+  full_name: "",
+  phone: "",
+  email: "",
+  id_number: "",
+  emergency_contact: "",
+});
 
 const columns = [
-  { key: 'full_name', label: 'Name', sortable: true },
-  { key: 'phone', label: 'Phone' },
-  { key: 'email', label: 'Email' },
-  { key: 'id_number', label: 'ID Number' },
-  { key: 'emergency_contact', label: 'Emergency Contact' },
-  { key: 'actions', label: 'Actions', width: 100 },
-]
+  { key: "full_name", label: "Name", sortable: true },
+  { key: "phone", label: "Phone" },
+  { key: "email", label: "Email" },
+  { key: "id_number", label: "ID Number" },
+  { key: "emergency_contact", label: "Emergency Contact" },
+  { key: "actions", label: "Actions", width: 100 },
+];
+
+const propertyOptions = computed(() =>
+  propertiesStore.items.map((p) => ({
+    value: p.id,
+    text: p.property_name,
+  })),
+);
+
+const unitOptions = computed(() =>
+  unitsStore.items.map((u) => ({
+    value: u.id,
+    text: `${u.property_name || ""} - Unit ${u.unit_number}`,
+  })),
+);
 
 const loadTenants = () => {
-  const params = searchQuery.value ? { search: searchQuery.value } : {}
-  return tenantsStore.fetchList(params)
-}
+  const params = {};
+  if (searchQuery.value) params.search = searchQuery.value;
+  if (filterProperty.value) params.property = filterProperty.value;
+  if (filterUnit.value) params.unit = filterUnit.value;
+  return tenantsStore.fetchList(params);
+};
 
 const saveTenant = async () => {
-  const isValid = await tenantForm.value?.validate()
-  if (!isValid) return
+  const isValid = await tenantForm.value?.validate();
+  if (!isValid) return;
 
-  saving.value = true
+  saving.value = true;
   try {
     if (editingId.value) {
-      await tenantsStore.updateItem(editingId.value, formData.value)
+      await tenantsStore.updateItem(editingId.value, formData.value);
     } else {
-      await tenantsStore.createItem(formData.value)
+      await tenantsStore.createItem(formData.value);
     }
-    const wasEdit = !!editingId.value
-    closeModal()
-    success(wasEdit ? 'Tenant updated' : 'Tenant created')
+    const wasEdit = !!editingId.value;
+    closeModal();
+    success(wasEdit ? "Tenant updated" : "Tenant created");
   } catch (err) {
-    console.error('Error saving tenant:', err)
-    error('Failed to save tenant')
+    console.error("Error saving tenant:", err);
+    error("Failed to save tenant");
   } finally {
-    saving.value = false
+    saving.value = false;
   }
-}
+};
 
 const editTenant = (tenant) => {
-  editingId.value = tenant.id
-  formData.value = { ...tenant }
-  showModal.value = true
-}
+  editingId.value = tenant.id;
+  formData.value = { ...tenant };
+  showModal.value = true;
+};
 
 const deleteTenant = async (id) => {
-  if (!confirm('Are you sure you want to delete this tenant?')) return
+  if (!confirm("Are you sure you want to delete this tenant?")) return;
 
   try {
-    await tenantsStore.deleteItem(id)
-    success('Tenant deleted')
+    await tenantsStore.deleteItem(id);
+    success("Tenant deleted");
   } catch (err) {
-    console.error('Error deleting tenant:', err)
-    error('Failed to delete tenant')
+    console.error("Error deleting tenant:", err);
+    error("Failed to delete tenant");
   }
-}
+};
 
 const closeModal = () => {
-  showModal.value = false
-  editingId.value = null
+  showModal.value = false;
+  editingId.value = null;
   formData.value = {
-    full_name: '',
-    phone: '',
-    email: '',
-    id_number: '',
-    emergency_contact: '',
-  }
-}
+    full_name: "",
+    phone: "",
+    email: "",
+    id_number: "",
+    emergency_contact: "",
+  };
+};
 
 onMounted(() => {
-  loadTenants().catch((err) => console.error('Error loading tenants:', err))
-})
+  loadTenants().catch((err) => console.error("Error loading tenants:", err));
+  propertiesStore.fetchList().catch(() => {});
+  unitsStore.fetchList().catch(() => {});
+});
 
-const searchDebounce = ref(null)
+const searchDebounce = ref(null);
 watch(searchQuery, () => {
-  if (searchDebounce.value) clearTimeout(searchDebounce.value)
+  if (searchDebounce.value) clearTimeout(searchDebounce.value);
   searchDebounce.value = setTimeout(() => {
-    loadTenants().catch((err) => console.error('Error loading tenants:', err))
-    searchDebounce.value = null
-  }, 300)
-})
+    loadTenants().catch((err) => console.error("Error loading tenants:", err));
+    searchDebounce.value = null;
+  }, 300);
+});
+
+watch([filterProperty, filterUnit], () => {
+  loadTenants().catch((err) => console.error("Error loading tenants:", err));
+});
 </script>
 
 <style scoped>

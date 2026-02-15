@@ -52,37 +52,76 @@
           :class="{ 'locale-option--active': locale === opt.value }"
           @click="setLocale(opt.value)"
         >
-          <span class="locale-option__flag">{{ getLocaleFlag(opt.value) }}</span>
+          <span class="locale-option__flag">{{
+            getLocaleFlag(opt.value)
+          }}</span>
           <span class="locale-option__label">{{ opt.label }}</span>
         </div>
       </VaDropdownContent>
     </VaDropdown>
 
     <!-- Account dropdown: avatar + actions -->
-    <VaDropdown placement="bottom-end" :offset="[0, 8]" class="app-navbar-actions__account-dropdown">
+    <VaDropdown
+      placement="bottom-end"
+      :offset="[0, 8]"
+      class="app-navbar-actions__account-dropdown"
+    >
       <template #anchor>
-        <button type="button" class="account-trigger" aria-haspopup="true" :aria-label="t('common.account')">
+        <button
+          type="button"
+          class="account-trigger"
+          aria-haspopup="true"
+          :aria-label="t('common.account')"
+        >
           <div class="account-trigger__avatar">
-            <VaIcon name="person" size="small" class="account-trigger__icon" />
+            <img
+              v-if="userImage"
+              :src="userImage"
+              alt="User avatar"
+              class="account-trigger__avatar-img"
+            />
+            <span v-else-if="userInitials" class="account-trigger__initials">{{
+              userInitials
+            }}</span>
+            <VaIcon
+              v-else
+              name="person"
+              size="small"
+              class="account-trigger__icon"
+            />
           </div>
-          <span v-if="!isMobile" class="account-trigger__name">{{ t('common.account') }}</span>
-          <VaIcon name="angle_down" size="small" class="account-trigger__chevron" />
+          <span v-if="!isMobile" class="account-trigger__name">{{
+            userName
+          }}</span>
+          <VaIcon
+            name="angle_down"
+            size="small"
+            class="account-trigger__chevron"
+          />
         </button>
       </template>
       <VaDropdownContent>
         <div class="account-menu">
           <button type="button" class="account-menu__item" @click="goToProfile">
             <VaIcon name="person" size="small" />
-            <span>{{ t('common.profile') }}</span>
+            <span>{{ t("common.profile") }}</span>
           </button>
-          <button type="button" class="account-menu__item" @click="goToSettings">
+          <button
+            type="button"
+            class="account-menu__item"
+            @click="goToSettings"
+          >
             <VaIcon name="gear" size="small" />
-            <span>{{ t('common.settings') }}</span>
+            <span>{{ t("common.settings") }}</span>
           </button>
           <div class="account-menu__divider" />
-          <button type="button" class="account-menu__item account-menu__item--danger" @click="handleLogout">
+          <button
+            type="button"
+            class="account-menu__item account-menu__item--danger"
+            @click="handleLogout"
+          >
             <VaIcon name="logout" size="small" />
-            <span>{{ t('common.signOut') }}</span>
+            <span>{{ t("common.signOut") }}</span>
           </button>
         </div>
       </VaDropdownContent>
@@ -91,55 +130,79 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
-import { useAuthStore } from '@/stores'
-import { setLocale as setI18nLocale, supportedLocales } from '@/i18n'
-import type { Locale } from '@/i18n'
+import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
+import { useAuthStore, useProfilesStore } from "@/stores";
+import { setLocale as setI18nLocale, supportedLocales } from "@/i18n";
+import type { Locale } from "@/i18n";
 
 defineProps<{
-  isMobile?: boolean
-}>()
+  isMobile?: boolean;
+}>();
 
-const router = useRouter()
-const { t, locale } = useI18n()
-const authStore = useAuthStore()
+const router = useRouter();
+const { t, locale } = useI18n();
+const authStore = useAuthStore();
+const profilesStore = useProfilesStore();
 
-const searchQuery = ref('')
-const notificationCount = ref(0)
-const localeOptions = supportedLocales
+const searchQuery = ref("");
+const notificationCount = ref(0);
+const localeOptions = supportedLocales;
 
 const localeFlags: Record<Locale, string> = {
-  en: '🇺🇸',
-  sw: '🇹🇿',
-}
+  en: "🇺🇸",
+  sw: "🇹🇿",
+};
 
-const currentLocaleFlag = computed(() => localeFlags[locale.value] ?? '🇺🇸')
+const currentLocaleFlag = computed(
+  () => localeFlags[locale.value as Locale] ?? "🇺🇸",
+);
 const currentLocaleLabel = computed(
-  () => localeOptions.find((o) => o.value === locale.value)?.label ?? 'English',
-)
+  () => localeOptions.find((o) => o.value === locale.value)?.label ?? "English",
+);
 
-function getLocaleFlag(l: Locale) {
-  return localeFlags[l] ?? '🇺🇸'
+const userInitials = computed(() => {
+  const name = profilesStore.profile?.owner?.name || "";
+  return name
+    .split(" ")
+    .map((n: string) => n[0])
+    .join("")
+    .toUpperCase();
+});
+
+const userName = computed(() => {
+  return profilesStore.profile?.owner?.name || t("common.account");
+});
+
+const userImage = computed(() => {
+  return profilesStore.profile?.image || null;
+});
+
+function getLocaleFlag(l: string) {
+  return localeFlags[l as Locale] ?? "🇺🇸";
 }
 
 function setLocale(value: Locale) {
-  setI18nLocale(value)
+  setI18nLocale(value);
 }
 
 function goToProfile() {
-  router.push({ name: 'profiles' })
+  router.push({ name: "profiles" });
 }
 
 function goToSettings() {
-  router.push({ name: 'profiles' })
+  router.push({ name: "profiles" });
 }
 
 const handleLogout = () => {
-  authStore.logout()
-  router.push({ name: 'login' })
-}
+  authStore.logout();
+  router.push({ name: "login" });
+};
+
+onMounted(() => {
+  profilesStore.fetchCurrentProfile().catch(() => {});
+});
 </script>
 
 <style scoped>
@@ -258,6 +321,19 @@ const handleLogout = () => {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.account-trigger__avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.account-trigger__initials {
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 .account-trigger__icon {

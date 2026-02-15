@@ -42,6 +42,19 @@
           :columns="columns"
           :loading="unitsStore.loading"
         >
+          <template #cell(image)="{ rowData }">
+            <div class="unit-image-cell">
+              <img
+                v-if="rowData.image_url"
+                :src="rowData.image_url"
+                :alt="rowData.unit_number"
+                class="unit-thumbnail"
+              />
+              <div v-else class="unit-placeholder">
+                <VaIcon name="meeting_room" size="small" />
+              </div>
+            </div>
+          </template>
           <template #cell(status)="{ rowData }">
             <VaChip :color="getStatusColor(rowData.status)">
               {{ rowData.status }}
@@ -106,13 +119,6 @@
           :rules="[validators.required]"
           class="mb-4"
         />
-        <VaInput
-          v-model="formData.deposit_amount"
-          label="Deposit Amount"
-          type="number"
-          :rules="[validators.required]"
-          class="mb-4"
-        />
         <VaSelect
           v-model="formData.status"
           label="Status"
@@ -122,6 +128,36 @@
           :rules="[validators.required]"
           class="mb-4"
         />
+
+        <!-- Image Upload -->
+        <div class="mb-4">
+          <label class="va-input-label">Unit Image</label>
+          <div class="image-upload-container">
+            <div v-if="imagePreview" class="image-preview">
+              <img :src="imagePreview" alt="Preview" />
+              <VaButton
+                preset="plain"
+                icon="close"
+                size="small"
+                color="danger"
+                class="remove-image-btn"
+                @click="removeImage"
+              />
+            </div>
+            <div v-else class="image-upload-placeholder">
+              <VaIcon name="add_photo_alternate" size="large" />
+              <p>Click to upload image</p>
+            </div>
+            <input
+              type="file"
+              ref="imageInput"
+              accept="image/*"
+              @change="handleImageSelect"
+              class="image-input"
+            />
+          </div>
+        </div>
+
         <div class="modal-actions">
           <VaButton preset="secondary" @click="closeModal">Cancel</VaButton>
           <VaButton type="submit" :loading="saving">Save</VaButton>
@@ -150,6 +186,9 @@ const searchQuery = ref("");
 const filterProperty = ref("");
 const filterStatus = ref("");
 const unitForm = ref<{ validate: () => Promise<boolean> } | null>(null);
+const imageInput = ref<HTMLInputElement | null>(null);
+const imagePreview = ref<string | null>(null);
+const selectedImage = ref<File | null>(null);
 
 const unitTypes = [
   "apartment",
@@ -167,7 +206,6 @@ const formData = ref<{
   floor: string;
   unit_type: string;
   rent_amount: string;
-  deposit_amount: string;
   status: string;
 }>({
   property: null,
@@ -175,11 +213,11 @@ const formData = ref<{
   floor: "",
   unit_type: "apartment",
   rent_amount: "",
-  deposit_amount: "",
   status: "vacant",
 });
 
 const columns = [
+  { key: "image", label: "Image", width: 80 },
   { key: "unit_number", label: "Unit #", sortable: true },
   { key: "property_name", label: "Property", sortable: true },
   { key: "floor", label: "Floor" },
@@ -213,24 +251,94 @@ const loadUnits = () => {
   return unitsStore.fetchList(params);
 };
 
+const handleImageSelect = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+
+  if (!file) return;
+
+  if (!file.type.startsWith("image/")) {
+    error("Please select an image file");
+    return;
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    error("Image size must be less than 5MB");
+    return;
+  }
+
+  selectedImage.value = file;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    imagePreview.value = e.target?.result as string;
+  };
+  reader.readAsDataURL(file);
+};
+
+const removeImage = () => {
+  selectedImage.value = null;
+  imagePreview.value = null;
+  if (imageInput.value) {
+    imageInput.value.value = "";
+  }
+};
+
 const saveUnit = async () => {
   const isValid = await unitForm.value?.validate();
   if (!isValid) return;
 
-  const payload = buildPayload(formData.value, ["property"]);
   saving.value = true;
   try {
-    if (editingId.value) {
-      await unitsStore.updateItem(editingId.value, payload);
+    console.log("saveUnit - selectedImage:", selectedImage.value);
+    console.log("saveUnit - imagePreview:", imagePreview.value);
+    console.log("saveUnit - is File?", selectedImage.value instanceof File);
+
+    // Only use FormData if user selected a NEW image file
+    if (selectedImage.value && selectedImage.value instanceof File) {
+      // Create FormData for multipart/form-data upload
+      const formDataPayload = new FormData();
+      formDataPayload.append("property", String(formData.value.property));
+      formDataPayload.append("unit_number", formData.value.unit_number);
+      if (formData.value.floor) {
+        formDataPayload.append("floor", formData.value.floor);
+      }
+      formDataPayload.append("unit_type", formData.value.unit_type);
+      formDataPayload.append("rent_amount", String(formData.value.rent_amount));
+      formDataPayload.append("status", formData.value.status);
+      formDataPayload.append("image", selectedImage.value);
+
+      if (editingId.value) {
+        await unitsStore.updateItem(editingId.value, formDataPayload);
+      } else {
+        await unitsStore.createItem(formDataPayload);
+      }
     } else {
-      await unitsStore.createItem(payload);
+      // Regular JSON payload without image
+      const payload = buildPayload(formData.value, ["property"]);
+      console.log("saveUnit - Using JSON payload:", payload);
+      console.log("saveUnit - editingId:", editingId.value);
+      if (editingId.value) {
+        await unitsStore.updateItem(editingId.value, payload);
+      } else {
+        await unitsStore.createItem(payload);
+      }
     }
+
     const wasEdit = !!editingId.value;
     closeModal();
     success(wasEdit ? "Unit updated" : "Unit created");
   } catch (err) {
     console.error("Error saving unit:", err);
-    error("Failed to save unit");
+    if (err.response?.data) {
+      console.error("API Error details:", err.response.data);
+      const errorMsg =
+        typeof err.response.data === "object"
+          ? JSON.stringify(err.response.data)
+          : err.response.data;
+      error(`Failed to save unit: ${errorMsg}`);
+    } else {
+      error("Failed to save unit");
+    }
   } finally {
     saving.value = false;
   }
@@ -248,9 +356,22 @@ const editUnit = (unit: Record<string, unknown>) => {
     floor: String(unit.floor ?? ""),
     unit_type: String(unit.unit_type ?? "apartment"),
     rent_amount: String(unit.rent_amount ?? ""),
-    deposit_amount: String(unit.deposit_amount ?? ""),
     status: String(unit.status ?? "vacant"),
   };
+
+  // Reset image state first
+  selectedImage.value = null;
+  imagePreview.value = null;
+  if (imageInput.value) {
+    imageInput.value.value = "";
+  }
+
+  // Show existing image preview but don't set selectedImage
+  // selectedImage should only be set when user selects a NEW file
+  if (unit.image_url) {
+    imagePreview.value = String(unit.image_url);
+  }
+
   showModal.value = true;
 };
 
@@ -275,9 +396,9 @@ const closeModal = () => {
     floor: "",
     unit_type: "apartment",
     rent_amount: "",
-    deposit_amount: "",
     status: "vacant",
   };
+  removeImage();
 };
 
 onMounted(() => {
@@ -329,7 +450,93 @@ watch([filterProperty, filterStatus], () => {
 .modal-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 1.5rem;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.unit-image-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.unit-thumbnail {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.unit-placeholder {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f7fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  color: #718096;
+}
+
+.image-upload-container {
+  position: relative;
+  width: 100%;
+  min-height: 200px;
+  border: 2px dashed #cbd5e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.image-upload-container:hover {
+  border-color: #5a67d8;
+}
+
+.image-upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: #718096;
+}
+
+.image-upload-placeholder p {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.image-preview {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.remove-image-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+}
+
+.image-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
 }
 </style>

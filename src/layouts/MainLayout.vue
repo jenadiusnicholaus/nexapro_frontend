@@ -61,7 +61,7 @@
           <div class="user-avatar">
             <VaIcon name="person" size="small" class="user-avatar-icon" />
           </div>
-          <span class="user-name">{{ t('common.account') }}</span>
+          <span class="user-name">{{ t("common.account") }}</span>
         </div>
       </div>
     </header>
@@ -77,20 +77,33 @@
             class="sidebar-link"
             :class="{ 'sidebar-link--active': isActive(item.path) }"
           >
-            <VaIcon :name="item.meta?.icon" size="small" class="sidebar-link-icon" />
-            <span v-show="drawerVisible" class="sidebar-link-text">{{ t(item.displayName) }}</span>
+            <VaIcon
+              :name="item.meta?.icon"
+              size="small"
+              class="sidebar-link-icon"
+            />
+            <span v-show="drawerVisible" class="sidebar-link-text">{{
+              t(item.displayName)
+            }}</span>
           </router-link>
         </nav>
 
         <div v-show="drawerVisible" class="sidebar-footer-card">
-          <div class="footer-card-title">{{ t('sidebar.propertyManagement') }}</div>
-          <div class="footer-card-subtitle">{{ t('sidebar.propertyManagementSubtitle') }}</div>
+          <div class="footer-card-title">
+            {{ t("sidebar.propertyManagement") }}
+          </div>
+          <div class="footer-card-subtitle">
+            {{ t("sidebar.propertyManagementSubtitle") }}
+          </div>
         </div>
       </div>
     </aside>
 
     <!-- Main Content -->
-    <main class="main-content" :class="{ 'main-content--expanded': !drawerVisible }">
+    <main
+      class="main-content"
+      :class="{ 'main-content--expanded': !drawerVisible }"
+    >
       <div class="content-wrapper">
         <AppLayoutNavigation />
         <router-view />
@@ -100,49 +113,49 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { storeToRefs } from 'pinia'
-import { useRouter, useRoute } from 'vue-router'
-import { useI18n } from 'vue-i18n'
-import { useAuthStore, useGlobalStore } from '@/stores'
-import { setLocale as setI18nLocale, supportedLocales } from '@/i18n'
-import type { Locale } from '@/i18n'
-import NavigationRoutes from '@/components/sidebar/NavigationRoutes'
-import AppLayoutNavigation from '@/components/app-layout-navigation/AppLayoutNavigation.vue'
+import { ref, computed } from "vue";
+import { storeToRefs } from "pinia";
+import { useRouter, useRoute } from "vue-router";
+import { useI18n } from "vue-i18n";
+import { useAuthStore, useGlobalStore } from "@/stores";
+import { setLocale as setI18nLocale, supportedLocales } from "@/i18n";
+import type { Locale } from "@/i18n";
+import NavigationRoutes from "@/components/sidebar/NavigationRoutes";
+import AppLayoutNavigation from "@/components/app-layout-navigation/AppLayoutNavigation.vue";
 
-const router = useRouter()
-const route = useRoute()
-const { t, locale } = useI18n()
-const authStore = useAuthStore()
-const globalStore = useGlobalStore()
-const { isSidebarMinimized } = storeToRefs(globalStore)
+const router = useRouter();
+const route = useRoute();
+const { t, locale } = useI18n();
+const authStore = useAuthStore();
+const globalStore = useGlobalStore();
+const { isSidebarMinimized } = storeToRefs(globalStore);
 
-const localeOptions = supportedLocales
+const localeOptions = supportedLocales;
 
 const setLocale = (value: Locale) => {
-  setI18nLocale(value)
-}
+  setI18nLocale(value);
+};
 
-const notificationCount = ref(0)
-const searchQuery = ref('')
+const notificationCount = ref(0);
+const searchQuery = ref("");
 
-const drawerVisible = computed(() => !isSidebarMinimized.value)
+const drawerVisible = computed(() => !isSidebarMinimized.value);
 
-const menuItems = computed(() => NavigationRoutes.routes)
+const menuItems = computed(() => NavigationRoutes.routes);
 
 const isActive = (path: string) => {
-  if (path === '/') return route.path === '/'
-  return route.path.startsWith(path)
-}
+  if (path === "/") return route.path === "/";
+  return route.path.startsWith(path);
+};
 
 const toggleDrawer = () => {
-  globalStore.toggleSidebar()
-}
+  globalStore.toggleSidebar();
+};
 
 const handleLogout = () => {
-  authStore.logout()
-  router.push({ name: 'login' })
-}
+  authStore.logout();
+  router.push({ name: "login" });
+};
 </script>
 
 <style scoped>
@@ -258,8 +271,6 @@ const handleLogout = () => {
   align-items: center;
   gap: 2px;
   margin-right: 8px;
-  padding-right: 8px;
-  border-right: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .locale-btn {
@@ -356,7 +367,9 @@ const handleLogout = () => {
   border-radius: 10px;
   color: var(--va-text-primary);
   text-decoration: none;
-  transition: background 0.2s, color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s;
 }
 
 .sidebar-link:hover {

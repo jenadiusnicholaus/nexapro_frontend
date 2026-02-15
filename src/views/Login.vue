@@ -4,9 +4,6 @@
     <div class="login-image-section">
       <div class="image-overlay">
         <div class="image-content">
-          <div class="image-logo">
-            <VaIcon name="home" size="large" class="image-logo-icon" />
-          </div>
           <h2 class="image-title">NexaProperty</h2>
           <p class="image-subtitle">Manage your properties with ease</p>
         </div>
@@ -21,7 +18,11 @@
           <p class="login-subtitle">Sign in to your account</p>
         </div>
 
-        <VaForm ref="loginForm" @submit.prevent="handleLogin" class="login-form">
+        <VaForm
+          ref="loginForm"
+          @submit.prevent="handleLogin"
+          class="login-form"
+        >
           <VaInput
             v-model="username"
             label="Username"
@@ -104,70 +105,74 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
-import { validators } from '@/utils/validators'
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "@/stores/auth";
+import { validators } from "@/utils/validators";
 
-const router = useRouter()
-const authStore = useAuthStore()
+const router = useRouter();
+const authStore = useAuthStore();
 
 // Test users from .env (pre-fill form for development)
 const testUsers = {
   admin: {
-    username: import.meta.env.VITE_TEST_ADMIN_USERNAME ?? 'admin',
-    password: import.meta.env.VITE_TEST_ADMIN_PASSWORD ?? 'admin123',
-    label: 'Admin',
-    access: 'Full access to everything',
+    username: import.meta.env.VITE_TEST_ADMIN_USERNAME ?? "admin",
+    password: import.meta.env.VITE_TEST_ADMIN_PASSWORD ?? "admin123",
+    label: "Admin",
+    access: "Full access to everything",
   },
   property_owner: {
-    username: import.meta.env.VITE_TEST_OWNER_USERNAME ?? 'property_owner',
-    password: import.meta.env.VITE_TEST_OWNER_PASSWORD ?? 'property_owner123',
-    label: 'Property Owner',
-    access: 'Only data for their linked Owner',
+    username: import.meta.env.VITE_TEST_OWNER_USERNAME ?? "property_owner",
+    password: import.meta.env.VITE_TEST_OWNER_PASSWORD ?? "property_owner123",
+    label: "Property Owner",
+    access: "Only data for their linked Owner",
   },
-}
+};
 
-const username = ref(testUsers.admin.username)
-const password = ref(testUsers.admin.password)
-const loginForm = ref(null)
+const username = ref(testUsers.admin.username);
+const password = ref(testUsers.admin.password);
+const loginForm = ref(null);
 
 const fillTestUser = (key) => {
-  const u = testUsers[key]
+  const u = testUsers[key];
   if (u) {
-    username.value = u.username
-    password.value = u.password
+    username.value = u.username;
+    password.value = u.password;
   }
-}
+};
 
 const handleLogin = async () => {
-  const isValid = await loginForm.value.validate()
-  if (!isValid) return
+  const isValid = await loginForm.value.validate();
+  if (!isValid) return;
 
-  const result = await authStore.login(username.value, password.value)
+  const result = await authStore.login(username.value, password.value);
   if (result.success) {
-    router.push('/')
+    router.push("/");
   }
-}
+};
 </script>
 
 <style scoped>
 .login-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   min-height: 100vh;
   display: flex;
   overflow: hidden;
+  margin: 0;
+  padding: 0;
 }
 
 /* Left Side - Image Section */
 .login-image-section {
   flex: 1;
   position: relative;
-  background-color: #1a1a2e;
-  background-image: url('https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?auto=format&fit=crop&w=1920&q=80');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  display: none; /* Hidden on mobile */
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: block;
+  overflow: hidden;
 }
 
 .image-overlay {
@@ -176,52 +181,90 @@ const handleLogin = async () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(
-    135deg,
-    rgba(102, 126, 234, 0.85) 0%,
-    rgba(118, 75, 162, 0.75) 100%
-  );
+  background: url("https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1920&q=80");
+  background-size: cover;
+  background-position: center;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 3rem;
 }
 
+.image-overlay::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(102, 126, 234, 0.9) 0%,
+    rgba(118, 75, 162, 0.85) 100%
+  );
+  z-index: 1;
+}
+
 .image-content {
   text-align: center;
   color: white;
   max-width: 500px;
+  position: relative;
+  z-index: 2;
+  animation: fadeInUp 0.8s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .image-logo {
-  width: 80px;
-  height: 80px;
-  margin: 0 auto 2rem;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 20px;
+  width: 140px;
+  height: 140px;
+  margin: 0 auto 2.5rem;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(10px);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(20px);
+  border: 3px solid rgba(255, 255, 255, 0.25);
+  padding: 1.5rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s ease;
 }
 
-.image-logo-icon {
-  color: #ffffff;
+.image-logo:hover {
+  transform: scale(1.05);
+}
+
+.image-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .image-title {
-  font-size: 3rem;
-  font-weight: 700;
+  font-size: 3.5rem;
+  font-weight: 800;
   margin: 0 0 1rem 0;
-  letter-spacing: -1px;
+  letter-spacing: -1.5px;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .image-subtitle {
-  font-size: 1.25rem;
+  font-size: 1.375rem;
   margin: 0;
   opacity: 0.95;
-  font-weight: 300;
+  font-weight: 400;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
 }
 
 /* Right Side - Login Form Section */
@@ -231,32 +274,47 @@ const handleLogin = async () => {
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  background: var(--va-background-primary);
+  background: #f8f9fa;
   min-height: 100vh;
 }
 
 .login-form-wrapper {
   width: 100%;
-  max-width: 420px;
+  max-width: 460px;
+  background: white;
+  padding: 3rem;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
 }
 
 .login-header {
   text-align: center;
   margin-bottom: 2.5rem;
+  animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .login-title {
-  font-size: 2rem;
+  font-size: 2.25rem;
   font-weight: 700;
-  color: var(--va-text-primary);
+  color: #1a1a2e;
   margin: 0 0 0.5rem 0;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.75px;
 }
 
 .login-subtitle {
-  font-size: 0.9375rem;
-  color: var(--va-text-secondary);
+  font-size: 1rem;
+  color: #6c757d;
   margin: 0;
+  font-weight: 400;
 }
 
 .login-form {
@@ -275,22 +333,39 @@ const handleLogin = async () => {
 .login-button {
   width: 100%;
   margin-top: 0.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.login-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+.login-button:active {
+  transform: translateY(0);
 }
 
 .login-footer {
   margin-top: 2rem;
   padding-top: 1.5rem;
-  border-top: 1px solid var(--va-background-border);
+  border-top: 1px solid #e9ecef;
   text-align: center;
 }
 
 .footer-text {
-  font-size: 0.75rem;
-  color: var(--va-text-secondary);
+  font-size: 0.8125rem;
+  color: #6c757d;
   margin: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 0.25rem;
 }
 
 .mt-4 {
@@ -310,17 +385,31 @@ const handleLogin = async () => {
   align-items: center;
   flex-wrap: wrap;
   gap: 0.5rem;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
 }
 
 .test-users-label {
-  font-size: 0.8125rem;
-  color: var(--va-text-secondary);
-  margin-right: 0.25rem;
+  font-size: 0.875rem;
+  color: #495057;
+  margin-right: 0.5rem;
+  font-weight: 500;
 }
 
 .test-user-btn {
   min-height: auto;
-  padding: 0.25rem 0.5rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.test-user-btn:hover {
+  background: #667eea;
+  color: white;
 }
 
 /* Tablet and Desktop */
@@ -334,10 +423,24 @@ const handleLogin = async () => {
 @media (max-width: 767px) {
   .login-form-section {
     padding: 1.5rem;
+    background: white;
+  }
+
+  .login-form-wrapper {
+    padding: 2rem 1.5rem;
+    box-shadow: none;
   }
 
   .login-title {
-    font-size: 1.75rem;
+    font-size: 1.875rem;
+  }
+
+  .image-title {
+    font-size: 2.5rem;
+  }
+
+  .image-subtitle {
+    font-size: 1.125rem;
   }
 }
 </style>

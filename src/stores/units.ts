@@ -21,7 +21,7 @@ export const useUnitsStore = defineStore("units", () => {
     }
   }
 
-  async function createItem(data: Record<string, unknown>) {
+  async function createItem(data: Record<string, unknown> | FormData) {
     await unitsAPI.create(data);
     // Ensure we refresh with current filters by using the last known params
     // If no params were stored, fetch without filters to get the full list
@@ -32,9 +32,15 @@ export const useUnitsStore = defineStore("units", () => {
 
   async function updateItem(
     id: string | number,
-    data: Record<string, unknown>,
+    data: Record<string, unknown> | FormData,
   ) {
-    await unitsAPI.update(id, data);
+    // Use PATCH for JSON updates to avoid image field issues
+    // Use PUT for FormData (with image)
+    if (data instanceof FormData) {
+      await unitsAPI.update(id, data);
+    } else {
+      await unitsAPI.patch(id, data);
+    }
     const refreshParams =
       Object.keys(lastParams.value).length > 0 ? lastParams.value : {};
     await fetchList(refreshParams);
