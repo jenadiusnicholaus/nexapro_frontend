@@ -32,15 +32,10 @@ export const useUnitsStore = defineStore("units", () => {
 
   async function updateItem(
     id: string | number,
-    data: Record<string, unknown> | FormData,
+    data: Record<string, unknown>,
   ) {
-    // Use PATCH for JSON updates to avoid image field issues
-    // Use PUT for FormData (with image)
-    if (data instanceof FormData) {
-      await unitsAPI.update(id, data);
-    } else {
-      await unitsAPI.patch(id, data);
-    }
+    // Always use PATCH for partial updates (including base64 images)
+    await unitsAPI.patch(id, data);
     const refreshParams =
       Object.keys(lastParams.value).length > 0 ? lastParams.value : {};
     await fetchList(refreshParams);

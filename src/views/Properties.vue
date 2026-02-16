@@ -275,32 +275,18 @@ const saveProperty = async () => {
 
   saving.value = true;
   try {
-    if (selectedImage.value) {
-      // Create FormData for multipart/form-data upload
-      const formDataPayload = new FormData();
-      formDataPayload.append("owner", String(formData.value.owner));
-      if (formData.value.location) {
-        formDataPayload.append("location", String(formData.value.location));
-      }
-      formDataPayload.append("property_name", formData.value.property_name);
-      formDataPayload.append("property_type", formData.value.property_type);
-      formDataPayload.append("address", formData.value.address);
-      formDataPayload.append("description", formData.value.description);
-      formDataPayload.append("image", selectedImage.value);
+    // Build base payload
+    const payload = buildPayload(formData.value, ["owner", "location"]);
 
-      if (editingId.value) {
-        await propertiesStore.updateItem(editingId.value, formDataPayload);
-      } else {
-        await propertiesStore.createItem(formDataPayload);
-      }
+    // Add base64 image if a new image was selected
+    if (selectedImage.value && imagePreview.value) {
+      payload.image = imagePreview.value; // imagePreview already contains base64 data URL
+    }
+
+    if (editingId.value) {
+      await propertiesStore.updateItem(editingId.value, payload);
     } else {
-      // Regular JSON payload without image
-      const payload = buildPayload(formData.value, ["owner", "location"]);
-      if (editingId.value) {
-        await propertiesStore.updateItem(editingId.value, payload);
-      } else {
-        await propertiesStore.createItem(payload);
-      }
+      await propertiesStore.createItem(payload);
     }
 
     const wasEdit = !!editingId.value;

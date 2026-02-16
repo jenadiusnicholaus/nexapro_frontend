@@ -48,17 +48,59 @@ apiClient.interceptors.response.use(
           localStorage.setItem("access_token", access);
           originalRequest.headers.Authorization = `Bearer ${access}`;
           return apiClient(originalRequest);
+        } else {
+          // No refresh token available - session expired
+          handleSessionExpired();
         }
-      } catch {
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("refresh_token");
-        window.location.href = "/auth/login";
+      } catch (refreshError) {
+        // Refresh token is invalid or expired
+        handleSessionExpired();
       }
     }
 
     return Promise.reject(error);
   },
 );
+
+// Handle session expiration with user notification
+function handleSessionExpired() {
+  // Clear all auth data
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("refresh_token");
+
+  // Show notification to user
+  const message = "Your session has expired. Please log in again.";
+
+  // Try to show toast notification if available
+  if (typeof window !== "undefined") {
+    // Create a temporary toast element
+    const toast = document.createElement("div");
+    toast.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #f44336;
+      color: white;
+      padding: 16px 24px;
+      border-radius: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      z-index: 10000;
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    // Redirect after showing message
+    setTimeout(() => {
+      document.body.removeChild(toast);
+      window.location.href = "/auth/login";
+    }, 2000);
+  } else {
+    // Fallback: immediate redirect
+    window.location.href = "/auth/login";
+  }
+}
 
 export const authAPI = {
   login: (username: string, password: string) =>
@@ -102,9 +144,9 @@ export const propertiesAPI = {
   list: (params: Record<string, unknown> = {}) =>
     apiClient.get("/properties/", { params }),
   get: (id: string | number) => apiClient.get(`/properties/${id}/`),
-  create: (data: Record<string, unknown> | FormData) =>
+  create: (data: Record<string, unknown>) =>
     apiClient.post("/properties/", data),
-  update: (id: string | number, data: Record<string, unknown> | FormData) =>
+  update: (id: string | number, data: Record<string, unknown>) =>
     apiClient.put(`/properties/${id}/`, data),
   patch: (id: string | number, data: Record<string, unknown>) =>
     apiClient.patch(`/properties/${id}/`, data),
@@ -115,9 +157,8 @@ export const unitsAPI = {
   list: (params: Record<string, unknown> = {}) =>
     apiClient.get("/units/", { params }),
   get: (id: string | number) => apiClient.get(`/units/${id}/`),
-  create: (data: Record<string, unknown> | FormData) =>
-    apiClient.post("/units/", data),
-  update: (id: string | number, data: Record<string, unknown> | FormData) =>
+  create: (data: Record<string, unknown>) => apiClient.post("/units/", data),
+  update: (id: string | number, data: Record<string, unknown>) =>
     apiClient.put(`/units/${id}/`, data),
   patch: (id: string | number, data: Record<string, unknown>) =>
     apiClient.patch(`/units/${id}/`, data),

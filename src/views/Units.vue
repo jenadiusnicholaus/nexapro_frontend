@@ -289,39 +289,18 @@ const saveUnit = async () => {
 
   saving.value = true;
   try {
-    console.log("saveUnit - selectedImage:", selectedImage.value);
-    console.log("saveUnit - imagePreview:", imagePreview.value);
-    console.log("saveUnit - is File?", selectedImage.value instanceof File);
+    // Build base payload
+    const payload = buildPayload(formData.value, ["property"]);
 
-    // Only use FormData if user selected a NEW image file
-    if (selectedImage.value && selectedImage.value instanceof File) {
-      // Create FormData for multipart/form-data upload
-      const formDataPayload = new FormData();
-      formDataPayload.append("property", String(formData.value.property));
-      formDataPayload.append("unit_number", formData.value.unit_number);
-      if (formData.value.floor) {
-        formDataPayload.append("floor", formData.value.floor);
-      }
-      formDataPayload.append("unit_type", formData.value.unit_type);
-      formDataPayload.append("rent_amount", String(formData.value.rent_amount));
-      formDataPayload.append("status", formData.value.status);
-      formDataPayload.append("image", selectedImage.value);
+    // Add base64 image if a new image was selected
+    if (selectedImage.value && imagePreview.value) {
+      payload.image = imagePreview.value; // imagePreview already contains base64 data URL
+    }
 
-      if (editingId.value) {
-        await unitsStore.updateItem(editingId.value, formDataPayload);
-      } else {
-        await unitsStore.createItem(formDataPayload);
-      }
+    if (editingId.value) {
+      await unitsStore.updateItem(editingId.value, payload);
     } else {
-      // Regular JSON payload without image
-      const payload = buildPayload(formData.value, ["property"]);
-      console.log("saveUnit - Using JSON payload:", payload);
-      console.log("saveUnit - editingId:", editingId.value);
-      if (editingId.value) {
-        await unitsStore.updateItem(editingId.value, payload);
-      } else {
-        await unitsStore.createItem(payload);
-      }
+      await unitsStore.createItem(payload);
     }
 
     const wasEdit = !!editingId.value;
