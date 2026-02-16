@@ -124,6 +124,10 @@ export const ownersAPI = {
     apiClient.put(`/owners/${id}/`, data),
   patch: (id: string | number, data: Record<string, unknown>) =>
     apiClient.patch(`/owners/${id}/`, data),
+  uploadSignature: (id: string | number, formData: FormData) =>
+    apiClient.patch(`/owners/${id}/`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
   delete: (id: string | number) => apiClient.delete(`/owners/${id}/`),
 };
 
@@ -174,6 +178,10 @@ export const tenantsAPI = {
     apiClient.put(`/tenants/${id}/`, data),
   patch: (id: string | number, data: Record<string, unknown>) =>
     apiClient.patch(`/tenants/${id}/`, data),
+  uploadSignature: (id: string | number, formData: FormData) =>
+    apiClient.patch(`/tenants/${id}/`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
   delete: (id: string | number) => apiClient.delete(`/tenants/${id}/`),
 };
 
@@ -190,6 +198,10 @@ export const tenanciesAPI = {
   delete: (id: string | number) => apiClient.delete(`/tenancies/${id}/`),
   moveOut: (id: string | number, moveOutDate: string) =>
     apiClient.put(`/tenancies/${id}/move-out/`, { move_out_date: moveOutDate }),
+  generateContract: (id: string | number) =>
+    apiClient.get(`/tenancies/${id}/generate-contract/`),
+  sendReminder: (id: string | number) =>
+    apiClient.post(`/tenancies/${id}/send-reminder/`),
 };
 
 export const billingAPI = {

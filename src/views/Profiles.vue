@@ -11,6 +11,45 @@
       </VaButton>
     </div>
 
+    <!-- Subscription Banner -->
+    <VaAlert
+      v-if="profile?.subscription?.is_expired"
+      color="danger"
+      class="mb-4"
+      border="top"
+    >
+      <div class="subscription-alert">
+        <div>
+          <strong>Subscription Expired</strong>
+          <p>
+            Your {{ profile.subscription.plan.name }} has expired. Upgrade now
+            to continue using NexaPro features.
+          </p>
+        </div>
+        <VaButton color="danger" @click="goToUpgrade">Upgrade Now</VaButton>
+      </div>
+    </VaAlert>
+
+    <VaAlert
+      v-else-if="
+        profile?.subscription && profile.subscription.days_remaining <= 7
+      "
+      color="warning"
+      class="mb-4"
+      border="top"
+    >
+      <div class="subscription-alert">
+        <div>
+          <strong>Subscription Expiring Soon</strong>
+          <p>
+            Your {{ profile.subscription.plan.name }} expires in
+            {{ profile.subscription.days_remaining }} days.
+          </p>
+        </div>
+        <VaButton color="warning" @click="goToRenew">Renew Now</VaButton>
+      </div>
+    </VaAlert>
+
     <!-- Main Profile Card -->
     <VaCard class="profile-card">
       <VaCardContent>
@@ -91,6 +130,124 @@
       </VaCardContent>
     </VaCard>
 
+    <!-- Subscription Card -->
+    <VaCard v-if="profile?.subscription" class="subscription-card mt-4">
+      <VaCardTitle>
+        <div class="card-title-flex">
+          <div>
+            <VaIcon name="card_membership" class="mr-2" />
+            Current Subscription
+          </div>
+          <VaBadge
+            :text="profile.subscription.status.toUpperCase()"
+            :color="profile.subscription.is_expired ? 'danger' : 'success'"
+          />
+        </div>
+      </VaCardTitle>
+      <VaCardContent>
+        <div class="subscription-content">
+          <!-- Plan Info -->
+          <div class="plan-info">
+            <h3 class="plan-name">{{ profile.subscription.plan.name }}</h3>
+            <p class="plan-price">
+              {{ profile.subscription.plan.price }}
+              {{ profile.subscription.plan.currency }}
+              <span v-if="profile.subscription.plan.price > 0"
+                >/{{ profile.subscription.plan.duration_days }} days</span
+              >
+              <span v-else>Free Trial</span>
+            </p>
+            <div class="plan-dates">
+              <div class="date-item">
+                <VaIcon name="event" size="small" />
+                <span
+                  >Started:
+                  {{ formatDate(profile.subscription.start_date) }}</span
+                >
+              </div>
+              <div class="date-item">
+                <VaIcon name="event_available" size="small" />
+                <span
+                  >Expires:
+                  {{ formatDate(profile.subscription.end_date) }}</span
+                >
+              </div>
+              <div
+                class="date-item"
+                :class="{
+                  'text-danger': profile.subscription.days_remaining <= 7,
+                }"
+              >
+                <VaIcon name="schedule" size="small" />
+                <span
+                  ><strong
+                    >{{ profile.subscription.days_remaining }} days
+                    remaining</strong
+                  ></span
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- Plan Limits -->
+          <div class="plan-limits">
+            <h4 class="limits-title">Plan Limits</h4>
+            <div class="limits-grid">
+              <div class="limit-item">
+                <VaIcon name="business" color="primary" />
+                <div class="limit-details">
+                  <span class="limit-label">Properties</span>
+                  <span class="limit-value">{{
+                    profile.subscription.plan.max_properties
+                  }}</span>
+                </div>
+              </div>
+              <div class="limit-item">
+                <VaIcon name="home" color="primary" />
+                <div class="limit-details">
+                  <span class="limit-label">Units</span>
+                  <span class="limit-value">{{
+                    profile.subscription.plan.max_units
+                  }}</span>
+                </div>
+              </div>
+              <div class="limit-item">
+                <VaIcon name="people" color="primary" />
+                <div class="limit-details">
+                  <span class="limit-label">Tenants</span>
+                  <span class="limit-value">{{
+                    profile.subscription.plan.max_tenants
+                  }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="upgrade-section"
+              v-if="
+                profile.subscription.plan.is_free_tier ||
+                profile.subscription.days_remaining <= 7
+              "
+            >
+              <VaButton
+                v-if="profile.subscription.plan.is_free_tier"
+                color="primary"
+                @click="goToUpgrade"
+                block
+              >
+                <VaIcon name="upgrade" class="mr-2" />
+                Upgrade for More Features
+              </VaButton>
+              <VaButton v-else color="primary" @click="goToRenew" block>
+                <VaIcon name="refresh" class="mr-2" />
+                Renew Subscription
+              </VaButton>
+            </div>
+          </div>
+        </div>
+      </VaCardContent>
+    </VaCard>
+
     <!-- Edit Profile Modal -->
     <VaModal v-model="showEditModal" title="Edit Profile" size="small">
       <VaForm ref="formRef" @submit.prevent="saveProfile">
@@ -109,12 +266,7 @@
           class="mb-4"
           required
         />
-        <VaInput
-          v-model="formData.phone"
-          label="Phone"
-          placeholder="Enter your phone"
-          class="mb-4"
-        />
+        <PhoneInput v-model="formData.phone" label="Phone" class="mb-4" />
       </VaForm>
 
       <template #footer>
@@ -131,11 +283,14 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
+import { useRouter } from "vue-router";
 import { useAppToast } from "@/composables/useAppToast";
 import { useProfilesStore } from "@/stores";
+import PhoneInput from "@/components/PhoneInput.vue";
 
 const { success, error } = useAppToast();
 const profilesStore = useProfilesStore();
+const router = useRouter();
 
 const profile = ref<any>(null);
 const showEditModal = ref(false);
@@ -156,17 +311,41 @@ const initials = computed(() => {
     .toUpperCase();
 });
 
+const formatDate = (dateString: string) => {
+  if (!dateString) return "N/A";
+  const date = new Date(dateString);
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+};
+
+const goToUpgrade = () => {
+  router.push("/admin/subscription/upgrade");
+};
+
+const goToRenew = () => {
+  router.push("/admin/subscription/renew");
+};
+
 const loadProfile = async () => {
   try {
     const data: any = await profilesStore.fetchCurrentProfile();
+    console.log("Profile data received:", data);
     profile.value = data;
 
-    formData.value = {
-      name: data.owner.name,
-      email: data.owner.email,
-      phone: data.owner.phone,
-    };
+    if (data?.owner) {
+      formData.value = {
+        name: data.owner.name || "",
+        email: data.owner.email || "",
+        phone: data.owner.phone || "",
+      };
+    } else {
+      console.warn("No owner data found in profile response");
+    }
   } catch (err) {
+    console.error("Profile load error:", err);
     error("Failed to load profile");
   }
 };
@@ -417,6 +596,139 @@ onMounted(loadProfile);
 
   .user-info {
     align-items: center;
+  }
+}
+
+/* Subscription Alert */
+.subscription-alert {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.subscription-alert p {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+}
+
+/* Subscription Card */
+.subscription-card {
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.card-title-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.subscription-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+/* Plan Info */
+.plan-info {
+  padding: 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px;
+  color: white;
+}
+
+.plan-name {
+  margin: 0 0 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.plan-price {
+  margin: 0 0 1.5rem;
+  font-size: 1.125rem;
+  opacity: 0.9;
+}
+
+.plan-dates {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.date-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.date-item.text-danger {
+  color: #ffd700;
+  font-weight: 600;
+}
+
+/* Plan Limits */
+.plan-limits {
+  padding: 1rem;
+}
+
+.limits-title {
+  margin: 0 0 1rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.limits-grid {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.limit-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: #f7fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.limit-details {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.limit-label {
+  font-size: 0.875rem;
+  color: #718096;
+}
+
+.limit-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.upgrade-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+@media (max-width: 768px) {
+  .subscription-content {
+    grid-template-columns: 1fr;
+  }
+
+  .subscription-alert {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 </style>

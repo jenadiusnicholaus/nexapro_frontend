@@ -23,18 +23,24 @@
           @submit.prevent="handleLogin"
           class="login-form"
         >
-          <VaInput
-            v-model="username"
-            label="Username"
-            placeholder="Enter your username"
-            :rules="[validators.required]"
-            preset="bordered"
-            class="login-input"
-          >
-            <template #prependInner>
-              <VaIcon name="person" size="small" />
-            </template>
-          </VaInput>
+          <div class="input-group">
+            <VaInput
+              v-model="username"
+              label="Username"
+              placeholder="Email, phone, or username"
+              :rules="[validators.required]"
+              preset="bordered"
+              class="login-input"
+            >
+              <template #prependInner>
+                <VaIcon name="person" size="small" />
+              </template>
+            </VaInput>
+            <p class="input-hint">
+              <VaIcon name="info" size="12px" />
+              You can sign in with your email, phone number, or username
+            </p>
+          </div>
 
           <VaInput
             v-model="password"
@@ -91,6 +97,15 @@
             <template #title>Authentication Failed</template>
             {{ authStore.error }}
           </VaAlert>
+
+          <div class="register-link">
+            <p>
+              Don't have an account?
+              <router-link to="/register" class="register-link-text">
+                Register here
+              </router-link>
+            </p>
+          </div>
         </VaForm>
 
         <div class="login-footer">
@@ -147,7 +162,7 @@ const handleLogin = async () => {
 
   const result = await authStore.login(username.value, password.value);
   if (result.success) {
-    router.push("/");
+    router.push("/admin");
   }
 };
 </script>
@@ -380,6 +395,29 @@ const handleLogin = async () => {
   margin-bottom: 1rem;
 }
 
+.register-link {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+.register-link p {
+  color: #6c757d;
+  font-size: 0.9375rem;
+  margin: 0;
+}
+
+.register-link-text {
+  color: #667eea;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.register-link-text:hover {
+  color: #764ba2;
+  text-decoration: underline;
+}
+
 .test-users {
   display: flex;
   align-items: center;
@@ -405,6 +443,26 @@ const handleLogin = async () => {
   font-weight: 500;
   border-radius: 6px;
   transition: all 0.2s ease;
+}
+
+.input-group {
+  margin-bottom: 1rem;
+}
+
+.input-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0;
+  font-size: 0.8125rem;
+  color: #6c757d;
+  line-height: 1.4;
+}
+
+.input-hint .va-icon {
+  color: #667eea;
+  flex-shrink: 0;
 }
 
 .test-user-btn:hover {

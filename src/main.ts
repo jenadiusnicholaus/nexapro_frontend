@@ -1,19 +1,22 @@
-import { createVuestic } from 'vuestic-ui'
-import 'vuestic-ui/css'
-import './scss/main.scss'
-import './assets/main.css'
+import { createVuestic } from "vuestic-ui";
+import "vuestic-ui/css";
+import "./scss/main.scss";
+import "./assets/main.css";
 
-import { createApp } from 'vue'
-import pinia from '@/stores'
-import i18n from '@/i18n'
-import App from './App.vue'
-import router from './router'
-import vuesticGlobalConfig from '@/services/vuestic-ui/global-config'
+import { createApp } from "vue";
+import pinia from "@/stores";
+import i18n from "@/i18n";
+import App from "./App.vue";
+import router from "./router";
+import vuesticGlobalConfig from "@/services/vuestic-ui/global-config";
+import VueTelInput from "vue-tel-input";
+import "vue-tel-input/vue-tel-input.css";
 
-const app = createApp(App)
+const app = createApp(App);
 
-app.use(pinia)
-app.use(i18n)
-app.use(router)
-app.use(createVuestic({ config: vuesticGlobalConfig }))
-app.mount('#app')
+app.use(pinia);
+app.use(i18n);
+app.use(router);
+app.use(createVuestic({ config: vuesticGlobalConfig }));
+app.use(VueTelInput);
+app.mount("#app");

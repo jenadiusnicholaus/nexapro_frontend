@@ -5,11 +5,7 @@
         <h1 class="page-title">Owners</h1>
         <p class="page-subtitle">Manage property owners and companies</p>
       </div>
-      <VaButton
-        icon="add"
-        @click="showModal = true"
-        size="large"
-      >
+      <VaButton icon="add" @click="showModal = true" size="large">
         Add Owner
       </VaButton>
     </div>
@@ -61,7 +57,12 @@
     </VaCard>
 
     <!-- Add/Edit Modal -->
-    <VaModal v-model="showModal" :title="editingId ? 'Edit Owner' : 'Add Owner'" hide-default-actions size="medium">
+    <VaModal
+      v-model="showModal"
+      :title="editingId ? 'Edit Owner' : 'Add Owner'"
+      hide-default-actions
+      size="medium"
+    >
       <VaForm ref="ownerForm" @submit.prevent="saveOwner">
         <VaSelect
           v-model="formData.owner_type"
@@ -83,10 +84,10 @@
           :rules="[validators.required]"
           class="mb-4"
         />
-        <VaInput
+        <PhoneInput
           v-model="formData.phone"
           label="Phone"
-          :rules="[validators.required]"
+          :required="true"
           class="mb-4"
         />
         <VaInput
@@ -112,114 +113,115 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
-import AppDataTable from '@/components/AppDataTable.vue'
-import { useAppToast } from '@/composables/useAppToast'
-import { useOwnersStore } from '@/stores'
-import { validators } from '@/utils/validators'
+import { ref, onMounted, watch } from "vue";
+import AppDataTable from "@/components/AppDataTable.vue";
+import { useAppToast } from "@/composables/useAppToast";
+import { useOwnersStore } from "@/stores";
+import { validators } from "@/utils/validators";
+import PhoneInput from "@/components/PhoneInput.vue";
 
-const { success, error } = useAppToast()
-const ownersStore = useOwnersStore()
+const { success, error } = useAppToast();
+const ownersStore = useOwnersStore();
 
-const saving = ref(false)
-const showModal = ref(false)
-const editingId = ref(null)
-const searchQuery = ref('')
-const filterType = ref('')
-const ownerForm = ref(null)
+const saving = ref(false);
+const showModal = ref(false);
+const editingId = ref(null);
+const searchQuery = ref("");
+const filterType = ref("");
+const ownerForm = ref(null);
 
-const ownerTypes = ['individual', 'company']
+const ownerTypes = ["individual", "company"];
 
 const formData = ref({
-  owner_type: 'individual',
-  name: '',
-  contact_person: '',
-  phone: '',
-  email: '',
-  address: '',
-})
+  owner_type: "individual",
+  name: "",
+  contact_person: "",
+  phone: "",
+  email: "",
+  address: "",
+});
 
 const columns = [
-  { key: 'name', label: 'Name', sortable: true },
-  { key: 'owner_type', label: 'Type', sortable: true },
-  { key: 'phone', label: 'Phone' },
-  { key: 'email', label: 'Email' },
-  { key: 'address', label: 'Address' },
-  { key: 'actions', label: 'Actions', width: 100 },
-]
+  { key: "name", label: "Name", sortable: true },
+  { key: "owner_type", label: "Type", sortable: true },
+  { key: "phone", label: "Phone" },
+  { key: "email", label: "Email" },
+  { key: "address", label: "Address" },
+  { key: "actions", label: "Actions", width: 100 },
+];
 
 const loadOwners = () => {
-  const params = {}
-  if (searchQuery.value) params.search = searchQuery.value
-  if (filterType.value) params.owner_type = filterType.value
-  return ownersStore.fetchList(params)
-}
+  const params = {};
+  if (searchQuery.value) params.search = searchQuery.value;
+  if (filterType.value) params.owner_type = filterType.value;
+  return ownersStore.fetchList(params);
+};
 
 const saveOwner = async () => {
-  const isValid = await ownerForm.value?.validate()
-  if (!isValid) return
+  const isValid = await ownerForm.value?.validate();
+  if (!isValid) return;
 
-  saving.value = true
+  saving.value = true;
   try {
     if (editingId.value) {
-      await ownersStore.updateItem(editingId.value, formData.value)
+      await ownersStore.updateItem(editingId.value, formData.value);
     } else {
-      await ownersStore.createItem(formData.value)
+      await ownersStore.createItem(formData.value);
     }
-    const wasEdit = !!editingId.value
-    closeModal()
-    success(wasEdit ? 'Owner updated' : 'Owner created')
+    const wasEdit = !!editingId.value;
+    closeModal();
+    success(wasEdit ? "Owner updated" : "Owner created");
   } catch (err) {
-    console.error('Error saving owner:', err)
-    error('Failed to save owner')
+    console.error("Error saving owner:", err);
+    error("Failed to save owner");
   } finally {
-    saving.value = false
+    saving.value = false;
   }
-}
+};
 
 const editOwner = (owner) => {
-  editingId.value = owner.id
-  formData.value = { ...owner }
-  showModal.value = true
-}
+  editingId.value = owner.id;
+  formData.value = { ...owner };
+  showModal.value = true;
+};
 
 const deleteOwner = async (id) => {
-  if (!confirm('Are you sure you want to delete this owner?')) return
+  if (!confirm("Are you sure you want to delete this owner?")) return;
 
   try {
-    await ownersStore.deleteItem(id)
-    success('Owner deleted')
+    await ownersStore.deleteItem(id);
+    success("Owner deleted");
   } catch (err) {
-    console.error('Error deleting owner:', err)
-    error('Failed to delete owner')
+    console.error("Error deleting owner:", err);
+    error("Failed to delete owner");
   }
-}
+};
 
 const closeModal = () => {
-  showModal.value = false
-  editingId.value = null
+  showModal.value = false;
+  editingId.value = null;
   formData.value = {
-    owner_type: 'individual',
-    name: '',
-    contact_person: '',
-    phone: '',
-    email: '',
-    address: '',
-  }
-}
+    owner_type: "individual",
+    name: "",
+    contact_person: "",
+    phone: "",
+    email: "",
+    address: "",
+  };
+};
 
 onMounted(() => {
-  loadOwners().catch((err) => console.error('Error loading owners:', err))
-})
+  loadOwners().catch((err) => console.error("Error loading owners:", err));
+});
 
-const filterDebounce = ref(null)
+const filterDebounce = ref(null);
 watch([searchQuery, filterType], () => {
-  if (filterDebounce.value) clearTimeout(filterDebounce.value)
+  if (filterDebounce.value) clearTimeout(filterDebounce.value);
   filterDebounce.value = setTimeout(() => {
-    loadOwners().catch((err) => console.error('Error loading owners:', err))
-    filterDebounce.value = null
-  }, 300)
-})
+    loadOwners().catch((err) => console.error("Error loading owners:", err));
+    filterDebounce.value = null;
+  }, 300);
+});
 </script>
 
 <style scoped>

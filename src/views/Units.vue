@@ -306,7 +306,7 @@ const saveUnit = async () => {
     const wasEdit = !!editingId.value;
     closeModal();
     success(wasEdit ? "Unit updated" : "Unit created");
-  } catch (err) {
+  } catch (err: any) {
     console.error("Error saving unit:", err);
     if (err.response?.data) {
       console.error("API Error details:", err.response.data);

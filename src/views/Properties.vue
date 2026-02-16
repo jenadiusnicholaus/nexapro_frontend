@@ -292,7 +292,7 @@ const saveProperty = async () => {
     const wasEdit = !!editingId.value;
     closeModal();
     success(wasEdit ? "Property updated" : "Property created");
-  } catch (err) {
+  } catch (err: any) {
     console.error("Error saving property:", err);
     if (err.response?.data) {
       console.error("API Error details:", err.response.data);
@@ -326,6 +326,19 @@ const editProperty = (property: Record<string, unknown>) => {
     address: String(property.address ?? ""),
     description: String(property.description ?? ""),
   };
+
+  // Reset image state first
+  selectedImage.value = null;
+  imagePreview.value = null;
+  if (imageInput.value) {
+    imageInput.value.value = "";
+  }
+
+  // Show existing image preview if available
+  if (property.image_url) {
+    imagePreview.value = String(property.image_url);
+  }
+
   showModal.value = true;
 };
 
@@ -335,7 +348,7 @@ const deleteProperty = async (id: number) => {
   try {
     await propertiesStore.deleteItem(id);
     success("Property deleted");
-  } catch (err) {
+  } catch (err: any) {
     console.error("Error deleting property:", err);
     error("Failed to delete property");
   }

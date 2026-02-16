@@ -8,6 +8,12 @@ import AppLayout from "@/layouts/AppLayout.vue";
 const routes: RouteRecordRaw[] = [
   {
     path: "/",
+    name: "home",
+    component: () => import("@/views/Home.vue"),
+    meta: { requiresAuth: false },
+  },
+  {
+    path: "/admin",
     name: "admin",
     component: AppLayout,
     meta: { requiresAuth: true },
@@ -73,7 +79,26 @@ const routes: RouteRecordRaw[] = [
         name: "profiles",
         component: () => import("@/views/Profiles.vue"),
       },
+      {
+        path: "subscription/plans",
+        name: "subscription-plans",
+        component: () => import("@/views/SubscriptionPlans.vue"),
+      },
+      {
+        path: "subscription/upgrade",
+        redirect: { name: "subscription-plans" },
+      },
+      {
+        path: "subscription/renew",
+        redirect: { name: "subscription-plans" },
+      },
     ],
+  },
+  {
+    path: "/register",
+    name: "register",
+    component: () => import("@/views/Register.vue"),
+    meta: { requiresAuth: false },
   },
   {
     path: "/auth",
@@ -92,8 +117,12 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
+    path: "/login",
+    redirect: { name: "login" },
+  },
+  {
     path: "/:pathMatch(.*)*",
-    redirect: { name: "dashboard" },
+    redirect: { name: "home" },
   },
 ];
 

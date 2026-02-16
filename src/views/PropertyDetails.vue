@@ -20,11 +20,11 @@
             <h1 class="property-title">{{ property.property_name }}</h1>
             <p class="property-meta">
               <VaIcon name="location_on" size="small" />
-              {{ property.location_display }}
+              {{ getLocationDisplay(property) }}
             </p>
             <p class="property-meta">
               <VaIcon name="business" size="small" />
-              {{ property.property_type }}
+              {{ getPropertyType(property) }}
             </p>
           </div>
         </div>
@@ -127,15 +127,44 @@
               </VaChip>
             </template>
             <template #cell(actions)="{ rowData }">
-              <VaButton
-                color="warning"
-                icon="logout"
-                size="small"
-                @click="moveOutTenancy(rowData)"
-                v-if="rowData.status === 'active'"
-              >
-                Move Out
-              </VaButton>
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap">
+                <VaButton
+                  icon="visibility"
+                  size="small"
+                  preset="secondary"
+                  @click="viewTenancyDetails"
+                >
+                  View Details
+                </VaButton>
+                <VaButton
+                  icon="description"
+                  size="small"
+                  color="primary"
+                  @click="generateContract(rowData)"
+                  :loading="generatingContractId === rowData.id"
+                >
+                  Contract
+                </VaButton>
+                <VaButton
+                  v-if="rowData.status === 'active'"
+                  icon="sms"
+                  size="small"
+                  color="success"
+                  @click="sendReminder(rowData)"
+                  :loading="sendingReminderId === rowData.id"
+                >
+                  Send SMS
+                </VaButton>
+                <VaButton
+                  v-if="rowData.status === 'active'"
+                  icon="logout"
+                  size="small"
+                  color="danger"
+                  @click="moveOutTenancy(rowData)"
+                >
+                  Move Out
+                </VaButton>
+              </div>
             </template>
           </AppDataTable>
         </div>
@@ -320,11 +349,10 @@
           placeholder="tenant@example.com"
           class="mb-4"
         />
-        <VaInput
+        <PhoneInput
           v-model="newTenantData.phone"
           label="Phone"
-          :rules="[(v) => !!v || 'Phone is required']"
-          placeholder="+255 XXX XXX XXX"
+          :required="true"
           class="mb-4"
         />
         <div class="modal-actions">
@@ -369,6 +397,36 @@
           :rules="[(v) => !!v || 'Status is required']"
           class="mb-4"
         />
+
+        <!-- Image Upload -->
+        <div class="mb-4">
+          <label class="va-input-label">Unit Image</label>
+          <div class="image-upload-container">
+            <div v-if="unitImagePreview" class="image-preview">
+              <img :src="unitImagePreview" alt="Preview" />
+              <VaButton
+                preset="plain"
+                icon="close"
+                size="small"
+                color="danger"
+                class="remove-image-btn"
+                @click="removeUnitImage"
+              />
+            </div>
+            <div v-else class="image-upload-placeholder">
+              <VaIcon name="add_photo_alternate" size="large" />
+              <p>Click to upload image</p>
+            </div>
+            <input
+              type="file"
+              ref="unitImageInput"
+              accept="image/*"
+              @change="handleUnitImageSelect"
+              class="image-input"
+            />
+          </div>
+        </div>
+
         <div class="modal-actions">
           <VaButton preset="secondary" @click="closeUnitModal">Cancel</VaButton>
           <VaButton type="submit" :loading="savingUnit">Save</VaButton>
@@ -398,6 +456,144 @@
         </div>
       </VaForm>
     </VaModal>
+
+    <!-- Signature Upload Modal -->
+    <VaModal
+      v-model="showSignatureModal"
+      title="Upload Signatures"
+      hide-default-actions
+      size="large"
+    >
+      <div class="signature-upload-container">
+        <p class="mb-4">
+          Please upload signatures before generating the contract.
+        </p>
+
+        <!-- Owner Signature Section -->
+        <div class="signature-section mb-6">
+          <h3 class="mb-3">Owner Signature & Stamp</h3>
+          <div class="upload-grid">
+            <div class="upload-item">
+              <label class="upload-label">Owner Signature</label>
+              <input
+                type="file"
+                ref="ownerSignatureInput"
+                accept="image/*"
+                @change="handleOwnerSignatureSelect"
+                class="file-input"
+              />
+              <div v-if="ownerSignaturePreview" class="preview-image">
+                <img :src="ownerSignaturePreview" alt="Owner Signature" />
+              </div>
+            </div>
+            <div class="upload-item">
+              <label class="upload-label">Owner Stamp</label>
+              <input
+                type="file"
+                ref="ownerStampInput"
+                accept="image/*"
+                @change="handleOwnerStampSelect"
+                class="file-input"
+              />
+              <div v-if="ownerStampPreview" class="preview-image">
+                <img :src="ownerStampPreview" alt="Owner Stamp" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tenant Signature Section -->
+        <div class="signature-section mb-6">
+          <h3 class="mb-3">Tenant Signature</h3>
+          <div class="upload-item">
+            <label class="upload-label">Tenant Signature</label>
+            <input
+              type="file"
+              ref="tenantSignatureInput"
+              accept="image/*"
+              @change="handleTenantSignatureSelect"
+              class="file-input"
+            />
+            <div v-if="tenantSignaturePreview" class="preview-image">
+              <img :src="tenantSignaturePreview" alt="Tenant Signature" />
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <VaButton preset="secondary" @click="closeSignatureModal"
+            >Cancel</VaButton
+          >
+          <VaButton @click="uploadSignatures" :loading="uploadingSignatures">
+            Upload & Generate Contract
+          </VaButton>
+        </div>
+      </div>
+    </VaModal>
+
+    <!-- SMS Confirmation Modal -->
+    <VaModal
+      v-model="showSmsModal"
+      title="Send Rent Reminder SMS"
+      hide-default-actions
+      size="medium"
+    >
+      <div class="sms-modal-container">
+        <p class="mb-4">
+          Select who should receive the rent reminder SMS for
+          <strong>{{ currentTenancyForSms?.tenant_name }}</strong
+          >:
+        </p>
+
+        <div class="recipient-selection mb-4">
+          <VaCheckbox
+            v-model="smsRecipients.sendToTenant"
+            label="Send to Tenant"
+            class="mb-3"
+          >
+            <template #label>
+              <div>
+                <strong>Send to Tenant</strong>
+                <p class="recipient-info">
+                  {{ currentTenancyForSms?.tenant_name }}
+                </p>
+              </div>
+            </template>
+          </VaCheckbox>
+
+          <VaCheckbox v-model="smsRecipients.sendToOwner" label="Send to Owner">
+            <template #label>
+              <div>
+                <strong>Send to Property Owner</strong>
+                <p class="recipient-info">Notification about reminder sent</p>
+              </div>
+            </template>
+          </VaCheckbox>
+        </div>
+
+        <VaAlert
+          v-if="!smsRecipients.sendToTenant && !smsRecipients.sendToOwner"
+          color="warning"
+          class="mb-4"
+        >
+          Please select at least one recipient
+        </VaAlert>
+
+        <div class="modal-actions">
+          <VaButton preset="secondary" @click="closeSmsModal">Cancel</VaButton>
+          <VaButton
+            color="success"
+            @click="confirmSendReminder"
+            :disabled="
+              !smsRecipients.sendToTenant && !smsRecipients.sendToOwner
+            "
+            :loading="sendingReminderId !== null"
+          >
+            Send SMS
+          </VaButton>
+        </div>
+      </div>
+    </VaModal>
   </div>
 </template>
 
@@ -413,6 +609,8 @@ import {
 import { useAppToast } from "@/composables/useAppToast";
 import AppDataTable from "@/components/AppDataTable.vue";
 import { buildPayload } from "@/utils/apiPayload";
+import { tenanciesAPI, ownersAPI, tenantsAPI } from "@/services/api";
+import PhoneInput from "@/components/PhoneInput.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -431,16 +629,42 @@ const showAddUnitModal = ref(false);
 const showAddTenancyModal = ref(false);
 const showAddTenantModal = ref(false);
 const showMoveOutModal = ref(false);
+const showSignatureModal = ref(false);
 const saving = ref(false);
 const savingUnit = ref(false);
 const creatingTenant = ref(false);
 const movingOut = ref(false);
+const uploadingSignatures = ref(false);
+const generatingContractId = ref<number | null>(null);
+const sendingReminderId = ref<number | null>(null);
+const showSmsModal = ref(false);
+const currentTenancyForContract = ref<Record<string, unknown> | null>(null);
+const currentTenancyForSms = ref<Record<string, unknown> | null>(null);
+const smsRecipients = ref({
+  sendToTenant: true,
+  sendToOwner: true,
+});
 const tenancyForm = ref<{ validate: () => Promise<boolean> } | null>(null);
 const tenantForm = ref<{ validate: () => Promise<boolean> } | null>(null);
 const unitForm = ref<{ validate: () => Promise<boolean> } | null>(null);
 const moveOutForm = ref<{ validate: () => Promise<boolean> } | null>(null);
 const selectedTenancyForMoveOut = ref<any>(null);
 const moveOutDate = ref("");
+const unitImageInput = ref<HTMLInputElement | null>(null);
+const unitSelectedImage = ref<File | null>(null);
+const unitImagePreview = ref<string | null>(null);
+const editingUnitId = ref<number | null>(null);
+
+// Signature upload refs
+const ownerSignatureInput = ref<HTMLInputElement | null>(null);
+const ownerStampInput = ref<HTMLInputElement | null>(null);
+const tenantSignatureInput = ref<HTMLInputElement | null>(null);
+const ownerSignatureFile = ref<File | null>(null);
+const ownerStampFile = ref<File | null>(null);
+const tenantSignatureFile = ref<File | null>(null);
+const ownerSignaturePreview = ref<string | null>(null);
+const ownerStampPreview = ref<string | null>(null);
+const tenantSignaturePreview = ref<string | null>(null);
 
 const tenancyFormData = ref({
   tenant: null,
@@ -489,7 +713,7 @@ const tenancyColumns = [
   { key: "end_date", label: "End Date" },
   { key: "rent_amount", label: "Rent", sortable: true },
   { key: "status", label: "Status", sortable: true },
-  { key: "actions", label: "Actions", width: 100 },
+  { key: "actions", label: "Actions", width: 450 },
 ];
 
 // Tenant columns
@@ -538,7 +762,9 @@ const availableUnitOptions = computed(() => {
     .filter((unit) => unit.status === "vacant")
     .map((unit) => ({
       value: unit.id,
-      text: `Unit ${unit.unit_number}${unit.floor ? " - Floor " + unit.floor : ""}`,
+      text: `Unit ${unit.unit_number}${
+        unit.floor ? " - Floor " + unit.floor : ""
+      }`,
     }));
 });
 
@@ -600,6 +826,87 @@ const goBack = () => {
   router.push({ name: "properties" });
 };
 
+const getLocationDisplay = (property: any): string => {
+  if (!property) return "N/A";
+
+  // Check if location_display exists and is valid
+  if (
+    property.location_display &&
+    typeof property.location_display === "string" &&
+    !property.location_display.includes("NoneType") &&
+    !property.location_display.includes("method-wrapper")
+  ) {
+    return property.location_display;
+  }
+
+  // Fallback to constructing from location parts
+  if (property.location) {
+    if (typeof property.location === "string") {
+      return property.location;
+    }
+    if (property.location.city || property.location.region) {
+      const parts = [];
+      if (property.location.city) parts.push(property.location.city);
+      if (property.location.region) parts.push(property.location.region);
+      if (property.location.country) parts.push(property.location.country);
+      return parts.join(", ");
+    }
+  }
+
+  return "Location not set";
+};
+
+const getPropertyType = (property: any): string => {
+  if (!property) return "N/A";
+
+  // Check if property_type exists and is valid
+  if (
+    property.property_type &&
+    typeof property.property_type === "string" &&
+    !property.property_type.includes("NoneType") &&
+    !property.property_type.includes("method-wrapper")
+  ) {
+    return (
+      property.property_type.charAt(0).toUpperCase() +
+      property.property_type.slice(1)
+    );
+  }
+
+  return "Property";
+};
+
+const handleUnitImageSelect = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+
+  if (!file) return;
+
+  if (!file.type.startsWith("image/")) {
+    error("Please select an image file");
+    return;
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    error("Image size must be less than 5MB");
+    return;
+  }
+
+  unitSelectedImage.value = file;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    unitImagePreview.value = e.target?.result as string;
+  };
+  reader.readAsDataURL(file);
+};
+
+const removeUnitImage = () => {
+  unitSelectedImage.value = null;
+  unitImagePreview.value = null;
+  if (unitImageInput.value) {
+    unitImageInput.value.value = "";
+  }
+};
+
 const saveUnit = async () => {
   const isValid = await unitForm.value?.validate();
   if (!isValid) return;
@@ -616,8 +923,22 @@ const saveUnit = async () => {
     };
 
     const payload = buildPayload(unitData, ["property"]);
-    await unitsStore.createItem(payload);
-    success("Unit created successfully");
+
+    // Add base64 image if a new image was selected
+    if (unitSelectedImage.value && unitImagePreview.value) {
+      payload.image = unitImagePreview.value;
+    }
+
+    if (editingUnitId.value) {
+      // Update existing unit
+      await unitsStore.updateItem(editingUnitId.value, payload);
+      success("Unit updated successfully");
+    } else {
+      // Create new unit
+      await unitsStore.createItem(payload);
+      success("Unit created successfully");
+    }
+
     closeUnitModal();
 
     // Refresh units list
@@ -640,6 +961,7 @@ const saveUnit = async () => {
 
 const closeUnitModal = () => {
   showAddUnitModal.value = false;
+  editingUnitId.value = null;
   unitFormData.value = {
     unit_number: "",
     floor: "",
@@ -647,11 +969,34 @@ const closeUnitModal = () => {
     rent_amount: "",
     status: "vacant",
   };
+  removeUnitImage();
 };
 
 const editUnit = (unit: any) => {
-  // TODO: Implement edit unit
-  console.log("Edit unit:", unit);
+  // Populate form with unit data
+  unitFormData.value = {
+    unit_number: String(unit.unit_number ?? ""),
+    floor: String(unit.floor ?? ""),
+    unit_type: String(unit.unit_type ?? "apartment"),
+    rent_amount: String(unit.rent_amount ?? ""),
+    status: String(unit.status ?? "vacant"),
+  };
+
+  // Reset image state first
+  unitSelectedImage.value = null;
+  unitImagePreview.value = null;
+  if (unitImageInput.value) {
+    unitImageInput.value.value = "";
+  }
+
+  // Show existing image preview if available
+  if (unit.image_url) {
+    unitImagePreview.value = String(unit.image_url);
+  }
+
+  // Store the unit ID for updating
+  editingUnitId.value = unit.id as number;
+  showAddUnitModal.value = true;
 };
 
 const deleteUnit = async (id: number) => {
@@ -708,6 +1053,238 @@ const closeMoveOutModal = () => {
   showMoveOutModal.value = false;
   selectedTenancyForMoveOut.value = null;
   moveOutDate.value = "";
+};
+
+// View tenancy details
+const viewTenancyDetails = () => {
+  // Already on property details page, just scroll to top or show a message
+  success("You are viewing this property's details");
+};
+
+// Signature upload handlers
+const handleOwnerSignatureSelect = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+  if (!file) return;
+
+  ownerSignatureFile.value = file;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    ownerSignaturePreview.value = e.target?.result as string;
+  };
+  reader.readAsDataURL(file);
+};
+
+const handleOwnerStampSelect = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+  if (!file) return;
+
+  ownerStampFile.value = file;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    ownerStampPreview.value = e.target?.result as string;
+  };
+  reader.readAsDataURL(file);
+};
+
+const handleTenantSignatureSelect = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+  if (!file) return;
+
+  tenantSignatureFile.value = file;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    tenantSignaturePreview.value = e.target?.result as string;
+  };
+  reader.readAsDataURL(file);
+};
+
+const uploadSignatures = async () => {
+  if (!currentTenancyForContract.value) return;
+
+  uploadingSignatures.value = true;
+  try {
+    const tenancy = currentTenancyForContract.value;
+
+    // Fetch full tenancy details to get owner information
+    const response = await tenanciesAPI.get(tenancy.id as number);
+    const fullTenancy = response.data;
+
+    // Get the property to find owner_id
+    const propertyResponse = propertiesStore.items.find(
+      (p: any) => p.id === propertyId.value,
+    );
+    const ownerId = propertyResponse?.owner as number | undefined;
+
+    // Upload owner signature and stamp if provided and owner found
+    if (
+      (ownerSignatureFile.value || ownerStampFile.value) &&
+      ownerId !== undefined
+    ) {
+      const ownerFormData = new FormData();
+      if (ownerSignatureFile.value) {
+        ownerFormData.append("signature", ownerSignatureFile.value);
+      }
+      if (ownerStampFile.value) {
+        ownerFormData.append("stamp", ownerStampFile.value);
+      }
+      await ownersAPI.uploadSignature(ownerId, ownerFormData);
+    }
+
+    // Upload tenant signature if provided
+    if (tenantSignatureFile.value) {
+      const tenantFormData = new FormData();
+      tenantFormData.append("signature", tenantSignatureFile.value);
+      const tenantId = fullTenancy.tenant || tenancy.tenant;
+      await tenantsAPI.uploadSignature(tenantId, tenantFormData);
+    }
+
+    success("Signatures uploaded successfully");
+    closeSignatureModal();
+
+    // Now generate the contract
+    await proceedWithContractGeneration(tenancy);
+  } catch (err: any) {
+    console.error("Error uploading signatures:", err);
+    error("Failed to upload signatures");
+  } finally {
+    uploadingSignatures.value = false;
+  }
+};
+
+const closeSignatureModal = () => {
+  showSignatureModal.value = false;
+  currentTenancyForContract.value = null;
+  ownerSignatureFile.value = null;
+  ownerStampFile.value = null;
+  tenantSignatureFile.value = null;
+  ownerSignaturePreview.value = null;
+  ownerStampPreview.value = null;
+  tenantSignaturePreview.value = null;
+  if (ownerSignatureInput.value) ownerSignatureInput.value.value = "";
+  if (ownerStampInput.value) ownerStampInput.value.value = "";
+  if (tenantSignatureInput.value) tenantSignatureInput.value.value = "";
+};
+
+const generateContract = async (tenancy: Record<string, unknown>) => {
+  // Store tenancy for later use and show signature upload modal
+  currentTenancyForContract.value = tenancy;
+  showSignatureModal.value = true;
+};
+
+const proceedWithContractGeneration = async (
+  tenancy: Record<string, unknown>,
+) => {
+  const tenancyId = tenancy.id as number;
+  generatingContractId.value = tenancyId;
+
+  try {
+    const response = await tenanciesAPI.generateContract(tenancyId);
+    const contractData = response.data;
+
+    // Try to download PDF if available
+    if (contractData.contract_pdf_base64) {
+      const base64Data = contractData.contract_pdf_base64;
+      const binaryString = window.atob(base64Data);
+      const bytes = new Uint8Array(binaryString.length);
+
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+
+      const blob = new Blob([bytes], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `tenancy_contract_${tenancyId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      success("Contract PDF downloaded successfully");
+    } else if (contractData.contract_text) {
+      // Fallback: Download contract as text file
+      const blob = new Blob([contractData.contract_text], {
+        type: "text/plain",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `tenancy_contract_${tenancyId}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      success("Contract downloaded as text (PDF generation unavailable)");
+    } else {
+      error("Contract not available");
+    }
+  } catch (err: any) {
+    console.error("Error generating contract:", err);
+    error("Failed to generate contract");
+  } finally {
+    generatingContractId.value = null;
+  }
+};
+
+const sendReminder = (tenancy: Record<string, unknown>) => {
+  // Store tenancy and show SMS modal
+  currentTenancyForSms.value = tenancy;
+  smsRecipients.value = {
+    sendToTenant: true,
+    sendToOwner: true,
+  };
+  showSmsModal.value = true;
+};
+
+const closeSmsModal = () => {
+  showSmsModal.value = false;
+  currentTenancyForSms.value = null;
+  smsRecipients.value = {
+    sendToTenant: true,
+    sendToOwner: true,
+  };
+};
+
+const confirmSendReminder = async () => {
+  if (!currentTenancyForSms.value) return;
+
+  const tenancyId = currentTenancyForSms.value.id as number;
+  sendingReminderId.value = tenancyId;
+
+  try {
+    const response = await tenanciesAPI.sendReminder(tenancyId);
+    const data = response.data;
+
+    if (data.success) {
+      const recipients = [];
+      if (smsRecipients.value.sendToTenant) recipients.push("tenant");
+      if (smsRecipients.value.sendToOwner) recipients.push("owner");
+
+      success(
+        `Rent reminder SMS sent successfully to ${recipients.join(" and ")}!`,
+      );
+
+      // Close modal and refresh tenancies
+      closeSmsModal();
+      await tenanciesStore.fetchList({ property: propertyId.value });
+    } else {
+      error(data.message || "Failed to send SMS reminder");
+    }
+  } catch (err: any) {
+    console.error("Error sending reminder:", err);
+    if (err.response?.data?.message) {
+      error(err.response.data.message);
+    } else {
+      error("Failed to send SMS reminder. Please try again.");
+    }
+  } finally {
+    sendingReminderId.value = null;
+  }
 };
 
 const viewTenant = (tenant: any) => {
@@ -1014,5 +1591,82 @@ watch(activeTab, async (newTab) => {
 .add-tenant-btn {
   flex-shrink: 0;
   margin-bottom: 0.125rem;
+}
+
+.image-upload-container {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  border: 2px dashed #cbd5e0;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.image-upload-container:hover {
+  border-color: #4299e1;
+}
+
+.image-preview {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.remove-image-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  padding: 4px;
+}
+
+.image-upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #718096;
+}
+
+.image-upload-placeholder p {
+  margin-top: 8px;
+  font-size: 0.875rem;
+}
+
+.image-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.sms-modal-container {
+  padding: 1rem 0;
+}
+
+.recipient-selection {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  background: #f7fafc;
+}
+
+.recipient-info {
+  font-size: 0.875rem;
+  color: #718096;
+  margin: 0.25rem 0 0 0;
 }
 </style>

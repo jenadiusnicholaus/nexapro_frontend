@@ -81,10 +81,10 @@
           :rules="[validators.required]"
           class="mb-4"
         />
-        <VaInput
+        <PhoneInput
           v-model="formData.phone"
           label="Phone"
-          :rules="[validators.required]"
+          :required="true"
           class="mb-4"
         />
         <VaInput
@@ -121,6 +121,7 @@ import AppDataTable from "@/components/AppDataTable.vue";
 import { useAppToast } from "@/composables/useAppToast";
 import { useTenantsStore, usePropertiesStore, useUnitsStore } from "@/stores";
 import { validators } from "@/utils/validators";
+import PhoneInput from "@/components/PhoneInput.vue";
 
 const { success, error } = useAppToast();
 const tenantsStore = useTenantsStore();

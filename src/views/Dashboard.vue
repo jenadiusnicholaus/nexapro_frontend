@@ -394,11 +394,11 @@ const mainMetrics = computed(() => [
     changeType: "positive",
   },
   {
-    label: "Total Revenue",
-    value: `TZS ${formatCurrency(totalRevenue.value)}`,
-    icon: "trending_up",
+    label: "Total Units",
+    value: totalUnits.value.toLocaleString(),
+    icon: "home",
     color: "purple",
-    change: "+18%",
+    change: `${vacantUnits.value} vacant`,
     changeType: "positive",
   },
 ]);
