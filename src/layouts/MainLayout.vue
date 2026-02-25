@@ -24,6 +24,14 @@
         </VaInput>
       </div>
       <div class="app-bar-right">
+        <!-- Subscription Plan Badge -->
+        <div class="subscription-badge">
+          <VaChip color="primary" size="large">
+            <VaIcon name="workspace_premium" size="small" class="mr-1" />
+            {{ currentPlan }}
+          </VaChip>
+        </div>
+
         <div class="notification-wrapper">
           <button
             type="button"
@@ -201,6 +209,7 @@ const setLocale = (value: Locale) => {
 const notificationCount = ref(0);
 const searchQuery = ref("");
 const showNotificationPanel = ref(false);
+const currentPlan = ref("Professional"); // Default plan, can be fetched from user profile
 
 // Close panel when clicking outside
 const closePanel = (event: MouseEvent) => {
@@ -413,6 +422,16 @@ const handleLogout = () => {
   position: absolute;
   top: 6px;
   right: 6px;
+}
+
+.subscription-badge {
+  margin-right: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.subscription-badge .mr-1 {
+  margin-right: 0.25rem;
 }
 
 .notification-wrapper {

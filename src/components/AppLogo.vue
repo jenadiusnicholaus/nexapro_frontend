@@ -5,7 +5,6 @@
       alt="NexaProperty Logo"
       class="app-logo__image"
     />
-    <span class="app-logo__text">NexaProperty</span>
   </span>
 </template>
 
@@ -31,7 +30,7 @@ defineProps<{
 }
 
 .app-logo__image {
-  height: 32px;
+  height: 48px;
   width: auto;
   object-fit: contain;
 }
