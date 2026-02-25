@@ -178,6 +178,41 @@
             :rules="[validators.required]"
           />
         </div>
+
+        <VaCheckbox
+          v-model="moveInData.deposit_paid"
+          label="Confirm payment received"
+          class="mb-3"
+        />
+
+        <VaAlert v-if="!moveInData.deposit_paid" color="warning" class="mb-3">
+          ⚠️ Receipt SMS will not be sent to tenant
+        </VaAlert>
+
+        <VaSelect
+          v-if="moveInData.deposit_paid"
+          v-model="moveInData.deposit_payment_method"
+          label="Payment Method"
+          :options="[
+            { value: 'cash', text: 'Cash' },
+            { value: 'bank', text: 'Bank Transfer' },
+            {
+              value: 'mobile_money',
+              text: 'Mobile Money (M-Pesa/Airtel/Tigo)',
+            },
+            { value: 'cheque', text: 'Cheque' },
+            { value: 'other', text: 'Other' },
+          ]"
+          text-by="text"
+          value-by="value"
+          :rules="[
+            (v) =>
+              !!v || 'Payment method is required when payment is confirmed',
+          ]"
+          placeholder="Select payment method"
+          class="mb-4"
+        />
+
         <div class="modal-actions">
           <VaButton preset="secondary" @click="closeMoveInModal"
             >Cancel</VaButton
@@ -420,6 +455,9 @@ const moveInData = ref({
   stay_duration_value: "",
   stay_duration_unit: "month",
   status: "active",
+  deposit_paid: false,
+  deposit_payment_method: "",
+  duration_months: 6, // Default 6 months
 });
 
 const columns = [
@@ -477,16 +515,108 @@ const saveMoveIn = async () => {
   const isValid = await moveInForm.value?.validate();
   if (!isValid) return;
 
-  const payload = buildPayload(moveInData.value, ["tenant", "unit"]);
+  // Validation: Confirm payment if deposit_paid is checked
+  if (!moveInData.value.deposit_paid) {
+    const confirmProceed = confirm(
+      "Payment not confirmed. Receipt SMS will not be sent to tenant. Continue?",
+    );
+    if (!confirmProceed) return;
+  }
+
+  // Validation: Payment method required if deposit is paid
+  if (
+    moveInData.value.deposit_paid &&
+    !moveInData.value.deposit_payment_method
+  ) {
+    error("Please select a payment method");
+    return;
+  }
+
   saving.value = true;
   try {
-    await tenanciesStore.createItem(payload);
+    // Calculate total deposit amount (rent × duration)
+    const durationValue =
+      parseInt(moveInData.value.stay_duration_value) ||
+      moveInData.value.duration_months ||
+      6;
+    const rentAmount = parseFloat(moveInData.value.rent_amount);
+    const calculatedDeposit = rentAmount * durationValue;
+
+    // Build robust payload according to new billing system
+    const tenancyPayload: any = {
+      tenant: moveInData.value.tenant,
+      unit: moveInData.value.unit,
+      move_in_date: moveInData.value.move_in_date,
+      contract_start: moveInData.value.move_in_date, // Required field
+      rent_amount: rentAmount,
+      rent_period: moveInData.value.rent_period || "month",
+      deposit_amount: moveInData.value.deposit_amount || calculatedDeposit,
+      deposit_paid: moveInData.value.deposit_paid,
+      currency: moveInData.value.currency || "TZS",
+      status: moveInData.value.status || "active",
+    };
+
+    // Add payment method only if deposit is paid
+    if (
+      moveInData.value.deposit_paid &&
+      moveInData.value.deposit_payment_method
+    ) {
+      tenancyPayload.deposit_payment_method =
+        moveInData.value.deposit_payment_method;
+    }
+
+    // Add duration - prefer duration_months for clarity
+    if (moveInData.value.duration_months) {
+      tenancyPayload.duration_months = Number(moveInData.value.duration_months);
+    } else if (moveInData.value.stay_duration_value) {
+      tenancyPayload.stay_duration_value = parseInt(
+        String(moveInData.value.stay_duration_value),
+      );
+      tenancyPayload.stay_duration_unit =
+        moveInData.value.stay_duration_unit || "month";
+    }
+
+    console.log("Creating tenancy with payload:", tenancyPayload);
+
+    await tenanciesStore.createItem(tenancyPayload);
     closeMoveInModal();
-    success("Tenant moved in");
+
+    // Show appropriate success message
+    if (moveInData.value.deposit_paid) {
+      success("Tenant moved in successfully! Receipt SMS sent to tenant.");
+    } else {
+      success(
+        "Tenant moved in successfully. No receipt SMS sent (payment not confirmed).",
+      );
+    }
+
     await unitsStore.fetchList({ status: "vacant" });
-  } catch (err) {
+  } catch (err: any) {
     console.error("Error creating tenancy:", err);
-    error("Failed to move in tenant");
+
+    // Enhanced error handling
+    if (err.response?.data) {
+      console.error("API Error details:", err.response.data);
+
+      // Handle specific error cases
+      if (err.response.data.unit) {
+        error(`Unit Error: ${err.response.data.unit}`);
+      } else if (err.response.data.detail) {
+        error(`Error: ${err.response.data.detail}`);
+      } else if (err.response.data.non_field_errors) {
+        error(`Error: ${err.response.data.non_field_errors.join(", ")}`);
+      } else {
+        const errorMsg =
+          typeof err.response.data === "object"
+            ? JSON.stringify(err.response.data)
+            : err.response.data;
+        error(`Failed to move in tenant: ${errorMsg}`);
+      }
+    } else if (err.message) {
+      error(`Network error: ${err.message}`);
+    } else {
+      error("Failed to move in tenant. Please try again.");
+    }
   } finally {
     saving.value = false;
   }
@@ -529,6 +659,9 @@ const closeMoveInModal = () => {
     stay_duration_value: "",
     stay_duration_unit: "month",
     status: "active",
+    deposit_paid: false,
+    deposit_payment_method: "",
+    duration_months: 6,
   };
 };
 
@@ -540,21 +673,40 @@ const closeMoveOutModal = () => {
 
 const viewTenancyDetails = async (tenancy: Record<string, unknown>) => {
   try {
+    console.log("Viewing tenancy details for:", tenancy);
+
     // Fetch full tenancy details to get property_id
     const response = await tenanciesAPI.get(tenancy.id as number);
     const fullTenancy = response.data;
 
-    const propertyId = fullTenancy.property_id || fullTenancy.property;
+    console.log("Full tenancy data:", fullTenancy);
+
+    // Try multiple possible property field names
+    const propertyId =
+      fullTenancy.property_id ||
+      fullTenancy.property ||
+      fullTenancy.unit?.property ||
+      fullTenancy.unit?.property_id;
+
+    console.log("Extracted property ID:", propertyId);
+
     if (propertyId) {
-      router.push({
+      const targetRoute = {
         name: "property-details",
         params: { id: String(propertyId) },
-      });
+      };
+      console.log("Navigating to:", targetRoute);
+
+      await router.push(targetRoute);
     } else {
-      error("Property information not available");
+      console.error("No property ID found in tenancy data:", fullTenancy);
+      error("Property information not available for this tenancy");
     }
   } catch (err: any) {
     console.error("Error fetching tenancy details:", err);
+    if (err.response?.data) {
+      console.error("API Error details:", err.response.data);
+    }
     error("Failed to load tenancy details");
   }
 };

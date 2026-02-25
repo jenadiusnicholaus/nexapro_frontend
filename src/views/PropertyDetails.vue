@@ -132,7 +132,7 @@
                   icon="visibility"
                   size="small"
                   preset="secondary"
-                  @click="viewTenancyDetails"
+                  @click="viewTenancyDetails(rowData)"
                 >
                   View Details
                 </VaButton>
@@ -244,6 +244,7 @@
           :rules="[(v) => !!v || 'Move-in date is required']"
           class="mb-4"
         />
+
         <div class="row mb-4">
           <div class="flex md4">
             <VaInput
@@ -273,13 +274,7 @@
             />
           </div>
         </div>
-        <VaInput
-          v-model="tenancyFormData.deposit_amount"
-          label="Deposit Amount"
-          type="number"
-          :rules="[(v) => !!v || 'Deposit amount is required']"
-          class="mb-4"
-        />
+
         <div class="row mb-4">
           <div class="flex md6">
             <VaInput
@@ -307,6 +302,53 @@
             />
           </div>
         </div>
+        <div class="mb-4">
+          <VaInput
+            v-model="tenancyFormData.deposit_amount"
+            label="Deposit Amount"
+            type="number"
+            :rules="[(v) => !!v || 'Deposit amount is required']"
+            class="mb-4"
+          />
+
+          <VaCheckbox
+            v-model="tenancyFormData.deposit_paid"
+            label="Confirm payment received"
+            class="mb-3"
+          />
+
+          <VaAlert
+            v-if="!tenancyFormData.deposit_paid"
+            color="warning"
+            class="mb-3"
+          >
+            ⚠️ Receipt SMS will not be sent to tenant
+          </VaAlert>
+
+          <VaSelect
+            v-if="tenancyFormData.deposit_paid"
+            v-model="tenancyFormData.deposit_payment_method"
+            label="Payment Method"
+            :options="[
+              { value: 'cash', text: 'Cash' },
+              { value: 'bank', text: 'Bank Transfer' },
+              {
+                value: 'mobile_money',
+                text: 'Mobile Money (M-Pesa/Airtel/Tigo)',
+              },
+              { value: 'cheque', text: 'Cheque' },
+              { value: 'other', text: 'Other' },
+            ]"
+            text-by="text"
+            value-by="value"
+            :rules="[
+              (v) =>
+                !!v || 'Payment method is required when payment is confirmed',
+            ]"
+            placeholder="Select payment method"
+          />
+        </div>
+
         <div class="modal-actions">
           <VaButton preset="secondary" @click="closeTenancyModal"
             >Cancel</VaButton
@@ -455,6 +497,160 @@
           <VaButton type="submit" :loading="movingOut">Move Out</VaButton>
         </div>
       </VaForm>
+    </VaModal>
+
+    <!-- Tenancy Details Modal -->
+    <VaModal
+      v-model="showTenancyDetailsModal"
+      title="Tenancy Details"
+      size="medium"
+      hide-default-actions
+    >
+      <div v-if="selectedTenancyForView" class="tenancy-details-content">
+        <div class="detail-grid">
+          <div class="detail-item">
+            <label class="detail-label">Tenant Name</label>
+            <p class="detail-value">{{ selectedTenancyForView.tenant_name }}</p>
+          </div>
+
+          <div class="detail-item">
+            <label class="detail-label">Unit Number</label>
+            <p class="detail-value">{{ selectedTenancyForView.unit_number }}</p>
+          </div>
+
+          <div class="detail-item">
+            <label class="detail-label">Property</label>
+            <p class="detail-value">
+              {{ selectedTenancyForView.property_name }}
+            </p>
+          </div>
+
+          <div class="detail-item">
+            <label class="detail-label">Move-In Date</label>
+            <p class="detail-value">
+              {{ selectedTenancyForView.move_in_date }}
+            </p>
+          </div>
+
+          <div class="detail-item">
+            <label class="detail-label">Contract Start</label>
+            <p class="detail-value">
+              {{ selectedTenancyForView.contract_start || "N/A" }}
+            </p>
+          </div>
+
+          <div class="detail-item">
+            <label class="detail-label">Contract End</label>
+            <p class="detail-value">
+              {{ selectedTenancyForView.contract_end || "N/A" }}
+            </p>
+          </div>
+
+          <div class="detail-item">
+            <label class="detail-label">Rent Amount</label>
+            <p class="detail-value">
+              {{ selectedTenancyForView.currency || "TZS" }}
+              {{ Number(selectedTenancyForView.rent_amount).toLocaleString() }}
+              <span v-if="selectedTenancyForView.rent_period">
+                / {{ selectedTenancyForView.rent_period }}</span
+              >
+            </p>
+          </div>
+
+          <div class="detail-item">
+            <label class="detail-label">Deposit Amount</label>
+            <p class="detail-value">
+              {{ selectedTenancyForView.currency || "TZS" }}
+              {{
+                Number(
+                  selectedTenancyForView.deposit_amount || 0,
+                ).toLocaleString()
+              }}
+            </p>
+          </div>
+
+          <div class="detail-item">
+            <label class="detail-label">Deposit Paid</label>
+            <p class="detail-value">
+              <VaBadge
+                :color="
+                  selectedTenancyForView.deposit_paid ? 'success' : 'warning'
+                "
+              >
+                {{ selectedTenancyForView.deposit_paid ? "Yes" : "No" }}
+              </VaBadge>
+            </p>
+          </div>
+
+          <div
+            class="detail-item"
+            v-if="selectedTenancyForView.deposit_payment_method"
+          >
+            <label class="detail-label">Payment Method</label>
+            <p class="detail-value">
+              {{ selectedTenancyForView.deposit_payment_method }}
+            </p>
+          </div>
+
+          <div class="detail-item">
+            <label class="detail-label">Status</label>
+            <p class="detail-value">
+              <VaBadge
+                :color="
+                  selectedTenancyForView.status === 'active'
+                    ? 'success'
+                    : selectedTenancyForView.status === 'completed'
+                      ? 'info'
+                      : 'danger'
+                "
+              >
+                {{ selectedTenancyForView.status }}
+              </VaBadge>
+            </p>
+          </div>
+
+          <div class="detail-item">
+            <label class="detail-label">Duration</label>
+            <p class="detail-value">
+              <span v-if="selectedTenancyForView.stay_duration_value">
+                {{ selectedTenancyForView.stay_duration_value }}
+                {{ selectedTenancyForView.stay_duration_unit || "months" }}
+              </span>
+              <span v-else-if="selectedTenancyForView.duration_months">
+                {{ selectedTenancyForView.duration_months }} months
+              </span>
+              <span
+                v-else-if="
+                  selectedTenancyForView.contract_start &&
+                  selectedTenancyForView.contract_end
+                "
+              >
+                {{
+                  calculateDuration(
+                    selectedTenancyForView.contract_start,
+                    selectedTenancyForView.contract_end,
+                  )
+                }}
+              </span>
+              <span v-else>N/A</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="modal-actions mt-4">
+          <VaButton
+            preset="primary"
+            icon="download"
+            @click="downloadUnsignedContract(selectedTenancyForView)"
+            :loading="generatingContractId === selectedTenancyForView.id"
+          >
+            Download Unsigned Contract
+          </VaButton>
+          <VaButton preset="secondary" @click="closeTenancyDetailsModal">
+            Close
+          </VaButton>
+        </div>
+      </div>
     </VaModal>
 
     <!-- Signature Upload Modal -->
@@ -650,6 +846,8 @@ const unitForm = ref<{ validate: () => Promise<boolean> } | null>(null);
 const moveOutForm = ref<{ validate: () => Promise<boolean> } | null>(null);
 const selectedTenancyForMoveOut = ref<any>(null);
 const moveOutDate = ref("");
+const showTenancyDetailsModal = ref(false);
+const selectedTenancyForView = ref<any>(null);
 const unitImageInput = ref<HTMLInputElement | null>(null);
 const unitSelectedImage = ref<File | null>(null);
 const unitImagePreview = ref<string | null>(null);
@@ -677,6 +875,9 @@ const tenancyFormData = ref({
   stay_duration_value: "",
   stay_duration_unit: "month",
   status: "active",
+  deposit_paid: false,
+  deposit_payment_method: "",
+  duration_months: 6, // Default 6 months
 });
 
 const newTenantData = ref({
@@ -709,8 +910,8 @@ const unitColumns = [
 const tenancyColumns = [
   { key: "tenant_name", label: "Tenant", sortable: true },
   { key: "unit_number", label: "Unit", sortable: true },
-  { key: "start_date", label: "Start Date", sortable: true },
-  { key: "end_date", label: "End Date" },
+  { key: "contract_start", label: "Start Date", sortable: true },
+  { key: "contract_end", label: "End Date", sortable: true },
   { key: "rent_amount", label: "Rent", sortable: true },
   { key: "status", label: "Status", sortable: true },
   { key: "actions", label: "Actions", width: 450 },
@@ -758,6 +959,9 @@ const tenantOptions = computed(() => {
 
 // Available units (vacant only) for tenancy
 const availableUnitOptions = computed(() => {
+  // feed rent amount from the seclect  unit to the tenancy form
+  tenancyFormData.value.rent_amount = unitFormData.value.rent_amount;
+
   return (unitsStore.items as any[])
     .filter((unit) => unit.status === "vacant")
     .map((unit) => ({
@@ -792,6 +996,7 @@ const getTenantCurrentUnit = (tenantId: number) => {
       (tenancy.tenant === tenantId || tenancy.tenant_id === tenantId) &&
       tenancy.status === "active",
   );
+
   return activeTenancy?.unit_number || "N/A";
 };
 
@@ -1056,9 +1261,48 @@ const closeMoveOutModal = () => {
 };
 
 // View tenancy details
-const viewTenancyDetails = () => {
-  // Already on property details page, just scroll to top or show a message
-  success("You are viewing this property's details");
+const viewTenancyDetails = (tenancy: Record<string, unknown>) => {
+  selectedTenancyForView.value = tenancy;
+  showTenancyDetailsModal.value = true;
+};
+
+const closeTenancyDetailsModal = () => {
+  showTenancyDetailsModal.value = false;
+  selectedTenancyForView.value = null;
+};
+
+const calculateDuration = (startDate: string, endDate: string) => {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const diffTime = Math.abs(end.getTime() - start.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const months = Math.round(diffDays / 30.44); // More accurate month calculation
+  return `${months} months`;
+};
+
+const downloadUnsignedContract = async (tenancy: Record<string, unknown>) => {
+  generatingContractId.value = tenancy.id as number;
+  try {
+    const response = await tenanciesAPI.generateContract(tenancy.id as number);
+
+    // Create blob and download
+    const blob = new Blob([response.data], { type: "application/pdf" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `contract_${tenancy.tenant_name}_${tenancy.unit_number}_unsigned.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    success("Unsigned contract downloaded successfully");
+  } catch (err: any) {
+    console.error("Error downloading contract:", err);
+    error("Failed to download unsigned contract");
+  } finally {
+    generatingContractId.value = null;
+  }
 };
 
 // Signature upload handlers
@@ -1372,40 +1616,110 @@ const saveTenancy = async () => {
   const isValid = await tenancyForm.value?.validate();
   if (!isValid) return;
 
+  // Validation: Confirm payment if deposit_paid is checked
+  if (!tenancyFormData.value.deposit_paid) {
+    const confirmProceed = confirm(
+      "Payment not confirmed. Receipt SMS will not be sent to tenant. Continue?",
+    );
+    if (!confirmProceed) return;
+  }
+
+  // Validation: Payment method required if deposit is paid
+  if (
+    tenancyFormData.value.deposit_paid &&
+    !tenancyFormData.value.deposit_payment_method
+  ) {
+    error("Please select a payment method");
+    return;
+  }
+
   saving.value = true;
   try {
-    const tenancyPayload = {
+    // Calculate total deposit amount (rent × duration)
+    const durationValue =
+      parseInt(tenancyFormData.value.stay_duration_value) ||
+      tenancyFormData.value.duration_months ||
+      6;
+    const rentAmount = parseFloat(tenancyFormData.value.rent_amount);
+    const calculatedDeposit = rentAmount * durationValue;
+
+    // Build robust payload according to new billing system
+    const tenancyPayload: any = {
       tenant: tenancyFormData.value.tenant,
       unit: tenancyFormData.value.unit,
       move_in_date: tenancyFormData.value.move_in_date,
-      contract_start: tenancyFormData.value.move_in_date,
-      rent_amount: tenancyFormData.value.rent_amount,
-      rent_period: tenancyFormData.value.rent_period,
-      deposit_amount: tenancyFormData.value.deposit_amount,
-      currency: tenancyFormData.value.currency,
-      stay_duration_value: parseInt(tenancyFormData.value.stay_duration_value),
-      stay_duration_unit: tenancyFormData.value.stay_duration_unit,
-      status: tenancyFormData.value.status,
+      contract_start: tenancyFormData.value.move_in_date, // Required field
+      rent_amount: rentAmount,
+      rent_period: tenancyFormData.value.rent_period || "month",
+      deposit_amount: tenancyFormData.value.deposit_amount || calculatedDeposit,
+      deposit_paid: tenancyFormData.value.deposit_paid,
+      currency: tenancyFormData.value.currency || "TZS",
     };
+
+    // Add payment method only if deposit is paid
+    if (
+      tenancyFormData.value.deposit_paid &&
+      tenancyFormData.value.deposit_payment_method
+    ) {
+      tenancyPayload.deposit_payment_method =
+        tenancyFormData.value.deposit_payment_method;
+    }
+
+    // Add duration - prefer duration_months for clarity
+    if (tenancyFormData.value.duration_months) {
+      tenancyPayload.duration_months = Number(
+        tenancyFormData.value.duration_months,
+      );
+    } else if (tenancyFormData.value.stay_duration_value) {
+      tenancyPayload.stay_duration_value = parseInt(
+        String(tenancyFormData.value.stay_duration_value),
+      );
+      tenancyPayload.stay_duration_unit =
+        tenancyFormData.value.stay_duration_unit || "month";
+    }
+
+    console.log("Creating tenancy with payload:", tenancyPayload);
 
     await tenanciesStore.createItem(tenancyPayload);
     closeTenancyModal();
-    success("Tenancy created successfully");
+
+    // Show appropriate success message
+    if (tenancyFormData.value.deposit_paid) {
+      success("Tenancy created successfully! Receipt SMS sent to tenant.");
+    } else {
+      success(
+        "Tenancy created successfully. No receipt SMS sent (payment not confirmed).",
+      );
+    }
 
     // Refresh data
     await tenanciesStore.fetchList({ property: propertyId.value });
     await unitsStore.fetchList({ property: propertyId.value });
   } catch (err: any) {
     console.error("Error creating tenancy:", err);
+
+    // Enhanced error handling
     if (err.response?.data) {
       console.error("API Error details:", err.response.data);
-      const errorMsg =
-        typeof err.response.data === "object"
-          ? JSON.stringify(err.response.data)
-          : err.response.data;
-      error(`Failed to create tenancy: ${errorMsg}`);
+
+      // Handle specific error cases
+      if (err.response.data.unit) {
+        error(`Unit Error: ${err.response.data.unit}`);
+      } else if (err.response.data.detail) {
+        error(`Error: ${err.response.data.detail}`);
+      } else if (err.response.data.non_field_errors) {
+        error(`Error: ${err.response.data.non_field_errors.join(", ")}`);
+      } else {
+        const errorMsg =
+          typeof err.response.data === "object"
+            ? JSON.stringify(err.response.data)
+            : err.response.data;
+        error(`Failed to create tenancy: ${errorMsg}`);
+      }
+    } else if (err.message) {
+      error(`Network error: ${err.message}`);
     } else {
-      error("Failed to create tenancy");
+      error("Failed to create tenancy. Please try again.");
     }
   } finally {
     saving.value = false;
@@ -1425,6 +1739,9 @@ const closeTenancyModal = () => {
     stay_duration_value: "",
     stay_duration_unit: "month",
     status: "active",
+    deposit_paid: false,
+    deposit_payment_method: "",
+    duration_months: 6,
   };
 };
 
@@ -1446,6 +1763,41 @@ watch(activeTab, async (newTab) => {
     console.error(`Error refreshing ${newTab} data:`, err);
   }
 });
+
+// 2️⃣ Watch selected unit (auto-fill rent)
+watch(
+  () => tenancyFormData.value.unit,
+  (selectedUnitId) => {
+    if (!selectedUnitId) return;
+
+    const selectedUnit = (unitsStore.items as any[])?.find(
+      (unit) => unit.id === selectedUnitId,
+    );
+
+    if (selectedUnit) {
+      tenancyFormData.value.rent_amount = String(
+        selectedUnit.rent_amount ?? "",
+      );
+    }
+  },
+);
+watch(
+  [
+    () => tenancyFormData.value.rent_amount,
+    () => tenancyFormData.value.stay_duration_value,
+  ],
+  ([rent, duration]) => {
+    const rentNumber = parseFloat(String(rent));
+    const durationNumber = parseFloat(String(duration));
+
+    if (!rentNumber || !durationNumber) {
+      tenancyFormData.value.deposit_amount = "";
+      return;
+    }
+
+    tenancyFormData.value.deposit_amount = String(rentNumber * durationNumber);
+  },
+);
 </script>
 
 <style scoped>
@@ -1668,5 +2020,44 @@ watch(activeTab, async (newTab) => {
   font-size: 0.875rem;
   color: #718096;
   margin: 0.25rem 0 0 0;
+}
+
+/* Tenancy Details Modal */
+.tenancy-details-content {
+  padding: 1rem 0;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.detail-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #4a5568;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.detail-value {
+  font-size: 1rem;
+  color: #1a202c;
+  margin: 0;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .detail-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
 }
 </style>

@@ -30,5 +30,14 @@ export const useNotificationsStore = defineStore("notifications", () => {
     await fetchList(refreshParams);
   }
 
-  return { items, loading, fetchList, createItem };
+  async function updateItem(id: number, data: Record<string, unknown>) {
+    await notificationsAPI.patch(id, data);
+    // Update the item in the local store
+    const index = items.value.findIndex((item) => item.id === id);
+    if (index !== -1) {
+      items.value[index] = { ...items.value[index], ...data };
+    }
+  }
+
+  return { items, loading, fetchList, createItem, updateItem };
 });

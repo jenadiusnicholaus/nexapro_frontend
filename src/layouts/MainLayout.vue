@@ -24,19 +24,80 @@
         </VaInput>
       </div>
       <div class="app-bar-right">
-        <button
-          type="button"
-          class="app-bar-icon-btn"
-          :aria-label="t('common.notifications')"
-        >
-          <VaIcon name="notifications" size="small" class="app-bar-nav-icon" />
-          <VaBadge
-            v-if="notificationCount > 0"
-            :text="String(notificationCount)"
-            color="danger"
-            class="app-bar-badge"
-          />
-        </button>
+        <div class="notification-wrapper">
+          <button
+            type="button"
+            class="app-bar-icon-btn"
+            :aria-label="t('common.notifications')"
+            @click="toggleNotificationPanel"
+          >
+            <VaIcon
+              name="notifications"
+              size="small"
+              class="app-bar-nav-icon"
+            />
+            <VaBadge
+              v-if="notificationCount > 0"
+              :text="String(notificationCount)"
+              color="danger"
+              class="app-bar-badge"
+            />
+          </button>
+
+          <!-- Notification Dropdown Panel -->
+          <div
+            v-show="showNotificationPanel"
+            class="notification-panel"
+            style="background: red; color: white"
+          >
+            <div class="notification-panel-header">
+              <h3>
+                Notifications (Panel is
+                {{ showNotificationPanel ? "OPEN" : "CLOSED" }})
+              </h3>
+              <button @click="goToNotifications" class="view-all-btn">
+                View All
+              </button>
+            </div>
+
+            <div class="notification-list">
+              <div
+                v-if="notificationsStore.items.length === 0"
+                class="no-notifications"
+              >
+                No notifications
+              </div>
+
+              <div
+                v-for="notification in recentNotifications"
+                :key="String(notification.id)"
+                class="notification-item"
+                :class="{ unread: notification.status === 'sent' }"
+                @click="markAsRead(notification)"
+              >
+                <div class="notification-icon">
+                  <VaIcon name="sms" size="small" />
+                </div>
+                <div class="notification-content">
+                  <p class="notification-subject">
+                    {{ String(notification.subject || "No subject") }}
+                  </p>
+                  <p class="notification-tenant">
+                    {{ String(notification.tenant_name || "N/A") }}
+                  </p>
+                  <p class="notification-time">
+                    {{ formatTime(String(notification.sent_at || "")) }}
+                  </p>
+                </div>
+                <VaBadge
+                  v-if="notification.status === 'sent'"
+                  color="primary"
+                  text="New"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
         <button
           type="button"
           class="app-bar-icon-btn"
@@ -113,11 +174,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { storeToRefs } from "pinia";
 import { useRouter, useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { useAuthStore, useGlobalStore } from "@/stores";
+import { useAuthStore, useGlobalStore, useNotificationsStore } from "@/stores";
 import { setLocale as setI18nLocale, supportedLocales } from "@/i18n";
 import type { Locale } from "@/i18n";
 import NavigationRoutes from "@/components/sidebar/NavigationRoutes";
@@ -128,6 +189,7 @@ const route = useRoute();
 const { t, locale } = useI18n();
 const authStore = useAuthStore();
 const globalStore = useGlobalStore();
+const notificationsStore = useNotificationsStore();
 const { isSidebarMinimized } = storeToRefs(globalStore);
 
 const localeOptions = supportedLocales;
@@ -138,6 +200,93 @@ const setLocale = (value: Locale) => {
 
 const notificationCount = ref(0);
 const searchQuery = ref("");
+const showNotificationPanel = ref(false);
+
+// Close panel when clicking outside
+const closePanel = (event: MouseEvent) => {
+  const target = event.target as HTMLElement;
+  if (!target.closest(".notification-wrapper")) {
+    showNotificationPanel.value = false;
+  }
+};
+
+onMounted(() => {
+  fetchNotificationCount();
+  // Refresh notification count every 30 seconds
+  setInterval(fetchNotificationCount, 30000);
+  // Add click outside listener
+  document.addEventListener("click", closePanel);
+});
+
+onUnmounted(() => {
+  document.removeEventListener("click", closePanel);
+});
+
+// Fetch unread notification count
+const fetchNotificationCount = async () => {
+  try {
+    // Fetch all notifications first to see the data structure
+    await notificationsStore.fetchList({ ordering: "-sent_at" });
+    console.log("All notifications:", notificationsStore.items);
+
+    // Count unread/sent notifications (status='sent' means unread in this system)
+    const unreadNotifications = notificationsStore.items.filter(
+      (notification: any) =>
+        notification.status === "sent" || notification.status === "unread",
+    );
+
+    notificationCount.value = unreadNotifications.length;
+    console.log("Unread notification count:", notificationCount.value);
+  } catch (err) {
+    console.error("Error fetching notifications:", err);
+  }
+};
+
+// Get recent notifications (top 5)
+const recentNotifications = computed(() =>
+  notificationsStore.items.slice(0, 5),
+);
+
+// Toggle notification panel
+const toggleNotificationPanel = () => {
+  showNotificationPanel.value = !showNotificationPanel.value;
+  console.log("Notification panel toggled:", showNotificationPanel.value);
+  console.log("Recent notifications:", recentNotifications.value);
+};
+
+// Navigate to notifications page
+const goToNotifications = () => {
+  showNotificationPanel.value = false;
+  router.push({ name: "notifications" });
+};
+
+// Mark notification as read
+const markAsRead = async (notification: any) => {
+  if (notification.status === "sent") {
+    try {
+      await notificationsStore.updateItem(notification.id, { status: "read" });
+      await fetchNotificationCount();
+    } catch (err) {
+      console.error("Error marking notification as read:", err);
+    }
+  }
+};
+
+// Format time
+const formatTime = (dateString: string) => {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
+};
 
 const drawerVisible = computed(() => !isSidebarMinimized.value);
 
@@ -264,6 +413,127 @@ const handleLogout = () => {
   position: absolute;
   top: 6px;
   right: 6px;
+}
+
+.notification-wrapper {
+  position: relative;
+}
+
+.notification-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 380px;
+  max-height: 500px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  z-index: 9999 !important;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.notification-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.notification-panel-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a202c;
+}
+
+.view-all-btn {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #7c3aed;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.view-all-btn:hover {
+  background: rgba(124, 58, 237, 0.1);
+}
+
+.notification-list {
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.no-notifications {
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: #718096;
+  font-size: 0.875rem;
+}
+
+.notification-item {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #f1f3f4;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.notification-item:hover {
+  background: #f7fafc;
+}
+
+.notification-item.unread {
+  background: #f0f4ff;
+}
+
+.notification-item.unread:hover {
+  background: #e6edff;
+}
+
+.notification-icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #7c3aed;
+  border-radius: 50%;
+  color: white;
+}
+
+.notification-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-subject {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1a202c;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notification-tenant {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.8125rem;
+  color: #4a5568;
+}
+
+.notification-time {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #718096;
 }
 
 .locale-switcher {
