@@ -169,7 +169,7 @@ const loadPlans = async () => {
   try {
     const token = localStorage.getItem("access_token");
     const response = await axios.get(
-      "http://localhost:8000/api/v1/subscriptions/plans/",
+      `${import.meta.env.VITE_API_BASE_URL || "https://nexaproapi.quantumvision-tech.com/api/v1"}/subscriptions/plans/`,
       {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       },
@@ -194,7 +194,7 @@ const processUpgrade = async () => {
   try {
     const token = localStorage.getItem("access_token");
     const response = await axios.post(
-      "http://localhost:8000/api/v1/subscriptions/subscriptions/upgrade/",
+      `${import.meta.env.VITE_API_BASE_URL || "https://nexaproapi.quantumvision-tech.com/api/v1"}/subscriptions/subscriptions/upgrade/`,
       {
         plan_id: selectedPlan.value.id,
         payment_method: paymentData.value.payment_method,

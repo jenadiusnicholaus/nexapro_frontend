@@ -1,7 +1,9 @@
 # Subscription System - Complete Guide
 
 ## Overview
+
 NexaPro uses a subscription-based model where:
+
 - **New owners get 30-day free trial** automatically on registration
 - **After 30 days**, they must upgrade to a paid plan
 - **Plans renew every 30 days** with payment
@@ -13,24 +15,27 @@ NexaPro uses a subscription-based model where:
 
 ### Available Plans
 
-| Plan | Price | Duration | Properties | Units | Tenants | Features |
-|------|-------|----------|------------|-------|---------|----------|
-| **Free Trial** | 0 TZS | 30 days | 1 | 5 | 10 | Basic features |
-| **Basic** | 10,000 TZS | 30 days | 3 | 15 | 30 | + Reports |
-| **Professional** | 25,000 TZS | 30 days | 10 | 50 | 100 | + Priority Support |
-| **Enterprise** | 50,000 TZS | 30 days | Unlimited | Unlimited | Unlimited | All features |
+| Plan             | Price      | Duration | Properties | Units     | Tenants   | Features           |
+| ---------------- | ---------- | -------- | ---------- | --------- | --------- | ------------------ |
+| **Free Trial**   | 0 TZS      | 30 days  | 1          | 5         | 10        | Basic features     |
+| **Basic**        | 10,000 TZS | 30 days  | 3          | 15        | 30        | + Reports          |
+| **Professional** | 25,000 TZS | 30 days  | 10         | 50        | 100       | + Priority Support |
+| **Enterprise**   | 50,000 TZS | 30 days  | Unlimited  | Unlimited | Unlimited | All features       |
 
 ### Plan Features
 
 **All Plans Include:**
+
 - ✅ SMS Notifications
 - ✅ Contract Generation
 - ✅ Payment Tracking
 
 **Basic & Above:**
+
 - ✅ Reports & Analytics
 
 **Professional & Enterprise:**
+
 - ✅ Priority Support
 
 ---
@@ -51,6 +56,7 @@ When an owner registers:
    - End: Registration date + 30 days
 
 **Code:**
+
 ```python
 # apps/subscriptions/signals.py
 @receiver(post_save, sender=Owner)
@@ -75,6 +81,7 @@ def create_free_trial_subscription(sender, instance, created, **kwargs):
 **Auth:** Public (no authentication required)
 
 **Response:**
+
 ```json
 [
   {
@@ -114,6 +121,7 @@ def create_free_trial_subscription(sender, instance, created, **kwargs):
 **Auth:** Required (JWT token)
 
 **Response:**
+
 ```json
 {
   "id": 1,
@@ -146,6 +154,7 @@ def create_free_trial_subscription(sender, instance, created, **kwargs):
 **Auth:** Required (JWT token)
 
 **Request:**
+
 ```json
 {
   "plan_id": 2,
@@ -155,6 +164,7 @@ def create_free_trial_subscription(sender, instance, created, **kwargs):
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -190,6 +200,7 @@ def create_free_trial_subscription(sender, instance, created, **kwargs):
 **Auth:** Required (JWT token)
 
 **Request:**
+
 ```json
 {
   "payment_method": "M-Pesa",
@@ -198,6 +209,7 @@ def create_free_trial_subscription(sender, instance, created, **kwargs):
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -221,6 +233,7 @@ def create_free_trial_subscription(sender, instance, created, **kwargs):
 **Auth:** Required (JWT token)
 
 **Response:**
+
 ```json
 {
   "count": 2,
@@ -247,6 +260,7 @@ def create_free_trial_subscription(sender, instance, created, **kwargs):
 ## Subscription Lifecycle
 
 ### Day 0: Registration
+
 ```
 ✅ Owner registers
 ✅ Free trial auto-assigned (30 days)
@@ -255,20 +269,23 @@ def create_free_trial_subscription(sender, instance, created, **kwargs):
 ```
 
 ### Day 23: Expiry Warning
+
 ```
-📱 SMS sent: "SUBSCRIPTION EXPIRING: Your Free Trial plan 
+📱 SMS sent: "SUBSCRIPTION EXPIRING: Your Free Trial plan
    expires in 7 days. Renew now to avoid service interruption."
 ```
 
 ### Day 30: Expiration
+
 ```
 ❌ Subscription expires
 ✅ Status changed to: Expired
-📱 SMS sent: "SUBSCRIPTION EXPIRED: Your Free Trial plan has expired. 
+📱 SMS sent: "SUBSCRIPTION EXPIRED: Your Free Trial plan has expired.
    Upgrade now to continue using NexaPro."
 ```
 
 ### After Expiration
+
 ```
 🔒 Access restricted (if middleware enabled)
 💡 Owner must upgrade to continue
@@ -279,10 +296,12 @@ def create_free_trial_subscription(sender, instance, created, **kwargs):
 ## Automated Tasks
 
 ### Check Expired Subscriptions
+
 **Task:** `check_expired_subscriptions`  
 **Schedule:** Daily at 3 AM
 
 **What it does:**
+
 1. Finds active subscriptions past end date
 2. Marks them as `expired`
 3. Sends SMS notification to owner
@@ -292,14 +311,16 @@ def create_free_trial_subscription(sender, instance, created, **kwargs):
 **SMS Examples:**
 
 **Expiry Warning (7 days before):**
+
 ```
-SUBSCRIPTION EXPIRING: Your Basic plan expires in 7 days. 
+SUBSCRIPTION EXPIRING: Your Basic plan expires in 7 days.
 Renew now to avoid service interruption. Visit your dashboard.
 ```
 
 **Expired:**
+
 ```
-SUBSCRIPTION EXPIRED: Your Basic plan has expired. 
+SUBSCRIPTION EXPIRED: Your Basic plan has expired.
 Upgrade now to continue using NexaPro. Visit your dashboard to renew.
 ```
 
@@ -312,7 +333,7 @@ Upgrade now to continue using NexaPro. Visit your dashboard to renew.
 ```javascript
 const SubscriptionBadge = ({ subscription }) => {
   const daysLeft = subscription.days_remaining;
-  
+
   if (subscription.is_expired) {
     return (
       <div className="subscription-expired">
@@ -328,11 +349,7 @@ const SubscriptionBadge = ({ subscription }) => {
       </div>
     );
   } else {
-    return (
-      <Badge color="green">
-        Active - {daysLeft} days remaining
-      </Badge>
-    );
+    return <Badge color="green">Active - {daysLeft} days remaining</Badge>;
   }
 };
 ```
@@ -345,13 +362,13 @@ const SubscriptionBadge = ({ subscription }) => {
 const handleUpgrade = async (planId) => {
   // Show payment dialog
   const paymentDetails = await showPaymentDialog();
-  
+
   // Upgrade subscription
-  const response = await fetch('/api/v1/subscriptions/subscriptions/upgrade/', {
-    method: 'POST',
+  const response = await fetch("/api/v1/subscriptions/subscriptions/upgrade/", {
+    method: "POST",
     headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
       plan_id: planId,
@@ -359,11 +376,15 @@ const handleUpgrade = async (planId) => {
       transaction_id: paymentDetails.transactionId,
     }),
   });
-  
+
   const data = await response.json();
-  
+
   if (data.success) {
-    Swal.fire('Success!', `Upgraded to ${data.subscription.plan_details.name}`, 'success');
+    Swal.fire(
+      "Success!",
+      `Upgraded to ${data.subscription.plan_details.name}`,
+      "success",
+    );
     // Refresh subscription data
   }
 };
@@ -376,23 +397,23 @@ const handleUpgrade = async (planId) => {
 ```jsx
 const PricingTable = () => {
   const [plans, setPlans] = useState([]);
-  
+
   useEffect(() => {
-    fetch('/api/v1/subscriptions/plans/')
-      .then(res => res.json())
-      .then(data => setPlans(data));
+    fetch("/api/v1/subscriptions/plans/")
+      .then((res) => res.json())
+      .then((data) => setPlans(data));
   }, []);
-  
+
   return (
     <div className="pricing-grid">
-      {plans.map(plan => (
+      {plans.map((plan) => (
         <div key={plan.id} className="pricing-card">
           <h3>{plan.name}</h3>
           <p className="price">
-            {plan.price > 0 ? `${plan.price} ${plan.currency}/month` : 'Free'}
+            {plan.price > 0 ? `${plan.price} ${plan.currency}/month` : "Free"}
           </p>
           <p>{plan.description}</p>
-          
+
           <ul className="features">
             <li>✅ {plan.max_properties} Properties</li>
             <li>✅ {plan.max_units} Units</li>
@@ -400,9 +421,9 @@ const PricingTable = () => {
             {plan.reports_analytics && <li>✅ Reports & Analytics</li>}
             {plan.priority_support && <li>✅ Priority Support</li>}
           </ul>
-          
+
           <button onClick={() => handleUpgrade(plan.id)}>
-            {plan.is_free_tier ? 'Current Plan' : 'Upgrade'}
+            {plan.is_free_tier ? "Current Plan" : "Upgrade"}
           </button>
         </div>
       ))}
@@ -438,7 +459,7 @@ print(f'Days remaining: {subscription.days_remaining()}')
 ### Test Upgrade
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/subscriptions/subscriptions/upgrade/ \
+curl -X POST $VITE_API_BASE_URL/subscriptions/subscriptions/upgrade/ \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -453,6 +474,7 @@ curl -X POST http://localhost:8000/api/v1/subscriptions/subscriptions/upgrade/ \
 ## Database Schema
 
 ### SubscriptionPlan
+
 ```sql
 CREATE TABLE subscriptions_subscriptionplan (
     id SERIAL PRIMARY KEY,
@@ -475,6 +497,7 @@ CREATE TABLE subscriptions_subscriptionplan (
 ```
 
 ### Subscription
+
 ```sql
 CREATE TABLE subscriptions_subscription (
     id SERIAL PRIMARY KEY,
@@ -488,6 +511,7 @@ CREATE TABLE subscriptions_subscription (
 ```
 
 ### SubscriptionPayment
+
 ```sql
 CREATE TABLE subscriptions_subscriptionpayment (
     id SERIAL PRIMARY KEY,
@@ -540,6 +564,6 @@ SubscriptionPlan.objects.create(
 ✅ **SMS notifications** - 7 days before & on expiry  
 ✅ **Easy upgrade** - One API call to upgrade  
 ✅ **Payment tracking** - Full payment history  
-✅ **Flexible renewal** - Renew anytime  
+✅ **Flexible renewal** - Renew anytime
 
 **Every new owner gets 30 days free, then must upgrade to continue!** 🎉💳

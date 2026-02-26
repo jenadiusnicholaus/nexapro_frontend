@@ -3,9 +3,11 @@
 ## ✅ Completed Features
 
 ### 1. Profile Page with Subscription Display
+
 **File:** `/src/views/Profiles.vue`
 
 **Features:**
+
 - ✅ Subscription status alerts (expired/expiring soon)
 - ✅ Current plan display with gradient design
 - ✅ Plan limits display (properties, units, tenants)
@@ -14,6 +16,7 @@
 - ✅ Formatted dates
 
 **Usage:**
+
 ```vue
 <!-- Automatic display when profile loads -->
 <!-- Shows subscription card if profile.subscription exists -->
@@ -22,9 +25,11 @@
 ---
 
 ### 2. Subscription Access Control Composable
+
 **File:** `/src/composables/useSubscription.ts`
 
 **Features:**
+
 - ✅ Check if subscription is expired
 - ✅ Check days remaining
 - ✅ Handle 403 errors from API
@@ -32,8 +37,9 @@
 - ✅ Handle limit errors
 
 **Usage Example:**
+
 ```typescript
-import { useSubscription } from '@/composables/useSubscription';
+import { useSubscription } from "@/composables/useSubscription";
 
 const {
   subscription,
@@ -47,12 +53,15 @@ const {
 // Before creating a property
 const createProperty = async () => {
   // Check access first
-  if (!checkSubscriptionAccess('create properties')) {
+  if (!checkSubscriptionAccess("create properties")) {
     return; // Shows upgrade dialog if expired
   }
-  
+
   try {
-    const response = await axios.post('/api/v1/properties/', propertyData);
+    const response = await axios.post(
+      `${import.meta.env.VITE_API_BASE_URL}/properties/`,
+      propertyData,
+    );
     // Success
   } catch (error) {
     // Handle subscription/limit errors automatically
@@ -67,9 +76,11 @@ const createProperty = async () => {
 ---
 
 ### 3. Subscription Plans Page
+
 **File:** `/src/views/SubscriptionPlans.vue`
 
 **Features:**
+
 - ✅ Display all available plans
 - ✅ Show current plan badge
 - ✅ Plan comparison grid
@@ -87,18 +98,18 @@ const createProperty = async () => {
 
 ```vue
 <script setup lang="ts">
-import { useSubscription } from '@/composables/useSubscription';
-import { useAppToast } from '@/composables/useAppToast';
+import { useSubscription } from "@/composables/useSubscription";
+import { useAppToast } from "@/composables/useAppToast";
 
 const { checkSubscriptionAccess, handleApiError } = useSubscription();
 const { success, error } = useAppToast();
 
 const createProperty = async () => {
   // Check subscription before showing form
-  if (!checkSubscriptionAccess('create properties')) {
+  if (!checkSubscriptionAccess("create properties")) {
     return;
   }
-  
+
   // Show create modal
   showCreateModal.value = true;
 };
@@ -106,11 +117,11 @@ const createProperty = async () => {
 const saveProperty = async () => {
   try {
     const response = await propertiesAPI.create(formData.value);
-    success('Property created successfully!');
+    success("Property created successfully!");
   } catch (err: any) {
     // Automatically handles subscription errors
     if (!handleApiError(err)) {
-      error('Failed to create property');
+      error("Failed to create property");
     }
   }
 };
@@ -123,15 +134,15 @@ const saveProperty = async () => {
 
 ```vue
 <script setup lang="ts">
-import { useSubscription } from '@/composables/useSubscription';
+import { useSubscription } from "@/composables/useSubscription";
 
 const { checkSubscriptionAccess, handleApiError } = useSubscription();
 
 const handleAddUnit = async () => {
-  if (!checkSubscriptionAccess('create units')) {
+  if (!checkSubscriptionAccess("create units")) {
     return;
   }
-  
+
   try {
     await unitsAPI.create(unitData);
   } catch (error) {
@@ -150,15 +161,15 @@ const handleAddUnit = async () => {
   <div class="dashboard">
     <!-- Subscription Alert -->
     <VaAlert v-if="isExpired" color="danger">
-      Your subscription has expired. 
+      Your subscription has expired.
       <router-link to="/subscription/upgrade">Upgrade now</router-link>
     </VaAlert>
-    
+
     <VaAlert v-else-if="daysRemaining <= 7" color="warning">
       Your subscription expires in {{ daysRemaining }} days.
       <router-link to="/subscription/renew">Renew now</router-link>
     </VaAlert>
-    
+
     <!-- Plan Usage -->
     <div class="usage-stats">
       <div class="stat-card">
@@ -178,7 +189,7 @@ const handleAddUnit = async () => {
 </template>
 
 <script setup lang="ts">
-import { useSubscription } from '@/composables/useSubscription';
+import { useSubscription } from "@/composables/useSubscription";
 
 const { subscription, plan, isExpired, daysRemaining } = useSubscription();
 </script>
@@ -191,6 +202,7 @@ const { subscription, plan, isExpired, daysRemaining } = useSubscription();
 The backend returns these errors when limits are reached:
 
 ### Subscription Expired
+
 ```json
 {
   "detail": "Your Free Trial subscription has expired. Please upgrade to continue using NexaPro features."
@@ -198,6 +210,7 @@ The backend returns these errors when limits are reached:
 ```
 
 ### Property Limit Reached
+
 ```json
 {
   "detail": "Property limit reached (1). Upgrade to Basic to add more properties."
@@ -205,6 +218,7 @@ The backend returns these errors when limits are reached:
 ```
 
 ### Unit Limit Reached
+
 ```json
 {
   "detail": "Unit limit reached (5). Upgrade to Basic to add more units."
@@ -212,6 +226,7 @@ The backend returns these errors when limits are reached:
 ```
 
 ### Tenant Limit Reached
+
 ```json
 {
   "detail": "Tenant limit reached (10). Upgrade to Basic to add more tenants."
@@ -225,6 +240,7 @@ The `handleApiError()` function automatically detects these and shows appropriat
 ## 🎨 Styling
 
 All subscription components use consistent styling:
+
 - **Primary color:** `#667eea` (purple)
 - **Gradient:** `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`
 - **Success:** Green badges for active subscriptions
@@ -238,6 +254,7 @@ All subscription components use consistent styling:
 ### To Complete Implementation:
 
 1. **Add Routes** (in `/src/router/index.ts`):
+
 ```typescript
 {
   path: '/subscription',
@@ -298,6 +315,7 @@ All subscription components use consistent styling:
 ## ✨ Summary
 
 **Implemented:**
+
 - ✅ Profile page with full subscription display
 - ✅ Subscription access control composable
 - ✅ Plans page with upgrade functionality
@@ -305,6 +323,7 @@ All subscription components use consistent styling:
 - ✅ Beautiful UI with alerts and badges
 
 **Ready to Use:**
+
 - Import `useSubscription()` in any component
 - Call `checkSubscriptionAccess()` before actions
 - Use `handleApiError()` in catch blocks

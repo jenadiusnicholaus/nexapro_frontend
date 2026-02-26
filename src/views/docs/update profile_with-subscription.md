@@ -1,6 +1,7 @@
 # Profile API with Subscription Data
 
 ## Overview
+
 The profile endpoint now includes complete subscription information, making it easy for the frontend to display subscription status, plan limits, and days remaining.
 
 ---
@@ -84,30 +85,30 @@ The profile endpoint now includes complete subscription information, making it e
 
 The `subscription` object includes:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | integer | Subscription ID |
-| `plan` | object | Full plan details |
-| `status` | string | `active`, `expired`, `cancelled`, or `pending` |
-| `start_date` | datetime | When subscription started |
-| `end_date` | datetime | When subscription ends |
-| `days_remaining` | integer | Days left in subscription |
-| `is_expired` | boolean | Whether subscription has expired |
-| `auto_renew` | boolean | Whether auto-renewal is enabled |
+| Field            | Type     | Description                                    |
+| ---------------- | -------- | ---------------------------------------------- |
+| `id`             | integer  | Subscription ID                                |
+| `plan`           | object   | Full plan details                              |
+| `status`         | string   | `active`, `expired`, `cancelled`, or `pending` |
+| `start_date`     | datetime | When subscription started                      |
+| `end_date`       | datetime | When subscription ends                         |
+| `days_remaining` | integer  | Days left in subscription                      |
+| `is_expired`     | boolean  | Whether subscription has expired               |
+| `auto_renew`     | boolean  | Whether auto-renewal is enabled                |
 
 ### Plan Object
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | integer | Plan ID |
-| `name` | string | Plan name (e.g., "Free Trial", "Basic") |
-| `price` | string | Plan price |
-| `currency` | string | Currency code (e.g., "TZS") |
-| `duration_days` | integer | Plan duration in days (usually 30) |
-| `max_properties` | integer | Maximum properties allowed |
-| `max_units` | integer | Maximum units allowed |
-| `max_tenants` | integer | Maximum tenants allowed |
-| `is_free_tier` | boolean | Whether this is the free trial plan |
+| Field            | Type    | Description                             |
+| ---------------- | ------- | --------------------------------------- |
+| `id`             | integer | Plan ID                                 |
+| `name`           | string  | Plan name (e.g., "Free Trial", "Basic") |
+| `price`          | string  | Plan price                              |
+| `currency`       | string  | Currency code (e.g., "TZS")             |
+| `duration_days`  | integer | Plan duration in days (usually 30)      |
+| `max_properties` | integer | Maximum properties allowed              |
+| `max_units`      | integer | Maximum units allowed                   |
+| `max_tenants`    | integer | Maximum tenants allowed                 |
+| `is_free_tier`   | boolean | Whether this is the free trial plan     |
 
 ---
 
@@ -118,14 +119,14 @@ The `subscription` object includes:
 ```javascript
 const SubscriptionBanner = ({ profile }) => {
   const { subscription } = profile;
-  
+
   if (!subscription) {
     return <Alert>No subscription found</Alert>;
   }
-  
+
   const { plan, days_remaining, is_expired, status } = subscription;
-  
-  if (is_expired || status === 'expired') {
+
+  if (is_expired || status === "expired") {
     return (
       <Alert color="danger">
         <strong>Subscription Expired</strong>
@@ -134,17 +135,19 @@ const SubscriptionBanner = ({ profile }) => {
       </Alert>
     );
   }
-  
+
   if (days_remaining <= 7) {
     return (
       <Alert color="warning">
         <strong>Subscription Expiring Soon</strong>
-        <p>Your {plan.name} expires in {days_remaining} days.</p>
+        <p>
+          Your {plan.name} expires in {days_remaining} days.
+        </p>
         <Button href="/subscription/renew">Renew Now</Button>
       </Alert>
     );
   }
-  
+
   return (
     <div className="subscription-info">
       <Badge color="success">{plan.name}</Badge>
@@ -161,34 +164,32 @@ const SubscriptionBanner = ({ profile }) => {
 ```javascript
 const PlanLimits = ({ profile }) => {
   const { subscription } = profile;
-  
+
   if (!subscription) return null;
-  
+
   const { plan } = subscription;
-  
+
   return (
     <div className="plan-limits">
       <h4>Your Plan Limits</h4>
-      
+
       <div className="limit-item">
         <span>Properties</span>
         <span>{plan.max_properties}</span>
       </div>
-      
+
       <div className="limit-item">
         <span>Units</span>
         <span>{plan.max_units}</span>
       </div>
-      
+
       <div className="limit-item">
         <span>Tenants</span>
         <span>{plan.max_tenants}</span>
       </div>
-      
+
       {plan.is_free_tier && (
-        <Button href="/subscription/plans">
-          Upgrade for More
-        </Button>
+        <Button href="/subscription/plans">Upgrade for More</Button>
       )}
     </div>
   );
@@ -202,31 +203,31 @@ const PlanLimits = ({ profile }) => {
 ```javascript
 const canCreateProperty = (profile) => {
   const { subscription } = profile;
-  
+
   if (!subscription || subscription.is_expired) {
     return {
       allowed: false,
-      message: 'Your subscription has expired. Please upgrade.'
+      message: "Your subscription has expired. Please upgrade.",
     };
   }
-  
+
   // Note: Actual count check should be done via API
   // This is just for UI hints
   return {
     allowed: true,
-    message: `You can create up to ${subscription.plan.max_properties} properties`
+    message: `You can create up to ${subscription.plan.max_properties} properties`,
   };
 };
 
 // Usage
 const handleCreateProperty = () => {
   const check = canCreateProperty(profile);
-  
+
   if (!check.allowed) {
-    Swal.fire('Subscription Required', check.message, 'warning');
+    Swal.fire("Subscription Required", check.message, "warning");
     return;
   }
-  
+
   // Proceed with creation
   createProperty();
 };
@@ -239,28 +240,28 @@ const handleCreateProperty = () => {
 ```javascript
 const Dashboard = () => {
   const [profile, setProfile] = useState(null);
-  
+
   useEffect(() => {
-    fetch('/api/v1/profiles/', {
+    fetch("/api/v1/profiles/", {
       headers: {
-        'Authorization': `Bearer ${token}`
-      }
+        Authorization: `Bearer ${token}`,
+      },
     })
-    .then(res => res.json())
-    .then(data => setProfile(data));
+      .then((res) => res.json())
+      .then((data) => setProfile(data));
   }, []);
-  
+
   if (!profile) return <Loading />;
-  
+
   const { user, owner, subscription, permissions } = profile;
-  
+
   return (
     <div className="dashboard">
       <header>
         <h1>Welcome, {owner.name}</h1>
         <SubscriptionBanner profile={profile} />
       </header>
-      
+
       <div className="stats-grid">
         <StatCard
           title="Properties"
@@ -268,14 +269,14 @@ const Dashboard = () => {
           limit={subscription.plan.max_properties}
           icon="building"
         />
-        
+
         <StatCard
           title="Units"
           count={unitCount}
           limit={subscription.plan.max_units}
           icon="home"
         />
-        
+
         <StatCard
           title="Tenants"
           count={tenantCount}
@@ -283,7 +284,7 @@ const Dashboard = () => {
           icon="users"
         />
       </div>
-      
+
       <PlanLimits profile={profile} />
     </div>
   );
@@ -297,7 +298,7 @@ const Dashboard = () => {
 ### cURL Example
 
 ```bash
-curl -X GET http://localhost:8000/api/v1/profiles/ \
+curl -X GET $VITE_API_BASE_URL/profiles/ \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
@@ -334,6 +335,6 @@ curl -X GET http://localhost:8000/api/v1/profiles/ \
 ✅ **Plan limits** available for UI display  
 ✅ **Days remaining** for expiry warnings  
 ✅ **Status check** for access control  
-✅ **Single API call** for all user data  
+✅ **Single API call** for all user data
 
 **The profile endpoint now provides complete subscription information in one request!** 🎉
