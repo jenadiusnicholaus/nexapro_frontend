@@ -48,6 +48,12 @@ const config: NavigationConfig = {
       meta: { icon: "home" },
     },
     {
+      name: "subscription-plans",
+      path: "/subscription/plans",
+      displayName: "Subscription",
+      meta: { icon: "workspace_premium" },
+    },
+    {
       name: "bills",
       path: "/bills",
       displayName: "menu.bills",
@@ -58,12 +64,6 @@ const config: NavigationConfig = {
       path: "/payments",
       displayName: "menu.payments",
       meta: { icon: "payment" },
-    },
-    {
-      name: "notifications",
-      path: "/notifications",
-      displayName: "menu.notifications",
-      meta: { icon: "notifications" },
     },
     {
       name: "profiles",

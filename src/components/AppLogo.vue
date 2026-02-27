@@ -30,9 +30,11 @@ defineProps<{
 }
 
 .app-logo__image {
-  height: 48px;
+  height: 56px;
   width: auto;
   object-fit: contain;
+  transform: scale(1.15);
+  transform-origin: left center;
 }
 
 .app-logo__text {

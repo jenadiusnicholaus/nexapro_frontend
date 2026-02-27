@@ -14,21 +14,69 @@
       </template>
     </VaInput>
 
-    <!-- Notifications -->
-    <VaButton
+    <!-- Notifications Dropdown -->
+    <VaDropdown
       v-if="!isMobile"
-      preset="plain"
-      :aria-label="t('common.notifications')"
-      class="app-navbar-actions__btn"
+      placement="bottom-end"
+      :offset="[0, 8]"
+      class="app-navbar-actions__notification-dropdown"
     >
-      <VaIcon name="notifications" size="small" />
-      <VaBadge
-        v-if="notificationCount > 0"
-        :text="String(notificationCount)"
-        color="danger"
-        class="app-navbar-actions__badge"
-      />
-    </VaButton>
+      <template #anchor>
+        <VaButton
+          preset="plain"
+          :aria-label="t('common.notifications')"
+          class="app-navbar-actions__btn"
+        >
+          <VaIcon name="notifications" size="small" />
+          <VaBadge
+            v-if="notificationCount > 0"
+            :text="String(notificationCount)"
+            color="danger"
+            class="app-navbar-actions__badge"
+          />
+        </VaButton>
+      </template>
+      <VaDropdownContent class="notification-dropdown-content">
+        <div class="notification-dropdown-header">
+          <h3>Notifications</h3>
+          <VaButton
+            preset="plain"
+            size="small"
+            @click="goToNotifications"
+            class="view-all-btn"
+          >
+            View All
+          </VaButton>
+        </div>
+        <div class="notification-list">
+          <div v-if="recentNotifications.length === 0" class="no-notifications">
+            No notifications
+          </div>
+          <div
+            v-for="notification in recentNotifications"
+            :key="String((notification as any).id)"
+            class="notification-item"
+            :class="{ unread: (notification as any).status === 'sent' }"
+            @click="markAsRead(notification)"
+          >
+            <VaIcon name="sms" size="small" color="primary" />
+            <div class="notification-content">
+              <p class="notification-subject">
+                {{ (notification as any).subject || "No subject" }}
+              </p>
+              <p class="notification-time">
+                {{ formatTime((notification as any).sent_at || "") }}
+              </p>
+            </div>
+            <VaBadge
+              v-if="(notification as any).status === 'sent'"
+              color="primary"
+              text="New"
+            />
+          </div>
+        </div>
+      </VaDropdownContent>
+    </VaDropdown>
 
     <!-- Language dropdown with flag -->
     <VaDropdown
@@ -133,7 +181,11 @@
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { useAuthStore, useProfilesStore } from "@/stores";
+import {
+  useAuthStore,
+  useProfilesStore,
+  useNotificationsStore,
+} from "@/stores";
 import { setLocale as setI18nLocale, supportedLocales } from "@/i18n";
 import type { Locale } from "@/i18n";
 
@@ -145,10 +197,68 @@ const router = useRouter();
 const { t, locale } = useI18n();
 const authStore = useAuthStore();
 const profilesStore = useProfilesStore();
+const notificationsStore = useNotificationsStore();
 
 const searchQuery = ref("");
 const notificationCount = ref(0);
 const localeOptions = supportedLocales;
+
+// Fetch notifications on mount
+onMounted(async () => {
+  await fetchNotificationCount();
+});
+
+// Fetch notification count
+const fetchNotificationCount = async () => {
+  try {
+    await notificationsStore.fetchList({ ordering: "-sent_at" });
+    const unreadNotifications = notificationsStore.items.filter(
+      (notification: any) =>
+        notification.status === "sent" || notification.status === "unread",
+    );
+    notificationCount.value = unreadNotifications.length;
+  } catch (err) {
+    console.error("Error fetching notifications:", err);
+  }
+};
+
+// Get recent notifications (top 5)
+const recentNotifications = computed(() =>
+  notificationsStore.items.slice(0, 5),
+);
+
+// Navigate to notifications page
+const goToNotifications = () => {
+  router.push({ name: "notifications" });
+};
+
+// Mark notification as read
+const markAsRead = async (notification: any) => {
+  if (notification.status === "sent") {
+    try {
+      await notificationsStore.updateItem(notification.id, { status: "read" });
+      await fetchNotificationCount();
+    } catch (err) {
+      console.error("Error marking notification as read:", err);
+    }
+  }
+};
+
+// Format time
+const formatTime = (dateString: string) => {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  return `${days}d ago`;
+};
 
 const localeFlags: Record<Locale, string> = {
   en: "🇺🇸",
@@ -388,5 +498,84 @@ onMounted(() => {
   height: 1px;
   margin: 0.25rem 0;
   background: rgba(0, 0, 0, 0.08);
+}
+
+/* Notification Dropdown */
+.notification-dropdown-content {
+  width: 480px;
+  max-width: 90vw;
+  max-height: 500px;
+  padding: 0;
+}
+
+.notification-dropdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.notification-dropdown-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a202c;
+}
+
+.view-all-btn {
+  color: #4299e1;
+  font-weight: 500;
+}
+
+.view-all-btn:hover {
+  background: rgba(66, 153, 225, 0.1);
+}
+
+.notification-list {
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.no-notifications {
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: #718096;
+  font-size: 0.875rem;
+}
+
+.notification-item {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #f1f3f4;
+  cursor: pointer;
+  transition: background 0.2s;
+  align-items: flex-start;
+}
+
+.notification-item:hover {
+  background: #f7fafc;
+}
+
+.notification-item.unread {
+  background: rgba(66, 153, 225, 0.05);
+}
+
+.notification-content {
+  flex: 1;
+}
+
+.notification-subject {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1a202c;
+}
+
+.notification-time {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #718096;
 }
 </style>

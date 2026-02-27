@@ -1,7 +1,63 @@
 <template>
   <div class="home-page">
+    <!-- Navbar -->
+    <nav class="landing-navbar" :class="{ scrolled: isScrolled }">
+      <div class="navbar-container">
+        <div class="navbar-logo">
+          <img
+            src="/images/transparent_longo.png"
+            alt="NexaPro"
+            class="logo-img"
+          />
+        </div>
+        <div class="navbar-menu" :class="{ active: mobileMenuOpen }">
+          <a href="#home" @click="scrollToSection('home')" class="nav-link"
+            >Home</a
+          >
+          <a
+            href="#features"
+            @click="scrollToSection('features')"
+            class="nav-link"
+            >Features</a
+          >
+          <a
+            href="#services"
+            @click="scrollToSection('services')"
+            class="nav-link"
+            >Services</a
+          >
+          <a
+            href="#testimonials"
+            @click="scrollToSection('testimonials')"
+            class="nav-link"
+            >Testimonials</a
+          >
+          <a
+            href="#contact"
+            @click="scrollToSection('contact')"
+            class="nav-link"
+            >Contact</a
+          >
+        </div>
+        <div class="navbar-actions">
+          <VaButton preset="plain" @click="goToLogin" class="nav-btn-login"
+            >Login</VaButton
+          >
+          <VaButton @click="getStarted" class="nav-btn-signup"
+            >Get Started</VaButton
+          >
+        </div>
+        <button
+          class="mobile-menu-btn"
+          @click="mobileMenuOpen = !mobileMenuOpen"
+        >
+          <VaIcon :name="mobileMenuOpen ? 'close' : 'menu'" />
+        </button>
+      </div>
+    </nav>
+
     <!-- Hero Section with Video Background -->
-    <section class="hero-section">
+    <section id="home" class="hero-section">
       <!-- Video Background Slider -->
       <div class="video-background">
         <video
@@ -116,7 +172,7 @@
     </section>
 
     <!-- Features Section -->
-    <section class="features-section">
+    <section id="features" class="features-section">
       <div class="container">
         <div class="section-header">
           <h2 class="section-title">Comprehensive Property Management</h2>
@@ -141,7 +197,7 @@
     </section>
 
     <!-- Services Section -->
-    <section class="services-section">
+    <section id="services" class="services-section">
       <div class="container">
         <h2 class="section-title">Our Services</h2>
         <div class="services-grid">
@@ -159,7 +215,7 @@
     </section>
 
     <!-- Testimonials Section -->
-    <section class="testimonials-section">
+    <section id="testimonials" class="testimonials-section">
       <div class="container">
         <div class="section-header">
           <h2 class="section-title">Trusted by Property Owners</h2>
@@ -197,7 +253,7 @@
     </section>
 
     <!-- CTA Section -->
-    <section class="cta-section">
+    <section id="contact" class="cta-section">
       <div class="container">
         <div class="cta-content">
           <h2 class="cta-title">Ready to Get Started?</h2>
@@ -306,6 +362,12 @@ import { useRouter } from "vue-router";
 
 const router = useRouter();
 
+// Mobile menu state
+const mobileMenuOpen = ref(false);
+
+// Scroll state for navbar
+const isScrolled = ref(false);
+
 // Video slider state
 const currentVideoIndex = ref(0);
 const videoRefs = ref<HTMLVideoElement[]>([]);
@@ -403,6 +465,15 @@ const clients = [
   { name: "Elite Properties", icon: "villa" },
 ];
 
+const scrollToSection = (sectionId: string) => {
+  mobileMenuOpen.value = false;
+  const element = document.getElementById(sectionId);
+  if (element) {
+    element.scrollIntoView({ behavior: "smooth" });
+  }
+};
+
+const goToLogin = () => router.push("/login");
 const getStarted = () => router.push("/register");
 const watchDemo = () => console.log("Watch demo");
 const contactSales = () => console.log("Contact sales");
@@ -462,15 +533,22 @@ const resetAutoSlide = () => {
   startAutoSlide();
 };
 
+// Handle scroll event for navbar
+const handleScroll = () => {
+  isScrolled.value = window.scrollY > 50;
+};
+
 // Ensure video plays on mount and start auto-slide
 onMounted(() => {
   playCurrentVideo();
   startAutoSlide();
+  window.addEventListener("scroll", handleScroll);
 });
 
-// Clean up interval on unmount
+// Clean up interval and scroll listener on unmount
 onUnmounted(() => {
   stopAutoSlide();
+  window.removeEventListener("scroll", handleScroll);
 });
 </script>
 
@@ -479,6 +557,112 @@ onUnmounted(() => {
   width: 100%;
   overflow-x: hidden;
   background: #ffffff;
+}
+
+/* Navbar */
+.landing-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: transparent;
+  backdrop-filter: none;
+  box-shadow: none;
+  z-index: 1000;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.landing-navbar.scrolled {
+  background: var(--va-primary);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  border-bottom: 3px solid rgba(255, 255, 255, 0.2);
+}
+
+.navbar-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.navbar-logo {
+  display: flex;
+  align-items: center;
+}
+
+.logo-img {
+  height: 75px;
+  width: auto;
+  transition: height 0.3s ease;
+}
+
+.landing-navbar.scrolled .logo-img {
+  height: 55px;
+}
+
+.navbar-menu {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+}
+
+.nav-link {
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9375rem;
+  transition: color 0.3s;
+  cursor: pointer;
+}
+
+.nav-link:hover {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.navbar-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.nav-btn-login {
+  color: #ffffff !important;
+}
+
+.nav-btn-signup {
+  background: #ffffff !important;
+  color: #1a1a1a !important;
+  font-weight: 700 !important;
+  border: 2px solid #ffffff !important;
+  padding: 0.5rem 1.5rem !important;
+  font-size: 0.9375rem !important;
+}
+
+.nav-btn-signup:deep(.va-button__content) {
+  color: #1a1a1a !important;
+}
+
+.nav-btn-signup:hover {
+  background: #f0f0f0 !important;
+  color: #000000 !important;
+}
+
+.nav-btn-signup:hover:deep(.va-button__content) {
+  color: #000000 !important;
+}
+
+.mobile-menu-btn {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  color: #ffffff;
+  transition: color 0.3s;
 }
 
 /* Hero Section with Video */
@@ -1107,6 +1291,30 @@ onUnmounted(() => {
 
 /* Responsive Design */
 @media (max-width: 968px) {
+  .navbar-menu {
+    position: fixed;
+    top: 70px;
+    left: 0;
+    right: 0;
+    background: white;
+    flex-direction: column;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: none;
+  }
+
+  .navbar-menu.active {
+    display: flex;
+  }
+
+  .navbar-actions {
+    display: none;
+  }
+
+  .mobile-menu-btn {
+    display: block;
+  }
+
   .hero-grid {
     grid-template-columns: 1fr;
     gap: 3rem;

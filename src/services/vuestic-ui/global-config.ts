@@ -34,6 +34,7 @@ export default defineVuesticConfig({
     },
     VaModal: {
       mobileFullscreen: false,
+      stripe: true,
       maxHeight: "calc(100% - 2rem)",
       hideDefaultActions: true,
     },
@@ -44,6 +45,10 @@ export default defineVuesticConfig({
     },
     VaDataTable: {
       disableClientSideSorting: true,
+    },
+    VaCard: {
+      elevation: 2,
+      stripe: true,
     },
     presets: {
       VaSelect: {

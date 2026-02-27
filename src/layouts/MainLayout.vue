@@ -1,7 +1,7 @@
 <template>
   <div class="app-layout">
     <!-- Top Header Bar -->
-    <header class="app-bar">
+    <header class="app-bar" style="border-bottom: 5px solid #4299e1">
       <button
         type="button"
         class="app-bar-menu-btn"
@@ -26,9 +26,19 @@
       <div class="app-bar-right">
         <!-- Subscription Plan Badge -->
         <div class="subscription-badge">
-          <VaChip color="primary" size="large">
+          <VaChip
+            color="primary"
+            size="large"
+            @click="goToSubscriptionPlans"
+            class="clickable-chip subscription-chip"
+          >
             <VaIcon name="workspace_premium" size="small" class="mr-1" />
-            {{ currentPlan }}
+            <div class="subscription-info">
+              <span class="plan-name">{{ currentPlan }}</span>
+              <span v-if="daysRemaining !== null" class="days-remaining"
+                >{{ daysRemaining }} days left</span
+              >
+            </div>
           </VaChip>
         </div>
 
@@ -53,16 +63,9 @@
           </button>
 
           <!-- Notification Dropdown Panel -->
-          <div
-            v-show="showNotificationPanel"
-            class="notification-panel"
-            style="background: red; color: white"
-          >
+          <div v-show="showNotificationPanel" class="notification-panel">
             <div class="notification-panel-header">
-              <h3>
-                Notifications (Panel is
-                {{ showNotificationPanel ? "OPEN" : "CLOSED" }})
-              </h3>
+              <h3>Notifications</h3>
               <button @click="goToNotifications" class="view-all-btn">
                 View All
               </button>
@@ -186,7 +189,12 @@ import { ref, computed, onMounted, onUnmounted } from "vue";
 import { storeToRefs } from "pinia";
 import { useRouter, useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { useAuthStore, useGlobalStore, useNotificationsStore } from "@/stores";
+import {
+  useAuthStore,
+  useGlobalStore,
+  useNotificationsStore,
+  useProfilesStore,
+} from "@/stores";
 import { setLocale as setI18nLocale, supportedLocales } from "@/i18n";
 import type { Locale } from "@/i18n";
 import NavigationRoutes from "@/components/sidebar/NavigationRoutes";
@@ -209,7 +217,15 @@ const setLocale = (value: Locale) => {
 const notificationCount = ref(0);
 const searchQuery = ref("");
 const showNotificationPanel = ref(false);
-const currentPlan = ref("Professional"); // Default plan, can be fetched from user profile
+const profilesStore = useProfilesStore();
+
+const currentPlan = computed(() => {
+  return profilesStore.profile?.subscription?.plan?.name || "Free Trial";
+});
+
+const daysRemaining = computed(() => {
+  return profilesStore.profile?.subscription?.days_remaining ?? null;
+});
 
 // Close panel when clicking outside
 const closePanel = (event: MouseEvent) => {
@@ -314,6 +330,10 @@ const handleLogout = () => {
   authStore.logout();
   router.push({ name: "login" });
 };
+
+const goToSubscriptionPlans = () => {
+  router.push("/subscription/plans");
+};
 </script>
 
 <style scoped>
@@ -336,9 +356,19 @@ const handleLogout = () => {
   padding: 0 1rem;
   gap: 1rem;
   background: #ffffff;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   z-index: 1000;
+}
+
+.app-bar::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: #4299e1 !important;
+  z-index: 10;
 }
 
 .app-bar-menu-btn {
@@ -357,8 +387,8 @@ const handleLogout = () => {
 }
 
 .app-bar-menu-btn:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: #202124;
+  background: rgba(66, 153, 225, 0.1);
+  color: #4299e1;
 }
 
 .app-bar-menu-icon,
@@ -411,11 +441,13 @@ const handleLogout = () => {
   background: transparent;
   cursor: pointer;
   color: #5f6368;
+  transition: all 0.2s ease;
 }
 
 .app-bar-icon-btn:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: #202124;
+  background: rgba(66, 153, 225, 0.1);
+  color: #4299e1;
+  transform: scale(1.05);
 }
 
 .app-bar-badge {
@@ -434,22 +466,54 @@ const handleLogout = () => {
   margin-right: 0.25rem;
 }
 
+.subscription-chip {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0.5rem 1rem;
+}
+
+.subscription-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
+}
+
+.subscription-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.125rem;
+}
+
+.plan-name {
+  font-weight: 600;
+  font-size: 0.875rem;
+  line-height: 1;
+}
+
+.days-remaining {
+  font-size: 0.75rem;
+  opacity: 0.9;
+  line-height: 1;
+}
+
 .notification-wrapper {
   position: relative;
+  z-index: 1001;
 }
 
 .notification-panel {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 12px);
   right: 0;
   width: 380px;
   max-height: 500px;
-  background: white;
+  background: white !important;
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  z-index: 9999 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  z-index: 99999 !important;
   overflow: hidden;
   border: 1px solid #e2e8f0;
+  display: block !important;
 }
 
 .notification-panel-header {
@@ -471,7 +535,7 @@ const handleLogout = () => {
   padding: 0.375rem 0.75rem;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #7c3aed;
+  color: #4299e1;
   background: transparent;
   border: none;
   border-radius: 6px;
@@ -480,7 +544,7 @@ const handleLogout = () => {
 }
 
 .view-all-btn:hover {
-  background: rgba(124, 58, 237, 0.1);
+  background: rgba(66, 153, 225, 0.1);
 }
 
 .notification-list {

@@ -24,26 +24,31 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from 'pinia'
-import { useGlobalStore } from '@/stores'
-import AppLogo from '@/components/AppLogo.vue'
-import AppNavbarActions from './components/AppNavbarActions.vue'
+import { storeToRefs } from "pinia";
+import { useGlobalStore } from "@/stores";
+import AppLogo from "@/components/AppLogo.vue";
+import AppNavbarActions from "./components/AppNavbarActions.vue";
 
 defineProps<{
-  isMobile?: boolean
-}>()
+  isMobile?: boolean;
+}>();
 
-const globalStore = useGlobalStore()
-const { isSidebarMinimized } = storeToRefs(globalStore)
+const globalStore = useGlobalStore();
+const { isSidebarMinimized } = storeToRefs(globalStore);
 
 const toggleSidebar = () => {
-  globalStore.toggleSidebar()
-}
+  globalStore.toggleSidebar();
+};
 </script>
 
 <style scoped>
 .app-navbar {
   z-index: 2;
+  border-bottom: 5px solid var(--va-primary) !important;
+}
+
+.app-navbar :deep(.va-navbar) {
+  border-bottom: 5px solid var(--va-primary) !important;
 }
 
 .app-navbar__left {

@@ -249,6 +249,29 @@ export const notificationsAPI = {
   delete: (id: string | number) => apiClient.delete(`/notifications/${id}/`),
 };
 
+export const subscriptionsAPI = {
+  // Plans
+  getPlans: () => apiClient.get("/subscriptions/plans/"),
+
+  // Subscription management
+  getCurrentSubscription: () => apiClient.get("/subscriptions/subscriptions/"),
+  upgradeSubscription: (data: {
+    plan_id: number;
+    account_number: string;
+    provider: string;
+  }) => apiClient.post("/subscriptions/subscriptions/upgrade/", data),
+  renewSubscription: (data: {
+    plan_id: number;
+    account_number: string;
+    provider: string;
+  }) => apiClient.post("/subscriptions/subscriptions/renew/", data),
+
+  // Payment management
+  getPayment: (paymentId: number) =>
+    apiClient.get(`/subscriptions/payments/${paymentId}/`),
+  getPaymentHistory: () => apiClient.get("/subscriptions/payments/"),
+};
+
 export const profilesAPI = {
   list: (params: Record<string, unknown> = {}) =>
     apiClient.get("/profiles/", { params }),

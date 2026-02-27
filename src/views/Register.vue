@@ -478,7 +478,7 @@ onUnmounted(() => {
 <style scoped>
 .register-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #008236 0%, #006629 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -537,7 +537,7 @@ onUnmounted(() => {
 }
 
 .step-badge.active {
-  background: #667eea;
+  background: var(--va-primary);
   color: #ffffff;
 }
 
@@ -554,7 +554,11 @@ onUnmounted(() => {
 }
 
 .step-line.active {
-  background: #667eea;
+  background: var(--va-primary);
+}
+
+.step-line.completed {
+  background: #48bb78;
 }
 
 .form-section {
@@ -593,12 +597,13 @@ onUnmounted(() => {
 }
 
 .login-link a {
-  color: #667eea;
+  color: var(--va-primary);
   font-weight: 600;
   text-decoration: none;
 }
 
 .login-link a:hover {
+  color: #006629;
   text-decoration: underline;
 }
 
@@ -622,7 +627,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  color: #667eea;
+  color: var(--va-primary);
   font-weight: 600;
   margin-top: 0.5rem;
 }
@@ -654,7 +659,7 @@ onUnmounted(() => {
 
 .resend-button {
   margin-top: 0.5rem;
-  color: #667eea !important;
+  color: var(--va-primary) !important;
 }
 
 .resend-button:disabled {
@@ -698,8 +703,8 @@ onUnmounted(() => {
 
 .phone-input :deep(.input-tel:focus) {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--va-primary);
+  box-shadow: 0 0 0 3px rgba(0, 130, 54, 0.1);
 }
 
 .error-text {
@@ -710,16 +715,57 @@ onUnmounted(() => {
 }
 
 @media (max-width: 640px) {
+  .register-page {
+    padding: 1rem;
+  }
+
   .register-card {
     padding: 2rem 1.5rem;
+    border-radius: 12px;
   }
 
   .register-title {
     font-size: 1.5rem;
   }
 
+  .register-subtitle {
+    font-size: 0.875rem;
+  }
+
   .button-group {
     grid-template-columns: 1fr;
+  }
+
+  .step-line {
+    width: 40px;
+  }
+
+  .step-badge {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+  }
+
+  .section-title {
+    font-size: 1.125rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .register-page {
+    padding: 0.5rem;
+  }
+
+  .register-card {
+    padding: 1.5rem 1rem;
+  }
+
+  .register-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .step-indicator {
+    margin-bottom: 1.5rem;
   }
 }
 </style>

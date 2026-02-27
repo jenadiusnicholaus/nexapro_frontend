@@ -185,7 +185,7 @@ const handleLogin = async () => {
 .login-image-section {
   flex: 1;
   position: relative;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #008236 0%, #006629 100%);
   display: block;
   overflow: hidden;
 }
@@ -214,8 +214,8 @@ const handleLogin = async () => {
   bottom: 0;
   background: linear-gradient(
     135deg,
-    rgba(102, 126, 234, 0.9) 0%,
-    rgba(118, 75, 162, 0.85) 100%
+    rgba(0, 130, 54, 0.9) 0%,
+    rgba(0, 102, 41, 0.85) 100%
   );
   z-index: 1;
 }
@@ -348,7 +348,7 @@ const handleLogin = async () => {
 .login-button {
   width: 100%;
   margin-top: 0.5rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--va-primary) !important;
   border: none;
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -359,7 +359,7 @@ const handleLogin = async () => {
 
 .login-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 8px 20px rgba(0, 130, 54, 0.4);
 }
 
 .login-button:active {
@@ -407,14 +407,14 @@ const handleLogin = async () => {
 }
 
 .register-link-text {
-  color: #667eea;
+  color: var(--va-primary);
   font-weight: 600;
   text-decoration: none;
   transition: color 0.2s ease;
 }
 
 .register-link-text:hover {
-  color: #764ba2;
+  color: #006629;
   text-decoration: underline;
 }
 
@@ -461,12 +461,12 @@ const handleLogin = async () => {
 }
 
 .input-hint .va-icon {
-  color: #667eea;
+  color: var(--va-primary);
   flex-shrink: 0;
 }
 
 .test-user-btn:hover {
-  background: #667eea;
+  background: var(--va-primary);
   color: white;
 }
 
@@ -479,14 +479,24 @@ const handleLogin = async () => {
 
 /* Mobile */
 @media (max-width: 767px) {
+  .login-container {
+    flex-direction: column;
+  }
+
+  .login-image-section {
+    display: none;
+  }
+
   .login-form-section {
     padding: 1.5rem;
     background: white;
+    min-height: auto;
   }
 
   .login-form-wrapper {
     padding: 2rem 1.5rem;
     box-shadow: none;
+    max-width: 100%;
   }
 
   .login-title {
@@ -499,6 +509,15 @@ const handleLogin = async () => {
 
   .image-subtitle {
     font-size: 1.125rem;
+  }
+
+  .test-users {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .test-user-btn {
+    width: 100%;
   }
 }
 </style>
