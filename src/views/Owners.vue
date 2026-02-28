@@ -1,35 +1,56 @@
 <template>
-  <div class="page-container">
-    <div class="page-header">
-      <div>
-        <h1 class="page-title">Owners</h1>
-        <p class="page-subtitle">Manage property owners and companies</p>
+  <div class="owners-page">
+    <div class="page-header-premium">
+      <div class="header-content">
+        <h1 class="premium-title">Owners</h1>
+        <p class="premium-subtitle">Manage property owners and companies</p>
       </div>
-      <VaButton icon="add" @click="showModal = true" size="large">
+      <VaButton 
+        size="large" 
+        class="premium-add-btn"
+        icon="add"
+        @click="showModal = true"
+      >
         Add Owner
       </VaButton>
     </div>
 
-    <VaCard class="data-card">
+    <div class="stats-mini-grid mb-6">
+      <div class="stat-card-glass">
+        <div class="stat-icon-wrap emerald">
+          <VaIcon name="person" size="24px" />
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">Total Owners</span>
+          <span class="stat-value">{{ ownersStore.items.length }}</span>
+        </div>
+      </div>
+    </div>
+
+    <VaCard class="premium-card">
       <VaCardContent>
-        <div class="filters">
-          <VaInput
-            v-model="searchQuery"
-            placeholder="Search owners..."
-            class="search-input"
-            preset="bordered"
-          >
-            <template #prependInner>
-              <VaIcon name="search" size="small" />
-            </template>
-          </VaInput>
-          <VaSelect
-            v-model="filterType"
-            :options="ownerTypes"
-            placeholder="Filter by type"
-            class="filter-select"
-            preset="bordered"
-          />
+        <div class="filters-premium mb-6">
+          <div class="search-wrap">
+            <VaInput
+              v-model="searchQuery"
+              placeholder="Search owners..."
+              class="premium-input-search"
+              background="rgba(255,255,255,0.03)"
+            >
+              <template #prependInner>
+                <VaIcon name="search" color="#22c55e" />
+              </template>
+            </VaInput>
+          </div>
+          <div class="select-wrap">
+            <VaSelect
+              v-model="filterType"
+              :options="ownerTypes"
+              placeholder="All Types"
+              class="premium-select"
+              background="rgba(255,255,255,0.03)"
+            />
+          </div>
         </div>
 
         <AppDataTable
@@ -37,77 +58,102 @@
           :columns="columns"
           :loading="ownersStore.loading"
         >
+          <template #cell(name)="{ rowData }">
+            <div class="owner-name-cell">
+              <span class="name-main">{{ rowData.name }}</span>
+              <span class="name-sub">{{ rowData.owner_type }}</span>
+            </div>
+          </template>
+
           <template #cell(actions)="{ rowData }">
-            <VaButton
-              preset="plain"
-              icon="edit"
-              size="small"
-              @click="editOwner(rowData)"
-            />
-            <VaButton
-              preset="plain"
-              icon="delete"
-              size="small"
-              color="danger"
-              @click="deleteOwner(rowData.id)"
-            />
+            <div class="actions-cell">
+              <VaButton
+                preset="secondary"
+                icon="edit"
+                size="small"
+                class="action-btn-glass"
+                @click="editOwner(rowData)"
+              />
+              <VaButton
+                preset="secondary"
+                icon="delete"
+                size="small"
+                color="danger"
+                class="action-btn-glass delete"
+                @click="deleteOwner(rowData.id)"
+              />
+            </div>
           </template>
         </AppDataTable>
       </VaCardContent>
     </VaCard>
 
-    <!-- Add/Edit Modal -->
+    <!-- Add/Edit Modal Premium -->
     <VaModal
       v-model="showModal"
       :title="editingId ? 'Edit Owner' : 'Add Owner'"
       hide-default-actions
       size="medium"
+      class="premium-modal"
     >
-      <VaForm ref="ownerForm" @submit.prevent="saveOwner">
-        <VaSelect
-          v-model="formData.owner_type"
-          label="Owner Type"
-          :options="ownerTypes"
-          :rules="[validators.required]"
-          class="mb-4"
-        />
-        <VaInput
-          v-model="formData.name"
-          label="Name"
-          :rules="[validators.required]"
-          class="mb-4"
-        />
-        <VaInput
-          v-if="formData.owner_type === 'company'"
-          v-model="formData.contact_person"
-          label="Contact Person"
-          :rules="[validators.required]"
-          class="mb-4"
-        />
-        <PhoneInput
-          v-model="formData.phone"
-          label="Phone"
-          :required="true"
-          class="mb-4"
-        />
-        <VaInput
-          v-model="formData.email"
-          label="Email"
-          type="email"
-          :rules="[validators.required, validators.email]"
-          class="mb-4"
-        />
-        <VaInput
-          v-model="formData.address"
-          label="Address"
-          :rules="[validators.required]"
-          class="mb-4"
-        />
-        <div class="modal-actions">
-          <VaButton preset="secondary" @click="closeModal">Cancel</VaButton>
-          <VaButton type="submit" :loading="saving">Save</VaButton>
-        </div>
-      </VaForm>
+      <div class="modal-inner">
+        <VaForm ref="ownerForm" @submit.prevent="saveOwner" class="premium-form">
+          <VaSelect
+            v-model="formData.owner_type"
+            label="Owner Type"
+            :options="ownerTypes"
+            :rules="[validators.required]"
+            class="mb-4"
+            background="rgba(255,255,255,0.03)"
+          />
+          <VaInput
+            v-model="formData.name"
+            label="Name"
+            :rules="[validators.required]"
+            class="mb-4"
+            background="rgba(255,255,255,0.03)"
+          />
+          <VaInput
+            v-if="formData.owner_type === 'company'"
+            v-model="formData.contact_person"
+            label="Contact Person"
+            :rules="[validators.required]"
+            class="mb-4"
+            background="rgba(255,255,255,0.03)"
+          />
+          <PhoneInput
+            v-model="formData.phone"
+            label="Phone"
+            :required="true"
+            class="mb-4"
+            background="rgba(255,255,255,0.03)"
+          />
+          <div class="form-grid">
+            <VaInput
+              v-model="formData.email"
+              label="Email"
+              type="email"
+              :rules="[validators.required, validators.email]"
+              class="mb-4"
+              background="rgba(255,255,255,0.03)"
+            />
+            <VaInput
+              v-model="formData.address"
+              label="Address"
+              :rules="[validators.required]"
+              class="mb-4"
+              background="rgba(255,255,255,0.03)"
+            />
+          </div>
+
+          <div class="modal-footer">
+            <VaButton preset="secondary" @click="closeModal" class="cancel-btn">Cancel</VaButton>
+            <VaButton type="submit" :loading="saving" class="save-btn-premium">
+              {{ editingId ? 'Update Owner' : 'Create Owner' }}
+            </VaButton>
+          </div>
+        </VaForm>
+      </div>
     </VaModal>
   </div>
 </template>
@@ -142,12 +188,12 @@ const formData = ref({
 });
 
 const columns = [
-  { key: "name", label: "Name", sortable: true },
+  { key: "name", label: "Owner", sortable: true },
   { key: "owner_type", label: "Type", sortable: true },
   { key: "phone", label: "Phone" },
   { key: "email", label: "Email" },
   { key: "address", label: "Address" },
-  { key: "actions", label: "Actions", width: 100 },
+  { key: "actions", label: "Actions", width: 120 },
 ];
 
 const loadOwners = () => {
@@ -225,80 +271,212 @@ watch([searchQuery, filterType], () => {
 </script>
 
 <style scoped>
-.page-container {
-  max-width: 1400px;
-  margin: 0 auto;
+.owners-page {
+  padding: 1.5rem;
+  min-height: calc(100vh - 4rem);
 }
 
-.page-header {
+.page-header-premium {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 2rem;
+  align-items: flex-end;
+  margin-bottom: 2.5rem;
 }
 
-.page-title {
-  font-size: 2rem;
+.premium-title {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--va-text-primary);
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.premium-subtitle {
+  color: var(--va-text-secondary);
+  font-size: 1rem;
+  margin: 0.25rem 0 0;
+}
+
+.premium-add-btn {
+  background: linear-gradient(135deg, #22c55e, #10b981) !important;
+  color: white !important;
+  font-weight: 700 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3) !important;
+  transition: all 0.3s ease !important;
+}
+
+.premium-add-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(34, 197, 94, 0.4) !important;
+}
+
+/* Stats */
+.stats-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.stat-card-glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 1.25rem;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.stat-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-icon-wrap.emerald {
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.75rem;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.stat-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+/* Premium Card & Filters */
+.premium-card {
+  background: var(--va-background-card-primary) !important;
+  backdrop-filter: blur(20px) !important;
+  border: 1px solid var(--va-background-border) !important;
+  border-radius: 20px !important;
+}
+
+.filters-premium {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.search-wrap {
+  flex: 1;
+  min-width: 300px;
+}
+
+.select-wrap {
+  width: 200px;
+}
+
+.premium-input-search :deep(.va-input-wrapper) {
+  border-radius: 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.premium-select :deep(.va-input-wrapper) {
+  border-radius: 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Owner Name Cell */
+.owner-name-cell {
+  display: flex;
+  flex-direction: column;
+}
+
+.owner-primary-name {
   font-weight: 700;
   color: var(--va-text-primary);
-  margin: 0 0 0.5rem 0;
+  font-size: 0.95rem;
 }
 
-.page-subtitle {
-  font-size: 0.875rem;
+.name-sub {
+  font-size: 0.75rem;
   color: var(--va-text-secondary);
-  margin: 0;
+  text-transform: capitalize;
 }
 
-.data-card {
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-}
-
-.filters {
+/* Actions */
+.actions-cell {
   display: flex;
+  gap: 0.5rem;
+}
+
+.action-btn-glass {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-radius: 8px !important;
+  color: var(--va-text-secondary) !important;
+}
+
+.action-btn-glass:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #22c55e !important;
+}
+
+.action-btn-glass.delete:hover {
+  color: #ef4444 !important;
+}
+
+/* Modal Premium */
+.premium-modal {
+  --va-modal-background: var(--va-background-primary);
+  --va-modal-border-radius: 24px;
+}
+
+.modal-inner {
+  padding: 1.5rem 0.5rem;
+}
+
+.premium-form :deep(.va-input-wrapper) {
+  border-radius: 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 1rem;
-  flex-wrap: wrap;
-  margin-bottom: 1.5rem;
 }
 
-.search-input {
-  flex: 1;
-  min-width: 250px;
-}
-
-.filter-select {
-  min-width: 200px;
-}
-
-.data-table {
-  margin-top: 0.5rem;
-}
-
-.modal-actions {
+.modal-footer {
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
-  margin-top: 1.5rem;
+  margin-top: 2rem;
+}
+
+.save-btn-premium {
+  background: linear-gradient(135deg, #22c55e, #10b981) !important;
+  border-radius: 10px !important;
+  font-weight: 700 !important;
+}
+
+.cancel-btn {
+  border-radius: 10px !important;
 }
 
 @media (max-width: 768px) {
-  .page-header {
+  .page-header-premium {
     flex-direction: column;
+    align-items: flex-start;
     gap: 1rem;
   }
-
-  .page-title {
-    font-size: 1.5rem;
-  }
-
-  .filters {
-    flex-direction: column;
-  }
-
-  .search-input,
-  .filter-select {
-    width: 100%;
+  .form-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

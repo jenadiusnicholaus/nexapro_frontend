@@ -43,12 +43,15 @@ const toggleSidebar = () => {
 
 <style scoped>
 .app-navbar {
-  z-index: 2;
-  border-bottom: 5px solid var(--va-primary) !important;
+  z-index: 10;
+  background: var(--va-background-secondary) !important;
+  backdrop-filter: blur(15px);
+  border-bottom: 1px solid var(--va-background-border) !important;
+  padding: 0.5rem 0;
 }
 
-.app-navbar :deep(.va-navbar) {
-  border-bottom: 5px solid var(--va-primary) !important;
+.app-navbar :deep(.va-navbar__content) {
+  background: transparent !important;
 }
 
 .app-navbar__left {

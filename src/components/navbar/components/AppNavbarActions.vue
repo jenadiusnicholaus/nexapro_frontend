@@ -1,176 +1,130 @@
 <template>
-  <div class="app-navbar-actions">
-    <!-- Search -->
+  <div class="app-navbar-actions-premium">
+    <!-- Search Premium -->
     <VaInput
       v-if="!isMobile"
       v-model="searchQuery"
       :placeholder="t('common.search')"
-      preset="bordered"
-      class="app-navbar-actions__search"
-      autocomplete="off"
+      class="premium-navbar-search"
+      background="rgba(255,255,255,0.03)"
     >
       <template #prependInner>
-        <VaIcon name="search" size="small" />
+        <VaIcon name="search" color="#22c55e" size="small" />
       </template>
     </VaInput>
 
-    <!-- Notifications Dropdown -->
+    <!-- Notifications Dropdown Premium -->
     <VaDropdown
       v-if="!isMobile"
       placement="bottom-end"
-      :offset="[0, 8]"
-      class="app-navbar-actions__notification-dropdown"
+      :offset="[0, 12]"
+      class="premium-dropdown-wrap"
     >
       <template #anchor>
         <VaButton
           preset="plain"
           :aria-label="t('common.notifications')"
-          class="app-navbar-actions__btn"
+          class="premium-nav-btn"
         >
-          <VaIcon name="notifications" size="small" />
-          <VaBadge
-            v-if="notificationCount > 0"
-            :text="String(notificationCount)"
-            color="danger"
-            class="app-navbar-actions__badge"
-          />
+          <VaIcon name="notifications" color="#94a3b8" />
+          <div v-if="notificationCount > 0" class="premium-badge-dot"></div>
         </VaButton>
       </template>
-      <VaDropdownContent class="notification-dropdown-content">
-        <div class="notification-dropdown-header">
-          <h3>Notifications</h3>
-          <VaButton
-            preset="plain"
-            size="small"
-            @click="goToNotifications"
-            class="view-all-btn"
-          >
-            View All
-          </VaButton>
+      <VaDropdownContent class="premium-dropdown-card">
+        <div class="notif-header">
+          <span class="notif-title">Notifications</span>
+          <VaButton preset="plain" size="small" color="#22c55e" @click="goToNotifications">View All</VaButton>
         </div>
-        <div class="notification-list">
-          <div v-if="recentNotifications.length === 0" class="no-notifications">
-            No notifications
+        <div class="notif-list-premium">
+          <div v-if="recentNotifications.length === 0" class="empty-notif">
+            No new updates
           </div>
           <div
             v-for="notification in recentNotifications"
             :key="String((notification as any).id)"
-            class="notification-item"
+            class="notif-item-premium"
             :class="{ unread: (notification as any).status === 'sent' }"
             @click="markAsRead(notification)"
           >
-            <VaIcon name="sms" size="small" color="primary" />
-            <div class="notification-content">
-              <p class="notification-subject">
-                {{ (notification as any).subject || "No subject" }}
-              </p>
-              <p class="notification-time">
-                {{ formatTime((notification as any).sent_at || "") }}
-              </p>
+            <div class="notif-icon emerald">
+              <VaIcon name="info" size="small" />
             </div>
-            <VaBadge
-              v-if="(notification as any).status === 'sent'"
-              color="primary"
-              text="New"
-            />
+            <div class="notif-content">
+              <p class="notif-subj">{{ (notification as any).subject || "No subject" }}</p>
+              <p class="notif-time">{{ formatTime((notification as any).sent_at || "") }}</p>
+            </div>
           </div>
         </div>
       </VaDropdownContent>
     </VaDropdown>
 
-    <!-- Language dropdown with flag -->
+    <!-- Language Premium -->
     <VaDropdown
       v-if="!isMobile"
       placement="bottom-end"
-      :offset="[0, 8]"
-      class="app-navbar-actions__locale-dropdown"
+      :offset="[0, 12]"
     >
       <template #anchor>
-        <VaButton preset="plain" size="small" class="locale-trigger">
-          <span class="locale-flag">{{ currentLocaleFlag }}</span>
-          <span class="locale-label">{{ currentLocaleLabel }}</span>
-          <VaIcon name="angle_down" size="small" class="locale-chevron" />
-        </VaButton>
+        <button class="locale-trigger-premium">
+          <span class="flag">{{ currentLocaleFlag }}</span>
+          <VaIcon name="expand_more" size="small" color="#64748b" />
+        </button>
       </template>
-      <VaDropdownContent>
+      <VaDropdownContent class="premium-dropdown-card min-w-[120px]">
         <div
           v-for="opt in localeOptions"
           :key="opt.value"
-          class="locale-option"
-          :class="{ 'locale-option--active': locale === opt.value }"
+          class="locale-opt-premium"
+          :class="{ active: locale === opt.value }"
           @click="setLocale(opt.value)"
         >
-          <span class="locale-option__flag">{{
-            getLocaleFlag(opt.value)
-          }}</span>
-          <span class="locale-option__label">{{ opt.label }}</span>
+          <span class="opt-flag">{{ getLocaleFlag(opt.value) }}</span>
+          <span class="opt-label">{{ opt.label }}</span>
         </div>
       </VaDropdownContent>
     </VaDropdown>
 
-    <!-- Account dropdown: avatar + actions -->
+    <!-- Theme Toggle Premium -->
+    <VaButton
+      v-if="!isMobile"
+      preset="plain"
+      class="premium-nav-btn theme-toggle-btn"
+      @click="toggleTheme"
+    >
+      <VaIcon :name="isDark ? 'light_mode' : 'dark_mode'" color="#22c55e" />
+    </VaButton>
+
+    <!-- Account Premium -->
     <VaDropdown
       placement="bottom-end"
-      :offset="[0, 8]"
-      class="app-navbar-actions__account-dropdown"
+      :offset="[0, 12]"
     >
       <template #anchor>
-        <button
-          type="button"
-          class="account-trigger"
-          aria-haspopup="true"
-          :aria-label="t('common.account')"
-        >
-          <div class="account-trigger__avatar">
-            <img
-              v-if="userImage"
-              :src="userImage"
-              alt="User avatar"
-              class="account-trigger__avatar-img"
-            />
-            <span v-else-if="userInitials" class="account-trigger__initials">{{
-              userInitials
-            }}</span>
-            <VaIcon
-              v-else
-              name="person"
-              size="small"
-              class="account-trigger__icon"
-            />
+        <button class="account-trigger-premium">
+          <div class="avatar-ring-premium">
+            <img v-if="userImage" :src="userImage" class="avatar-img" />
+            <div v-else class="avatar-initials-gradient">{{ userInitials }}</div>
           </div>
-          <span v-if="!isMobile" class="account-trigger__name">{{
-            userName
-          }}</span>
-          <VaIcon
-            name="angle_down"
-            size="small"
-            class="account-trigger__chevron"
-          />
+          <div v-if="!isMobile" class="user-meta">
+            <span class="user-name">{{ userName }}</span>
+            <span class="user-role">Owner</span>
+          </div>
+          <VaIcon name="unfold_more" size="small" color="#64748b" />
         </button>
       </template>
-      <VaDropdownContent>
-        <div class="account-menu">
-          <button type="button" class="account-menu__item" @click="goToProfile">
-            <VaIcon name="person" size="small" />
-            <span>{{ t("common.profile") }}</span>
-          </button>
-          <button
-            type="button"
-            class="account-menu__item"
-            @click="goToSettings"
-          >
-            <VaIcon name="gear" size="small" />
-            <span>{{ t("common.settings") }}</span>
-          </button>
-          <div class="account-menu__divider" />
-          <button
-            type="button"
-            class="account-menu__item account-menu__item--danger"
-            @click="handleLogout"
-          >
-            <VaIcon name="logout" size="small" />
-            <span>{{ t("common.signOut") }}</span>
-          </button>
+      <VaDropdownContent class="premium-dropdown-card account-menu-premium">
+        <div class="menu-item-premium" @click="goToProfile">
+          <VaIcon name="person_outline" color="#94a3b8" />
+          <span>Profile</span>
+        </div>
+        <div class="menu-item-premium" @click="goToSettings">
+          <VaIcon name="settings" color="#94a3b8" />
+          <span>Settings</span>
+        </div>
+        <div class="menu-divider"></div>
+        <div class="menu-item-premium danger" @click="handleLogout">
+          <VaIcon name="logout" color="#ef4444" />
+          <span>Sign Out</span>
         </div>
       </VaDropdownContent>
     </VaDropdown>
@@ -181,6 +135,7 @@
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
+import { useColors } from "vuestic-ui";
 import {
   useAuthStore,
   useProfilesStore,
@@ -193,8 +148,9 @@ defineProps<{
   isMobile?: boolean;
 }>();
 
+const { t, locale } = useI18n({ useScope: 'global' });
+
 const router = useRouter();
-const { t, locale } = useI18n();
 const authStore = useAuthStore();
 const profilesStore = useProfilesStore();
 const notificationsStore = useNotificationsStore();
@@ -203,12 +159,28 @@ const searchQuery = ref("");
 const notificationCount = ref(0);
 const localeOptions = supportedLocales;
 
-// Fetch notifications on mount
+const { applyPreset, currentPresetName } = useColors();
+
+const currentTheme = computed(() => currentPresetName.value);
+const isDark = computed(() => currentTheme.value === "dark");
+
+const toggleTheme = () => {
+  const newTheme = isDark.value ? "light" : "dark";
+  applyPreset(newTheme);
+  localStorage.setItem("app-theme", newTheme);
+};
+
+onMounted(() => {
+  const savedTheme = localStorage.getItem("app-theme") || "dark";
+  if (savedTheme !== currentTheme.value) {
+    applyPreset(savedTheme);
+  }
+});
+
 onMounted(async () => {
   await fetchNotificationCount();
 });
 
-// Fetch notification count
 const fetchNotificationCount = async () => {
   try {
     await notificationsStore.fetchList({ ordering: "-sent_at" });
@@ -222,17 +194,14 @@ const fetchNotificationCount = async () => {
   }
 };
 
-// Get recent notifications (top 5)
 const recentNotifications = computed(() =>
   notificationsStore.items.slice(0, 5),
 );
 
-// Navigate to notifications page
 const goToNotifications = () => {
   router.push({ name: "notifications" });
 };
 
-// Mark notification as read
 const markAsRead = async (notification: any) => {
   if (notification.status === "sent") {
     try {
@@ -244,7 +213,6 @@ const markAsRead = async (notification: any) => {
   }
 };
 
-// Format time
 const formatTime = (dateString: string) => {
   if (!dateString) return "";
   const date = new Date(dateString);
@@ -268,21 +236,20 @@ const localeFlags: Record<Locale, string> = {
 const currentLocaleFlag = computed(
   () => localeFlags[locale.value as Locale] ?? "🇺🇸",
 );
-const currentLocaleLabel = computed(
-  () => localeOptions.find((o) => o.value === locale.value)?.label ?? "English",
-);
 
 const userInitials = computed(() => {
   const name = profilesStore.profile?.owner?.name || "";
+  if (!name) return "US";
   return name
     .split(" ")
     .map((n: string) => n[0])
     .join("")
+    .slice(0, 2)
     .toUpperCase();
 });
 
 const userName = computed(() => {
-  return profilesStore.profile?.owner?.name || t("common.account");
+  return profilesStore.profile?.owner?.name || "User";
 });
 
 const userImage = computed(() => {
@@ -316,266 +283,251 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.app-navbar-actions {
+.app-navbar-actions-premium {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  min-height: 2.5rem;
+  gap: 1.25rem;
 }
 
-.app-navbar-actions__search {
-  width: 220px;
-  min-width: 160px;
-  flex-shrink: 0;
+/* Search */
+.premium-navbar-search {
+  width: 240px;
 }
 
-.app-navbar-actions__btn {
-  flex-shrink: 0;
+.premium-navbar-search :deep(.va-input-wrapper) {
+  border-radius: 100px !important;
+  border: 1px solid var(--va-background-border) !important;
+  background: var(--va-background-element) !important;
+}
+
+/* Buttons & Badges */
+.premium-nav-btn {
+  width: 40px;
+  height: 40px;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px !important;
+  background: var(--va-background-element) !important;
   position: relative;
 }
 
-.app-navbar-actions__badge {
+.premium-badge-dot {
   position: absolute;
-  top: 2px;
-  right: 2px;
-}
-
-.app-navbar-actions__locale-dropdown,
-.app-navbar-actions__account-dropdown {
-  flex-shrink: 0;
-}
-
-/* Language dropdown */
-.locale-trigger {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.375rem 0.5rem;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--va-text-primary);
-  border-radius: 8px;
-}
-
-.locale-trigger:hover {
-  background: rgba(0, 0, 0, 0.05);
-}
-
-.locale-flag {
-  font-size: 1rem;
-  line-height: 1;
-}
-
-.locale-label {
-  max-width: 6rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.locale-chevron {
-  opacity: 0.7;
-  margin-left: 0.125rem;
-}
-
-.locale-option {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.875rem;
-  cursor: pointer;
-  border-radius: 6px;
-  transition: background 0.15s;
-}
-
-.locale-option:hover {
-  background: rgba(0, 0, 0, 0.06);
-}
-
-.locale-option--active {
-  background: rgba(124, 58, 237, 0.1);
-  color: var(--va-primary);
-  font-weight: 500;
-}
-
-.locale-option__flag {
-  font-size: 1.125rem;
-}
-
-/* Account dropdown */
-.account-trigger {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.25rem 0.5rem 0.25rem 0.25rem;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--va-text-primary);
-  cursor: pointer;
-  font: inherit;
-  transition: background 0.15s;
-}
-
-.account-trigger:hover {
-  background: rgba(0, 0, 0, 0.05);
-}
-
-.account-trigger__avatar {
-  width: 32px;
-  height: 32px;
+  top: 10px;
+  right: 10px;
+  width: 8px;
+  height: 8px;
+  background: #22c55e;
   border-radius: 50%;
-  background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%);
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+}
+
+/* Dropdown Card */
+.premium-dropdown-card {
+  background: var(--va-background-secondary) !important;
+  border: 1px solid var(--va-background-border) !important;
+  box-shadow: var(--va-shadow) !important;
+  border-radius: 16px !important;
+  padding: 0.5rem !important;
+}
+
+/* Notifications */
+.notif-header {
+  padding: 0.75rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 0.5rem;
+}
+
+.notif-title {
+  font-weight: 700;
+  color: var(--va-text-primary);
+}
+
+.notif-list-premium {
+  width: 320px;
+}
+
+.notif-item-premium {
+  display: flex;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.notif-item-premium:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.notif-item-premium.unread {
+  background: rgba(34, 197, 94, 0.03);
+}
+
+.notif-icon.emerald {
+  width: 36px;
+  height: 36px;
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  overflow: hidden;
 }
 
-.account-trigger__avatar-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.account-trigger__initials {
-  color: #fff;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.account-trigger__icon {
-  color: #fff !important;
-}
-
-.account-trigger__name {
+.notif-subj {
   font-size: 0.875rem;
-  font-weight: 500;
-  max-width: 5rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-weight: 600;
+  color: var(--va-text-primary);
+  margin: 0;
 }
 
-.account-trigger__chevron {
-  opacity: 0.7;
-  flex-shrink: 0;
+.notif-time {
+  font-size: 0.75rem;
+  color: var(--va-text-secondary);
+  margin: 0;
 }
 
-.account-menu {
-  min-width: 180px;
-  padding: 0.25rem 0;
+.empty-notif {
+  padding: 2rem;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.875rem;
 }
 
-.account-menu__item {
+/* Locale */
+.locale-trigger-premium {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  width: 100%;
-  padding: 0.5rem 0.75rem;
+  background: var(--va-background-element);
   border: none;
-  border-radius: 6px;
-  background: transparent;
+  padding: 0.5rem 0.75rem;
+  border-radius: 12px;
   color: var(--va-text-primary);
-  font-size: 0.875rem;
-  text-align: left;
   cursor: pointer;
-  transition: background 0.15s;
 }
 
-.account-menu__item:hover {
-  background: rgba(0, 0, 0, 0.06);
-}
-
-.account-menu__item--danger:hover {
-  background: rgba(234, 34, 34, 0.1);
-  color: var(--va-danger);
-}
-
-.account-menu__divider {
-  height: 1px;
-  margin: 0.25rem 0;
-  background: rgba(0, 0, 0, 0.08);
-}
-
-/* Notification Dropdown */
-.notification-dropdown-content {
-  width: 480px;
-  max-width: 90vw;
-  max-height: 500px;
-  padding: 0;
-}
-
-.notification-dropdown-header {
+.locale-opt-premium {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.notification-dropdown-header h3 {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1a202c;
-}
-
-.view-all-btn {
-  color: #4299e1;
-  font-weight: 500;
-}
-
-.view-all-btn:hover {
-  background: rgba(66, 153, 225, 0.1);
-}
-
-.notification-list {
-  max-height: 420px;
-  overflow-y: auto;
-}
-
-.no-notifications {
-  padding: 3rem 1.5rem;
-  text-align: center;
-  color: #718096;
-  font-size: 0.875rem;
-}
-
-.notification-item {
-  display: flex;
   gap: 0.75rem;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid #f1f3f4;
+  padding: 0.625rem 1rem;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background 0.2s;
-  align-items: flex-start;
+  transition: all 0.2s;
+  color: #94a3b8;
 }
 
-.notification-item:hover {
-  background: #f7fafc;
+.locale-opt-premium:hover {
+  background: rgba(255, 255, 255, 0.03);
+  color: #f1f5f9;
 }
 
-.notification-item.unread {
-  background: rgba(66, 153, 225, 0.05);
+.locale-opt-premium.active {
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
 }
 
-.notification-content {
-  flex: 1;
+/* Account */
+.account-trigger-premium {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 0.8rem;
+  background: var(--va-background-element);
+  border: 1px solid var(--va-background-border);
+  border-radius: 100px;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.notification-subject {
-  margin: 0 0 0.25rem 0;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #1a202c;
+.account-trigger-premium:hover {
+  background: rgba(255, 255, 255, 0.06);
 }
 
-.notification-time {
-  margin: 0;
+.avatar-ring-premium {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  padding: 1.5px;
+  background: linear-gradient(135deg, #22c55e, #10b981);
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.avatar-initials-gradient {
+  width: 100%;
+  height: 100%;
+  background: var(--va-background-primary);
+  color: var(--va-text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 0.75rem;
-  color: #718096;
+  font-weight: 700;
+  border-radius: 50%;
+}
+
+.user-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.2;
+}
+
+.user-name {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--va-text-primary);
+}
+
+.user-role {
+  font-size: 0.7rem;
+  color: #22c55e;
+  font-weight: 600;
+}
+
+.account-menu-premium {
+  width: 200px;
+}
+
+.menu-item-premium {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  cursor: pointer;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.menu-item-premium:hover {
+  background: rgba(255, 255, 255, 0.03);
+  color: #f1f5f9;
+}
+
+.menu-item-premium.danger:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.menu-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.05);
+  margin: 0.4rem 0.5rem;
 }
 </style>

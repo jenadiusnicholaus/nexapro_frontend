@@ -4,9 +4,9 @@
     <div class="dashboard-header">
       <div class="header-content">
         <div class="header-left">
-          <h1 class="dashboard-title">Dashboard</h1>
+          <h1 class="dashboard-title">{{ t('dashboard.title') }}</h1>
           <p class="dashboard-subtitle">
-            Welcome back! Here's what's happening with your properties today.
+            {{ t('dashboard.subtitle') }}
           </p>
         </div>
         <div class="header-actions">
@@ -24,7 +24,7 @@
             @click="loadDashboardData"
             :loading="loading"
           >
-            Refresh
+            {{ t('dashboard.refresh') }}
           </VaButton>
         </div>
       </div>
@@ -71,8 +71,8 @@
         <VaCard class="chart-card">
           <VaCardTitle class="chart-header">
             <div class="chart-title-group">
-              <h3>Revenue Overview</h3>
-              <p class="chart-subtitle">Monthly revenue trends</p>
+              <h3>{{ t('dashboard.charts.revenueTitle') }}</h3>
+              <p class="chart-subtitle">{{ t('dashboard.charts.revenueSubtitle') }}</p>
             </div>
             <div class="chart-actions">
               <VaButtonGroup>
@@ -97,11 +97,11 @@
               <div class="chart-legend">
                 <div class="legend-item">
                   <div class="legend-dot legend-dot--primary"></div>
-                  <span>This Month</span>
+                  <span>{{ t('dashboard.charts.thisMonth') }}</span>
                 </div>
                 <div class="legend-item">
                   <div class="legend-dot legend-dot--secondary"></div>
-                  <span>Last Month</span>
+                  <span>{{ t('dashboard.charts.lastMonth') }}</span>
                 </div>
               </div>
               <div class="chart-bars">
@@ -128,9 +128,9 @@
         <!-- Properties Overview -->
         <VaCard class="overview-card">
           <VaCardTitle class="card-header">
-            <h3>Properties Overview</h3>
+            <h3>{{ t('dashboard.overview.title') }}</h3>
             <VaButton preset="plain" size="small" to="/properties">
-              View all
+              {{ t('dashboard.overview.viewAll') }}
               <VaIcon name="arrow_forward" size="small" />
             </VaButton>
           </VaCardTitle>
@@ -142,7 +142,7 @@
                 </div>
                 <div class="stat-content">
                   <div class="stat-value">{{ occupiedUnits }}</div>
-                  <div class="stat-label">Occupied</div>
+                  <div class="stat-label">{{ t('dashboard.overview.occupied') }}</div>
                 </div>
               </div>
               <div class="stat-item">
@@ -151,7 +151,7 @@
                 </div>
                 <div class="stat-content">
                   <div class="stat-value">{{ vacantUnits }}</div>
-                  <div class="stat-label">Vacant</div>
+                  <div class="stat-label">{{ t('dashboard.overview.vacant') }}</div>
                 </div>
               </div>
               <div class="stat-item">
@@ -160,13 +160,13 @@
                 </div>
                 <div class="stat-content">
                   <div class="stat-value">{{ maintenanceUnits }}</div>
-                  <div class="stat-label">Maintenance</div>
+                  <div class="stat-label">{{ t('dashboard.overview.maintenance') }}</div>
                 </div>
               </div>
             </div>
             <div class="occupancy-progress">
               <div class="progress-header">
-                <span>Occupancy Rate</span>
+                <span>{{ t('dashboard.overview.occupancyRate') }}</span>
                 <span class="progress-value">{{ occupancyRate }}%</span>
               </div>
               <div class="progress-bar">
@@ -185,7 +185,7 @@
         <!-- Recent Activity -->
         <VaCard class="activity-card">
           <VaCardTitle class="card-header">
-            <h3>Recent Activity</h3>
+            <h3>{{ t('dashboard.activity.title') }}</h3>
             <VaChip color="primary" size="small">{{
               recentBills.length + recentPayments.length
             }}</VaChip>
@@ -198,14 +198,14 @@
                   size="small"
                   @click="activeTab = 'bills'"
                 >
-                  Bills
+                  {{ t('dashboard.activity.bills') }}
                 </VaButton>
                 <VaButton
                   :preset="activeTab === 'payments' ? 'primary' : 'secondary'"
                   size="small"
                   @click="activeTab = 'payments'"
                 >
-                  Payments
+                  {{ t('dashboard.activity.payments') }}
                 </VaButton>
               </VaButtonGroup>
             </div>
@@ -219,7 +219,7 @@
                 class="empty-state"
               >
                 <VaIcon name="inbox" size="large" />
-                <p>No {{ activeTab }} found</p>
+                <p>{{ t('dashboard.activity.noItemsFound', { item: activeTab === 'bills' ? t('dashboard.activity.bills') : t('dashboard.activity.payments') }) }}</p>
               </div>
               <div v-else class="activity-list">
                 <div
@@ -270,7 +270,7 @@
         <!-- Quick Actions -->
         <VaCard class="quick-actions-card">
           <VaCardTitle class="card-header">
-            <h3>Quick Actions</h3>
+            <h3>{{ t('dashboard.quickActions.title') }}</h3>
           </VaCardTitle>
           <VaCardContent>
             <div class="quick-actions-grid">
@@ -293,7 +293,7 @@
           <VaCardTitle class="card-header">
             <div class="insights-header">
               <VaIcon name="lightbulb" class="insights-icon" />
-              <h3>Insights</h3>
+              <h3>{{ t('dashboard.insights.title') }}</h3>
             </div>
             <VaChip color="warning" size="small">{{ insights.length }}</VaChip>
           </VaCardTitle>
@@ -320,6 +320,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from "vue";
+import { useI18n } from "vue-i18n";
 import {
   billingAPI,
   paymentsAPI,
@@ -327,6 +328,8 @@ import {
   tenanciesAPI,
   unitsAPI,
 } from "@/services/api";
+
+const { t } = useI18n({ useScope: 'global' });
 
 const loading = ref(false);
 const dateRange = ref("last_28_days");
@@ -558,524 +561,181 @@ onMounted(() => {
 <style scoped>
 .modern-dashboard {
   min-height: 100vh;
-  background: #f8f9fa;
-  padding: 1rem;
+  background: var(--va-background-primary);
+  padding: 1.25rem;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: var(--va-text-primary);
+  transition: all 0.3s ease;
 }
 
 /* Header */
-.dashboard-header {
-  margin-bottom: 1rem;
-}
-
+.dashboard-header { margin-bottom: 1.25rem; }
 .header-content {
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(5px);
+  background: var(--va-background-card-primary);
+  backdrop-filter: blur(12px);
   border-radius: 16px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 1.5rem 2rem;
+  border: 1px solid var(--va-background-border);
+  display: flex; justify-content: space-between; align-items: center;
 }
-
-.header-left {
-  flex: 1;
-}
-
-.dashboard-title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: #2c3e50;
-  margin: 0 0 0.5rem 0;
-}
-
-.dashboard-subtitle {
-  color: #6c757d;
-  font-size: 1rem;
-  margin: 0;
-}
-
-.header-actions {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-}
-
-.date-selector {
-  min-width: 150px;
-}
+.dashboard-title { font-size: 2rem; font-weight: 700; color: var(--va-text-primary); margin: 0 0 .35rem; letter-spacing: -.02em; }
+.dashboard-subtitle { color: var(--va-text-secondary); font-size: .95rem; margin: 0; }
+.header-actions { display: flex; gap: .75rem; align-items: center; }
+.date-selector { min-width: 150px; }
 
 /* Metrics Grid */
-.metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
+.metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
 .metric-card {
-  background: #ffffff;
-  border-radius: 8px;
-  padding: 1rem;
-  border: 1px solid #e2e8f0;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  transition: border-color 0.3s ease;
+  background: var(--va-background-card-primary);
+  border-radius: 14px; padding: 1.25rem;
+  border: 1px solid var(--va-background-border);
+  display: flex; align-items: center; gap: 1rem;
+  transition: all 0.3s cubic-bezier(.4,0,.2,1);
 }
-
-.metric-card:hover {
-  border-color: #cbd5e0;
-}
+.metric-card:hover { border-color: rgba(34,197,94,.2); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.2); }
 
 .metric-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: 2px solid #e2e8f0;
+  width: 48px; height: 48px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent; border: none;
 }
-
-.metric-card--blue .metric-icon {
-  border-color: #4a5568;
-  color: #4a5568;
-}
-
-.metric-card--green .metric-icon {
-  border-color: #48bb78;
-  color: #48bb78;
-}
-
-.metric-card--orange .metric-icon {
-  border-color: #ed8936;
-  color: #ed8936;
-}
-
-.metric-card--purple .metric-icon {
-  border-color: #5a67d8;
-  color: #5a67d8;
-}
-
-.metric-content {
-  flex: 1;
-}
-
-.metric-value {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #2d3748;
-  line-height: 1;
-  margin-bottom: 0.25rem;
-}
-
-.metric-label {
-  color: #718096;
-  font-size: 0.875rem;
-  margin-bottom: 0.5rem;
-}
-
-.metric-change {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #718096;
-}
+.metric-card--blue .metric-icon { background: linear-gradient(135deg, #22c55e, #10b981); color: #fff; }
+.metric-card--green .metric-icon { background: linear-gradient(135deg, #22c55e, #10b981); color: #fff; }
+.metric-card--orange .metric-icon { background: linear-gradient(135deg, #f59e0b, #f97316); color: #fff; }
+.metric-card--purple .metric-icon { background: linear-gradient(135deg, #10b981, #34d399); color: #fff; }
+.metric-value { font-size: 1.75rem; font-weight: 700; color: var(--va-text-primary); line-height: 1; margin-bottom: .2rem; }
+.metric-label { color: var(--va-text-secondary); font-size: .8rem; margin-bottom: .35rem; }
+.metric-change { display: flex; align-items: center; gap: .2rem; font-size: .72rem; font-weight: 600; color: #22c55e; }
+.metric-change.positive { color: #22c55e; }
 
 /* Dashboard Grid */
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-
-.dashboard-column {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
+.dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.dashboard-column { display: flex; flex-direction: column; gap: 1rem; }
 
 /* Cards */
-.chart-card,
-.overview-card,
-.activity-card,
-.quick-actions-card,
-.insights-card {
-  background: #ffffff;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-}
-
-.chart-header,
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.5rem 0.75rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.chart-header h3,
-.card-header h3 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #2d3748;
-  margin: 0;
-}
-
-.chart-subtitle {
-  color: #718096;
-  font-size: 0.875rem;
-  margin: 0.25rem 0 0 0;
-}
-
-.insights-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.insights-icon {
-  color: #718096;
-}
-
-/* Revenue Chart */
-.revenue-chart {
-  padding: 1rem 1.5rem;
-}
-
-.chart-legend {
-  display: flex;
-  gap: 2rem;
-  margin-bottom: 1rem;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  color: #4a5568;
-}
-
-.legend-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
-
-.legend-dot--primary {
-  background: #5a67d8;
-}
-
-.legend-dot--secondary {
-  background: #e2e8f0;
-}
-
-.chart-bars {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  height: 200px;
-  gap: 1rem;
-}
-
-.chart-bar-group {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.chart-bar {
-  width: 100%;
-  max-width: 40px;
-  border-radius: 8px 8px 0 0;
-  transition: opacity 0.2s ease;
-}
-
-.chart-bar--primary {
-  background: #5a67d8;
-}
-
-.chart-bar--secondary {
-  background: #e2e8f0;
-}
-
-.chart-label {
-  font-size: 0.75rem;
-  color: #718096;
-  margin-top: 0.5rem;
-}
-
-/* Properties Overview */
-.properties-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.stat-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.75rem;
-  background: #f7fafc;
-  border-radius: 8px;
-}
-
-.stat-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: 2px solid #e2e8f0;
-}
-
-.stat-icon--occupied {
-  border-color: #48bb78;
-  color: #48bb78;
-}
-
-.stat-icon--vacant {
-  border-color: #ed8936;
-  color: #ed8936;
-}
-
-.stat-icon--maintenance {
-  border-color: #4299e1;
-  color: #4299e1;
-}
-
-.stat-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #2d3748;
-}
-
-.stat-label {
-  color: #718096;
-  font-size: 0.875rem;
-}
-
-.occupancy-progress {
-  padding: 0 1rem;
-}
-
-.progress-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-.progress-value {
-  font-weight: 600;
-  color: #2d3748;
-}
-
-.progress-bar {
-  height: 8px;
-  background: #e2e8f0;
-  border-radius: 4px;
+.chart-card, .overview-card, .activity-card, .quick-actions-card, .insights-card {
+  background: var(--va-background-card-primary);
+  border-radius: 14px;
+  border: 1px solid var(--va-background-border);
   overflow: hidden;
 }
-
-.progress-fill {
-  height: 100%;
-  background: #48bb78;
-  transition: width 0.3s ease;
+.chart-header, .card-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 1.25rem 1.5rem .75rem;
+  border-bottom: 1px solid var(--va-background-border);
 }
+.chart-header h3, .card-header h3 { font-size: 1.1rem; font-weight: 600; color: var(--va-text-primary); margin: 0; }
+.chart-subtitle { color: var(--va-text-secondary); font-size: .82rem; margin: .2rem 0 0; }
+.insights-header { display: flex; align-items: center; gap: .5rem; }
+.insights-icon { color: #f59e0b; }
+
+/* Revenue Chart */
+.revenue-chart { padding: 1rem 1.5rem; }
+.chart-legend { display: flex; gap: 1.5rem; margin-bottom: 1rem; }
+.legend-item { display: flex; align-items: center; gap: .4rem; font-size: .82rem; color: #94a3b8; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+.legend-dot--primary { background: #22c55e; }
+.legend-dot--secondary { background: var(--va-background-element); }
+.chart-bars { display: flex; justify-content: space-between; align-items: flex-end; height: 200px; gap: .75rem; }
+.chart-bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: .4rem; }
+.chart-bar {
+  width: 100%; max-width: 36px; border-radius: 6px 6px 0 0;
+  transition: opacity .2s ease;
+}
+.chart-bar--primary { background: linear-gradient(180deg, #22c55e, #16a34a); }
+.chart-bar--secondary { background: var(--va-background-element); }
+.chart-label { font-size: .72rem; color: #64748b; margin-top: .35rem; }
+
+/* Properties Overview */
+.properties-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; margin-bottom: 1rem; }
+.stat-item {
+  display: flex; align-items: center; gap: .75rem;
+  padding: .75rem; background: var(--va-background-element); border-radius: 10px;
+  border: 1px solid var(--va-background-border);
+}
+.stat-icon {
+  width: 38px; height: 38px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent; border: none;
+}
+.stat-icon--occupied { background: rgba(34,197,94,.12); color: #22c55e; }
+.stat-icon--vacant { background: rgba(249,115,22,.12); color: #f97316; }
+.stat-icon--maintenance { background: rgba(34,197,94,.12); color: #34d399; }
+.stat-value { font-size: 1.35rem; font-weight: 700; color: var(--va-text-primary); }
+.stat-label { color: var(--va-text-secondary); font-size: .8rem; }
+.occupancy-progress { padding: 0 .5rem; }
+.progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: .4rem; color: #94a3b8; font-size: .85rem; }
+.progress-value { font-weight: 600; color: var(--va-text-primary); }
+.progress-bar { height: 8px; background: var(--va-background-element); border-radius: 4px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, #22c55e, #10b981); border-radius: 4px; transition: width .5s ease; }
 
 /* Activity Card */
-.activity-tabs {
-  padding: 0.75rem 1.5rem 0;
-}
-
-.activity-content {
-  padding: 0.75rem 1.5rem 1rem;
-}
-
-.loading-state,
-.empty-state {
-  text-align: center;
-  padding: 3rem 1rem;
-  color: #718096;
-}
-
-.activity-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
+.activity-tabs { padding: .75rem 1.5rem 0; }
+.activity-content { padding: .75rem 1.5rem 1rem; }
+.loading-state, .empty-state { text-align: center; padding: 2.5rem 1rem; color: #64748b; }
+.activity-list { display: flex; flex-direction: column; gap: .6rem; }
 .activity-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  background: #f7fafc;
-  border-radius: 8px;
-  transition: background-color 0.2s ease;
+  display: flex; align-items: center; gap: .75rem;
+  padding: .75rem; background: var(--va-background-element); border-radius: 10px;
+  border: 1px solid var(--va-background-border);
+  transition: all .2s ease;
 }
-
-.activity-item:hover {
-  background: #edf2f7;
-}
-
+.activity-item:hover { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.08); }
 .activity-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: 2px solid #e2e8f0;
+  width: 38px; height: 38px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  border: none;
 }
-
-.activity-icon--bills {
-  border-color: #ed8936;
-  color: #ed8936;
-}
-
-.activity-icon--payments {
-  border-color: #48bb78;
-  color: #48bb78;
-}
-
-.activity-details {
-  flex: 1;
-}
-
-.activity-title {
-  font-weight: 600;
-  color: #2d3748;
-  margin-bottom: 0.25rem;
-}
-
-.activity-subtitle {
-  font-size: 0.875rem;
-  color: #718096;
-}
-
-.activity-amount {
-  font-weight: 600;
-  color: #2d3748;
-}
-
-.activity-amount--bills,
-.activity-amount--payments {
-  color: #2d3748;
-}
+.activity-icon--bills { background: rgba(249,115,22,.12); color: #f97316; }
+.activity-icon--payments { background: rgba(34,197,94,.12); color: #22c55e; }
+.activity-details { flex: 1; }
+.activity-title { font-weight: 600; color: var(--va-text-primary); margin-bottom: .15rem; font-size: .9rem; }
+.activity-subtitle { font-size: .8rem; color: var(--va-text-secondary); }
+.activity-amount { font-weight: 600; font-size: .9rem; }
+.activity-amount--bills { color: #f97316; }
+.activity-amount--payments { color: #22c55e; }
 
 /* Quick Actions */
-.quick-actions-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
-  padding: 0.75rem 1.5rem 1rem;
-}
-
+.quick-actions-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .6rem; padding: .75rem 1.5rem 1rem; }
 .quick-action-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 1rem 0.75rem;
-  border-radius: 8px;
-  background: #f7fafc;
-  border: 2px solid transparent;
-  transition: all 0.2s ease;
+  display: flex !important; flex-direction: column !important; align-items: center !important;
+  gap: .4rem !important; padding: 1rem .75rem !important;
+  border-radius: 12px !important; background: var(--va-background-element) !important;
+  border: 1px solid var(--va-background-border) !important;
+  color: var(--va-text-secondary) !important;
+  transition: all .25s cubic-bezier(.4,0,.2,1) !important;
 }
-
 .quick-action-btn:hover {
-  background: white;
-  border-color: #718096;
-  transform: translateY(-2px);
+  background: rgba(34,197,94,.08) !important;
+  border-color: rgba(34,197,94,.2) !important;
+  color: #fff !important; transform: translateY(-2px) !important;
 }
 
 /* Insights */
-.insights-list {
-  padding: 0.75rem 1.5rem 1rem;
-}
-
+.insights-list { padding: .75rem 1.5rem 1rem; }
 .insight-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  background: #f7fafc;
-  border-radius: 8px;
-  margin-bottom: 0.75rem;
-  border-left: 4px solid #718096;
+  display: flex; align-items: flex-start; gap: .75rem;
+  padding: .75rem; background: var(--va-background-element); border-radius: 10px;
+  margin-bottom: .6rem;
+  border-left: 3px solid #22c55e;
 }
-
-.insight-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #718096;
-  margin-top: 0.5rem;
-}
-
-.insight-text {
-  color: #2d3748;
-  font-size: 0.875rem;
-  margin-bottom: 0.25rem;
-}
-
-.insight-time {
-  color: #718096;
-  font-size: 0.75rem;
-}
+.insight-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; margin-top: .4rem; }
+.insight-text { color: var(--va-text-primary); font-size: .85rem; margin-bottom: .15rem; }
+.insight-time { color: var(--va-text-secondary); font-size: .72rem; }
 
 /* Responsive */
 @media (max-width: 1200px) {
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .metrics-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  .dashboard-grid { grid-template-columns: 1fr; }
+  .metrics-grid { grid-template-columns: repeat(2, 1fr); }
 }
-
 @media (max-width: 768px) {
-  .modern-dashboard {
-    padding: 1rem;
-  }
-
-  .header-content {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-
-  .dashboard-title {
-    font-size: 2rem;
-  }
-
-  .metrics-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .properties-stats {
-    grid-template-columns: 1fr;
-  }
-
-  .quick-actions-grid {
-    grid-template-columns: 1fr;
-  }
+  .modern-dashboard { padding: .75rem; }
+  .header-content { flex-direction: column; align-items: flex-start; gap: .75rem; }
+  .dashboard-title { font-size: 1.5rem; }
+  .metrics-grid { grid-template-columns: 1fr; }
+  .properties-stats { grid-template-columns: 1fr; }
+  .quick-actions-grid { grid-template-columns: 1fr; }
 }
 </style>
+
+

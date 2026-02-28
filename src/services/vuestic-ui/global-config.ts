@@ -3,7 +3,10 @@ import iconsConfig from "./icons-config/icons-config";
 import colors from "./themes";
 
 export default defineVuesticConfig({
-  colors,
+  colors: {
+    ...colors,
+    currentPresetName: "dark",
+  },
   icons: iconsConfig,
   breakpoint: {
     enabled: true,

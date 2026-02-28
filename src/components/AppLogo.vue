@@ -1,7 +1,7 @@
 <template>
-  <span class="app-logo" :class="{ 'app-logo--light': variant === 'light' }">
+  <span class="app-logo">
     <img
-      src="/images/logo.png"
+      src="/images/transparent_longo.png"
       alt="NexaProperty Logo"
       class="app-logo__image"
     />
@@ -9,9 +9,6 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
-  variant?: "light" | "default";
-}>();
 </script>
 
 <style scoped>

@@ -153,7 +153,8 @@ watch(() => route.fullPath, setActiveExpand, { immediate: true });
 
 <style scoped>
 .app-sidebar {
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 1px 0 12px rgba(0, 0, 0, 0.3);
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .app-sidebar :deep(.va-sidebar__content) {
@@ -161,18 +162,18 @@ watch(() => route.fullPath, setActiveExpand, { immediate: true });
 }
 
 .app-sidebar :deep(.va-sidebar-item) {
-  border-radius: 8px;
-  margin: 0.125rem 0.5rem;
-  transition: all 0.2s ease;
+  border-radius: 10px;
+  margin: 0.15rem 0.5rem;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .app-sidebar :deep(.va-sidebar-item:hover) {
-  background-color: rgba(66, 153, 225, 0.08);
+  background-color: rgba(34, 197, 94, 0.08);
 }
 
 .app-sidebar :deep(.va-sidebar-item--active) {
-  background-color: rgba(66, 153, 225, 0.12);
-  border-left: 3px solid #4299e1;
+  background-color: rgba(34, 197, 94, 0.12);
+  border-left: 3px solid #22c55e;
 }
 
 .app-sidebar :deep(.va-sidebar-item__content) {

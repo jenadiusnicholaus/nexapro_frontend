@@ -1,4 +1,7 @@
 <template>
+  <div class="absolute top-4 right-4 z-50">
+    <LanguageSwitcher />
+  </div>
   <VaLayout v-if="breakpoint.lgUp" class="h-screen bg-[var(--va-background-secondary)]">
     <template #left>
       <RouterLink
@@ -36,6 +39,7 @@
 <script lang="ts" setup>
 import { useBreakpoint } from 'vuestic-ui'
 import AppLogo from '@/components/AppLogo.vue'
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 
 const breakpoint = useBreakpoint()
 </script>

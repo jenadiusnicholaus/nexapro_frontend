@@ -1,40 +1,77 @@
 <template>
-  <div>
-    <div class="page-header">
-      <h1 class="page-title">Units</h1>
-      <VaButton @click="showModal = true">Add Unit</VaButton>
+  <div class="units-page-premium">
+    <div class="page-header-premium">
+      <div class="header-content">
+        <h1 class="premium-title">Property Units</h1>
+        <p class="premium-subtitle">Manage individual rental spaces and availability</p>
+      </div>
+      <VaButton 
+        size="large" 
+        class="premium-add-btn"
+        icon="add"
+        @click="showModal = true"
+      >
+        Add Unit
+      </VaButton>
     </div>
 
-    <VaCard>
+    <div class="stats-mini-grid mb-6">
+      <div class="stat-card-glass">
+        <div class="stat-icon-wrap emerald">
+          <VaIcon name="meeting_room" size="24px" />
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">Total Units</span>
+          <span class="stat-value">{{ unitsStore.items.length }}</span>
+        </div>
+      </div>
+      <div class="stat-card-glass">
+        <div class="stat-icon-wrap emerald">
+          <VaIcon name="check_circle" size="24px" />
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">Vacant</span>
+          <span class="stat-value">{{ unitsStore.items.filter(u => u.status === 'vacant').length }}</span>
+        </div>
+      </div>
+    </div>
+
+    <VaCard class="premium-card">
       <VaCardContent>
-        <div class="filters mb-4">
-          <VaInput
-            v-model="searchQuery"
-            placeholder="Search units..."
-            class="mr-2"
-            style="max-width: 300px"
-          >
-            <template #prependInner>
-              <VaIcon name="search" />
-            </template>
-          </VaInput>
-          <VaSelect
-            v-model="filterProperty"
-            :options="propertyOptions"
-            text-by="text"
-            value-by="value"
-            placeholder="Filter by property"
-            style="max-width: 200px"
-            clearable
-          />
-          <VaSelect
-            v-model="filterStatus"
-            :options="statusOptions"
-            text-by="(option) => option.charAt(0).toUpperCase() + option.slice(1)"
-            placeholder="Filter by status"
-            style="max-width: 200px"
-            clearable
-          />
+        <div class="filters-premium mb-6">
+          <div class="search-wrap">
+            <VaInput
+              v-model="searchQuery"
+              placeholder="Search units..."
+              class="premium-input-search"
+              background="rgba(255,255,255,0.03)"
+            >
+              <template #prependInner>
+                <VaIcon name="search" color="#22c55e" />
+              </template>
+            </VaInput>
+          </div>
+          <div class="select-wrap-dual">
+            <VaSelect
+              v-model="filterProperty"
+              :options="propertyOptions"
+              text-by="text"
+              value-by="value"
+              placeholder="All Properties"
+              class="premium-select"
+              background="rgba(255,255,255,0.03)"
+              clearable
+            />
+            <VaSelect
+              v-model="filterStatus"
+              :options="statusOptions"
+              text-by="(option) => option.charAt(0).toUpperCase() + option.slice(1)"
+              placeholder="Any Status"
+              class="premium-select"
+              background="rgba(255,255,255,0.03)"
+              clearable
+            />
+          </div>
         </div>
 
         <AppDataTable
@@ -43,126 +80,146 @@
           :loading="unitsStore.loading"
         >
           <template #cell(image)="{ rowData }">
-            <div class="unit-image-cell">
+            <div class="unit-image-ring">
               <img
                 v-if="rowData.image_url"
                 :src="rowData.image_url"
                 :alt="rowData.unit_number"
-                class="unit-thumbnail"
+                class="unit-thumb-premium"
               />
-              <div v-else class="unit-placeholder">
-                <VaIcon name="meeting_room" size="small" />
+              <div v-else class="unit-thumb-placeholder">
+                <VaIcon name="home_work" size="small" />
               </div>
             </div>
           </template>
-          <template #cell(status)="{ rowData }">
-            <VaChip :color="getStatusColor(rowData.status)">
-              {{ rowData.status }}
-            </VaChip>
+
+          <template #cell(unit_number)="{ rowData }">
+            <div class="unit-id-cell">
+              <span class="unit-num-main">Unit {{ rowData.unit_number }}</span>
+              <span class="prop-name-sub">{{ rowData.property_name }}</span>
+            </div>
           </template>
+
+          <template #cell(rent_amount)="{ rowData }">
+            <span class="rent-value-premium">
+              ${{ Number(rowData.rent_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 }) }}
+            </span>
+          </template>
+
+          <template #cell(status)="{ rowData }">
+            <div class="status-glow" :class="rowData.status">
+              {{ rowData.status }}
+            </div>
+          </template>
+
           <template #cell(actions)="{ rowData }">
-            <VaButton
-              preset="plain"
-              icon="edit"
-              size="small"
-              @click="editUnit(rowData)"
-            />
-            <VaButton
-              preset="plain"
-              icon="delete"
-              size="small"
-              color="danger"
-              @click="deleteUnit(Number(rowData.id))"
-            />
+            <div class="actions-cell">
+              <VaButton
+                preset="plain"
+                icon="edit"
+                size="small"
+                color="#94a3b8"
+                class="hover-emerald"
+                @click="editUnit(rowData)"
+              />
+              <VaButton
+                preset="plain"
+                icon="delete"
+                size="small"
+                color="#ef4444"
+                @click="deleteUnit(Number(rowData.id))"
+              />
+            </div>
           </template>
         </AppDataTable>
       </VaCardContent>
     </VaCard>
 
-    <!-- Add/Edit Modal -->
+    <!-- Add/Edit Modal Premium -->
     <VaModal
       v-model="showModal"
       :title="editingId ? 'Edit Unit' : 'Add Unit'"
       hide-default-actions
       size="medium"
+      class="premium-modal"
     >
-      <VaForm ref="unitForm" @submit.prevent="saveUnit">
-        <VaSelect
-          v-model="formData.property"
-          label="Property"
-          :options="propertyOptions"
-          text-by="text"
-          value-by="value"
-          :rules="[validators.required]"
-          class="mb-4"
-        />
-        <VaInput
-          v-model="formData.unit_number"
-          label="Unit Number"
-          :rules="[validators.required]"
-          class="mb-4"
-        />
-        <VaInput v-model="formData.floor" label="Floor" class="mb-4" />
-        <VaSelect
-          v-model="formData.unit_type"
-          label="Unit Type"
-          :options="unitTypes"
-          text-by="(option) => option.charAt(0).toUpperCase() + option.slice(1)"
-          value-by="value"
-          :rules="[validators.required]"
-          class="mb-4"
-        />
-        <VaInput
-          v-model="formData.rent_amount"
-          label="Rent Amount"
-          type="number"
-          :rules="[validators.required]"
-          class="mb-4"
-        />
-        <VaSelect
-          v-model="formData.status"
-          label="Status"
-          :options="statusOptions"
-          text-by="(option) => option.charAt(0).toUpperCase() + option.slice(1)"
-          value-by="value"
-          :rules="[validators.required]"
-          class="mb-4"
-        />
-
-        <!-- Image Upload -->
-        <div class="mb-4">
-          <label class="va-input-label">Unit Image</label>
-          <div class="image-upload-container">
-            <div v-if="imagePreview" class="image-preview">
-              <img :src="imagePreview" alt="Preview" />
-              <VaButton
-                preset="plain"
-                icon="close"
-                size="small"
-                color="danger"
-                class="remove-image-btn"
-                @click="removeImage"
-              />
-            </div>
-            <div v-else class="image-upload-placeholder">
-              <VaIcon name="add_photo_alternate" size="large" />
-              <p>Click to upload image</p>
-            </div>
-            <input
-              type="file"
-              ref="imageInput"
-              accept="image/*"
-              @change="handleImageSelect"
-              class="image-input"
+      <div class="modal-inner">
+        <VaForm ref="unitForm" @submit.prevent="saveUnit" class="premium-form">
+          <VaSelect
+            v-model="formData.property"
+            label="Property"
+            :options="propertyOptions"
+            text-by="text"
+            value-by="value"
+            :rules="[validators.required]"
+            class="mb-4"
+            background="rgba(255,255,255,0.03)"
+          />
+          <div class="form-grid">
+            <VaInput
+              v-model="formData.unit_number"
+              label="Unit Number"
+              :rules="[validators.required]"
+              class="mb-4"
+              background="rgba(255,255,255,0.03)"
+            />
+            <VaInput v-model="formData.floor" label="Floor" class="mb-4" background="rgba(255,255,255,0.03)" />
+          </div>
+          <div class="form-grid">
+            <VaSelect
+              v-model="formData.unit_type"
+              label="Unit Type"
+              :options="unitTypes"
+              text-by="(option) => option.charAt(0).toUpperCase() + option.slice(1)"
+              value-by="value"
+              :rules="[validators.required]"
+              class="mb-4"
+              background="rgba(255,255,255,0.03)"
+            />
+            <VaInput
+              v-model="formData.rent_amount"
+              label="Rent Amount"
+              type="number"
+              :rules="[validators.required]"
+              class="mb-4"
+              background="rgba(255,255,255,0.03)"
             />
           </div>
-        </div>
+          <VaSelect
+            v-model="formData.status"
+            label="Status"
+            :options="statusOptions"
+            text-by="(option) => option.charAt(0).toUpperCase() + option.slice(1)"
+            value-by="value"
+            :rules="[validators.required]"
+            class="mb-4"
+            background="rgba(255,255,255,0.03)"
+          />
 
-        <div class="modal-actions">
-          <VaButton preset="secondary" @click="closeModal">Cancel</VaButton>
-          <VaButton type="submit" :loading="saving">Save</VaButton>
-        </div>
-      </VaForm>
+          <!-- Premium Image Upload -->
+          <div class="image-upload-premium">
+            <span class="upload-label">Unit Media</span>
+            <div class="image-box-premium" :class="{ 'has-image': imagePreview }">
+              <div v-if="imagePreview" class="preview-wrap">
+                <img :src="imagePreview" alt="Preview" />
+                <div class="overlay" @click="removeImage">
+                  <VaIcon name="delete" color="white" />
+                </div>
+              </div>
+              <div v-else class="upload-placeholder">
+                <VaIcon name="cloud_upload" size="32px" color="#22c55e" />
+                <p>Drag or click to upload</p>
+              </div>
+              <input type="file" ref="imageInput" accept="image/*" @change="handleImageSelect" class="absolute-input" />
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <VaButton preset="secondary" @click="closeModal" class="cancel-btn">Cancel</VaButton>
+            <VaButton type="submit" :loading="saving" class="save-btn-premium">Confirm Unit</VaButton>
+          </div>
+        </VaForm>
+      </div>
     </VaModal>
   </div>
 </template>
@@ -217,12 +274,11 @@ const formData = ref<{
 });
 
 const columns = [
-  { key: "image", label: "Image", width: 80 },
-  { key: "unit_number", label: "Unit #", sortable: true },
-  { key: "property_name", label: "Property", sortable: true },
+  { key: "image", label: "Preview", width: 80 },
+  { key: "unit_number", label: "Unit Info", sortable: true },
   { key: "floor", label: "Floor" },
   { key: "unit_type", label: "Type", sortable: true },
-  { key: "rent_amount", label: "Rent", sortable: true },
+  { key: "rent_amount", label: "Monthly Rent", sortable: true },
   { key: "status", label: "Status", sortable: true },
   { key: "actions", label: "Actions", width: 100 },
 ];
@@ -233,15 +289,6 @@ const propertyOptions = computed(() =>
     text: p.property_name,
   })),
 );
-
-const getStatusColor = (status: unknown) => {
-  const colors: Record<string, string> = {
-    vacant: "success",
-    occupied: "info",
-    maintenance: "warning",
-  };
-  return colors[String(status)] || "secondary";
-};
 
 const loadUnits = () => {
   const params: Record<string, unknown> = {};
@@ -289,12 +336,10 @@ const saveUnit = async () => {
 
   saving.value = true;
   try {
-    // Build base payload
     const payload = buildPayload(formData.value, ["property"]);
 
-    // Add base64 image if a new image was selected
     if (selectedImage.value && imagePreview.value) {
-      payload.image = imagePreview.value; // imagePreview already contains base64 data URL
+      payload.image = imagePreview.value; 
     }
 
     if (editingId.value) {
@@ -308,16 +353,7 @@ const saveUnit = async () => {
     success(wasEdit ? "Unit updated" : "Unit created");
   } catch (err: any) {
     console.error("Error saving unit:", err);
-    if (err.response?.data) {
-      console.error("API Error details:", err.response.data);
-      const errorMsg =
-        typeof err.response.data === "object"
-          ? JSON.stringify(err.response.data)
-          : err.response.data;
-      error(`Failed to save unit: ${errorMsg}`);
-    } else {
-      error("Failed to save unit");
-    }
+    error("Failed to save unit");
   } finally {
     saving.value = false;
   }
@@ -338,15 +374,12 @@ const editUnit = (unit: Record<string, unknown>) => {
     status: String(unit.status ?? "vacant"),
   };
 
-  // Reset image state first
   selectedImage.value = null;
   imagePreview.value = null;
   if (imageInput.value) {
     imageInput.value.value = "";
   }
 
-  // Show existing image preview but don't set selectedImage
-  // selectedImage should only be set when user selects a NEW file
   if (unit.image_url) {
     imagePreview.value = String(unit.image_url);
   }
@@ -361,7 +394,6 @@ const deleteUnit = async (id: number) => {
     await unitsStore.deleteItem(id);
     success("Unit deleted");
   } catch (err) {
-    console.error("Error deleting unit:", err);
     error("Failed to delete unit");
   }
 };
@@ -400,122 +432,321 @@ watch([filterProperty, filterStatus], () => {
 </script>
 
 <style scoped>
-.page-header {
+.units-page-premium {
+  padding: 1.5rem;
+  min-height: calc(100vh - 4rem);
+}
+
+.page-header-premium {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
+  align-items: flex-end;
+  margin-bottom: 2.5rem;
 }
 
-.page-title {
+.premium-title {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--va-text-primary);
   margin: 0;
-  color: var(--va-primary);
+  letter-spacing: -0.02em;
 }
 
-.filters {
+.premium-subtitle {
+  color: var(--va-text-secondary);
+  font-size: 1rem;
+  margin: 0.25rem 0 0;
+}
+
+.premium-add-btn {
+  background: linear-gradient(135deg, #22c55e, #10b981) !important;
+  color: white !important;
+  font-weight: 700 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3) !important;
+}
+
+/* Stats */
+.stats-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.stat-card-glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 1.25rem;
+  border-radius: 16px;
   display: flex;
+  align-items: center;
   gap: 1rem;
+}
+
+.stat-icon-wrap.emerald {
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.75rem;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.stat-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+/* Filters */
+.filters-premium {
+  display: flex;
+  gap: 1.5rem;
   flex-wrap: wrap;
 }
 
-.mb-4 {
-  margin-bottom: 1rem;
+.search-wrap {
+  flex: 1;
+  min-width: 300px;
 }
 
-.mr-2 {
-  margin-right: 0.5rem;
-}
-
-.modal-actions {
+.select-wrap-dual {
   display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  margin-top: 1rem;
+  gap: 1rem;
 }
 
-.unit-image-cell {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.premium-card {
+  background: rgba(15, 23, 42, 0.6) !important;
+  backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-radius: 20px !important;
 }
 
-.unit-thumbnail {
-  width: 60px;
-  height: 60px;
+.premium-input-search :deep(.va-input-wrapper),
+.premium-select :deep(.va-input-wrapper) {
+  border-radius: 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Cell Styles */
+.unit-image-ring {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  padding: 2px;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.3), transparent);
+  overflow: hidden;
+}
+
+.unit-thumb-premium {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border-radius: 10px;
 }
 
-.unit-placeholder {
-  width: 60px;
-  height: 60px;
+.unit-thumb-placeholder {
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f7fafc;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  color: #718096;
+  background: rgba(255, 255, 255, 0.02);
+  color: #64748b;
+  border-radius: 10px;
 }
 
-.image-upload-container {
+.unit-id-cell {
+  display: flex;
+  flex-direction: column;
+}
+
+.unit-num-main {
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.prop-name-sub {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.rent-value-premium {
+  font-weight: 700;
+  color: #22c55e;
+  font-size: 1.05rem;
+}
+
+.status-glow {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.status-glow.vacant {
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.1);
+}
+
+.status-glow.occupied {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.status-glow.maintenance {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.actions-cell {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.hover-emerald:hover {
+  color: #22c55e !important;
+}
+
+/* Modal Premium */
+.premium-modal {
+  --va-modal-background: var(--va-background-primary);
+  --va-modal-border-radius: 24px;
+}
+
+.modal-inner {
+  padding: 1.5rem 0.5rem;
+}
+
+.premium-form :deep(.va-input-wrapper) {
+  border-radius: 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+/* Premium Image Upload */
+.image-upload-premium {
+  margin-top: 1.5rem;
+}
+
+.upload-label {
+  display: block;
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+
+.image-box-premium {
   position: relative;
   width: 100%;
-  min-height: 200px;
-  border: 2px dashed #cbd5e0;
-  border-radius: 8px;
+  height: 180px;
+  border: 2px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.image-box-premium:hover {
+  border-color: #22c55e;
+  background: rgba(34, 197, 94, 0.02);
+}
+
+.preview-wrap {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.preview-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.preview-wrap .overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s;
   cursor: pointer;
-  transition: border-color 0.2s;
 }
 
-.image-upload-container:hover {
-  border-color: #5a67d8;
+.preview-wrap:hover .overlay {
+  opacity: 1;
 }
 
-.image-upload-placeholder {
+.upload-placeholder {
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 200px;
-  color: #718096;
+  color: #64748b;
+  gap: 0.5rem;
 }
 
-.image-upload-placeholder p {
-  margin-top: 0.5rem;
-  font-size: 0.875rem;
-}
-
-.image-preview {
-  position: relative;
-  width: 100%;
-  height: 200px;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.image-preview img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.remove-image-btn {
+.absolute-input {
   position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 50%;
-}
-
-.image-input {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  top: 0; left: 0; width: 100%; height: 100%;
   opacity: 0;
   cursor: pointer;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.save-btn-premium {
+  background: linear-gradient(135deg, #22c55e, #10b981) !important;
+  border-radius: 10px !important;
+  font-weight: 700 !important;
+}
+
+.cancel-btn {
+  border-radius: 10px !important;
+}
+
+.mr-2 { margin-right: 0.5rem; }
+
+@media (max-width: 768px) {
+  .page-header-premium {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

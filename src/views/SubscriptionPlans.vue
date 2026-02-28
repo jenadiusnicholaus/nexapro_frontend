@@ -1,224 +1,235 @@
 <template>
   <div class="subscription-plans-page">
+    <!-- Hero Section -->
     <div class="page-header">
-      <h1 class="title">Subscription Plans</h1>
-      <p class="subtitle">Choose the plan that fits your needs</p>
+      <div class="header-badge">
+        <span class="badge-dot"></span>
+        Flexible Subscription Plans
+      </div>
+      <h1 class="title">Elevate Your Management</h1>
+      <p class="subtitle">Choose a plan that scales with your property portfolio. Professional features for professional owners.</p>
     </div>
 
-    <!-- Loading State -->
-    <VaAlert v-if="subscriptionsStore.loading" color="info">
-      Loading subscription plans...
-    </VaAlert>
+    <!-- Alert States -->
+    <div class="alerts-container">
+      <VaAlert v-if="subscriptionsStore.loading" color="info" outline class="mb-4">
+        <template #prependInner>
+          <VaProgressCircle indeterminate size="small" class="mr-2" />
+        </template>
+        Loading subscription plans...
+      </VaAlert>
 
-    <!-- Error State -->
-    <VaAlert v-if="subscriptionsStore.error" color="danger">
-      {{ subscriptionsStore.error }}
-    </VaAlert>
+      <VaAlert v-if="subscriptionsStore.error" color="danger" border="left" class="mb-4">
+        {{ subscriptionsStore.error }}
+      </VaAlert>
+    </div>
 
     <!-- Current Subscription Card -->
-    <VaCard
-      v-if="profilesStore.profile?.subscription?.plan"
-      class="current-subscription-card mb-4"
-    >
-      <VaCardContent>
-        <div class="current-subscription-content">
-          <div class="subscription-icon">
-            <VaIcon name="workspace_premium" size="3rem" color="#667eea" />
-          </div>
-          <div class="subscription-details">
-            <div class="subscription-header">
-              <h3>Your Current Plan</h3>
-              <VaBadge
-                :text="
-                  profilesStore.profile?.subscription?.status?.toUpperCase()
-                "
-                :color="
-                  profilesStore.profile?.subscription?.is_expired
-                    ? 'danger'
-                    : 'success'
-                "
-                size="large"
-              />
-            </div>
-            <div class="subscription-info">
-              <div class="plan-name">
-                {{ profilesStore.profile?.subscription?.plan?.name }}
-              </div>
-              <div class="plan-details">
-                <div class="detail-item">
-                  <VaIcon name="calendar_today" size="small" />
-                  <span
-                    >{{
-                      profilesStore.profile?.subscription?.days_remaining
-                    }}
-                    days remaining</span
-                  >
-                </div>
-                <div class="detail-item">
-                  <VaIcon name="event" size="small" />
-                  <span
-                    >Expires:
-                    {{
-                      new Date(
-                        profilesStore.profile?.subscription?.end_date,
-                      ).toLocaleDateString()
-                    }}</span
-                  >
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </VaCardContent>
-    </VaCard>
-
-    <div class="plans-grid">
-      <VaCard
-        v-for="plan in subscriptionsStore.plans"
-        :key="plan.id"
-        class="plan-card"
-        :class="{ 'current-plan': isCurrentPlan(plan.id) }"
-        :style="
-          isCurrentPlan(plan.id)
-            ? {
-                border: '3px solid #4299e1',
-                backgroundColor: '#ebf8ff',
-                boxShadow: '0 8px 16px rgba(66, 153, 225, 0.2)',
-              }
-            : {}
-        "
-      >
-        <VaCardTitle>
-          <div class="plan-header">
-            <h3>{{ plan.name }}</h3>
-            <VaBadge
-              v-if="isCurrentPlan(plan.id)"
-              text="CURRENT PLAN"
-              color="primary"
-              size="large"
-            />
-          </div>
-        </VaCardTitle>
+    <div v-if="profilesStore.profile?.subscription?.plan" class="current-sub-wrapper">
+      <VaCard class="current-subscription-card">
+        <div class="card-glow"></div>
         <VaCardContent>
-          <div class="plan-price">
-            <span class="price">{{ plan.price }}</span>
-            <span class="currency">{{ plan.currency }}</span>
-            <span class="duration" v-if="parseFloat(plan.price) > 0"
-              >/{{ plan.duration_days }} days</span
-            >
+          <div class="current-subscription-content">
+            <div class="subscription-icon-wrapper">
+              <div class="icon-circle">
+                <VaIcon name="workspace_premium" size="2.5rem" />
+              </div>
+            </div>
+            <div class="subscription-details">
+              <div class="subscription-header">
+                <div>
+                  <div class="status-indicator">
+                    <span class="pulse-dot" :class="{ 'is-expired': profilesStore.profile?.subscription?.is_expired }"></span>
+                    {{ profilesStore.profile?.subscription?.status?.toUpperCase() }}
+                  </div>
+                  <h3 class="plan-name-title">
+                    {{ profilesStore.profile?.subscription?.plan?.name }}
+                  </h3>
+                </div>
+                <div class="days-remaining">
+                  <span class="days-num">{{ profilesStore.profile?.subscription?.days_remaining }}</span>
+                  <span class="days-label">Days Left</span>
+                </div>
+              </div>
+              <div class="subscription-footer">
+                <div class="detail-item">
+                  <VaIcon name="event" size="18px" />
+                  <span>Renews on: {{ new Date(profilesStore.profile?.subscription?.end_date).toLocaleDateString() }}</span>
+                </div>
+                <div class="divider-dot"></div>
+                <div class="detail-item">
+                  <VaIcon name="shield" size="18px" />
+                  <span>Secure Billing</span>
+                </div>
+              </div>
+            </div>
           </div>
-
-          <p class="plan-description">{{ plan.description }}</p>
-
-          <div class="plan-features">
-            <h4>Features:</h4>
-            <ul>
-              <li>
-                <VaIcon name="check_circle" color="success" size="small" />
-                {{ plan.max_properties }} Properties
-              </li>
-              <li>
-                <VaIcon name="check_circle" color="success" size="small" />
-                {{ plan.max_units }} Units
-              </li>
-              <li>
-                <VaIcon name="check_circle" color="success" size="small" />
-                {{ plan.max_tenants }} Tenants
-              </li>
-              <li>
-                <VaIcon name="check_circle" color="success" size="small" />
-                {{ plan.sms_notifications ? "SMS" : "No" }} Notifications
-              </li>
-              <li>
-                <VaIcon name="check_circle" color="success" size="small" />
-                {{ plan.contract_generation ? "Contract" : "No" }} Generation
-              </li>
-              <li>
-                <VaIcon name="check_circle" color="success" size="small" />
-                {{ plan.payment_tracking ? "Payment" : "No" }} Tracking
-              </li>
-              <li>
-                <VaIcon name="check_circle" color="success" size="small" />
-                {{ plan.reports_analytics ? "Reports" : "No" }} & Analytics
-              </li>
-              <li>
-                <VaIcon name="check_circle" color="success" size="small" />
-                {{ plan.priority_support ? "Priority" : "Standard" }} Support
-              </li>
-            </ul>
-          </div>
-
-          <VaButton
-            v-if="!isCurrentPlan(plan.id) && !plan.is_free_tier"
-            color="primary"
-            @click.stop.prevent="selectPlan(plan)"
-            block
-          >
-            Upgrade
-          </VaButton>
-
-          <VaButton
-            v-else-if="isCurrentPlan(plan.id) && !plan.is_free_tier"
-            color="success"
-            disabled
-            block
-          >
-            Current Plan
-          </VaButton>
         </VaCardContent>
       </VaCard>
+    </div>
+
+    <!-- Plans Grid -->
+    <div class="plans-grid">
+      <div
+        v-for="plan in subscriptionsStore.plans"
+        :key="plan.id"
+        class="plan-card-wrapper"
+        :class="{ 'is-current': isCurrentPlan(plan.id) }"
+      >
+        <VaCard class="plan-card">
+          <div v-if="plan.is_popular" class="popular-ribbon">Most Popular</div>
+          
+          <VaCardContent class="plan-content">
+            <div class="plan-header">
+              <h3 class="plan-name">{{ plan.name }}</h3>
+              <p class="plan-desc">{{ plan.description }}</p>
+            </div>
+
+            <div class="plan-pricing">
+              <div class="price-container">
+                <span class="currency">{{ plan.currency }}</span>
+                <span class="price-val">{{ formatPrice(plan.price) }}</span>
+              </div>
+              <span class="duration" v-if="parseFloat(plan.price) > 0">
+                per {{ plan.duration_days }} days
+              </span>
+              <span class="duration" v-else>Free forever</span>
+            </div>
+
+            <div class="plan-features">
+              <div class="features-label">Included Features</div>
+              <ul class="features-list">
+                <li>
+                  <VaIcon name="check_circle" size="18px" class="feat-icon" />
+                  <span class="feat-text"><strong>{{ plan.max_properties }}</strong> Properties</span>
+                </li>
+                <li>
+                  <VaIcon name="check_circle" size="18px" class="feat-icon" />
+                  <span class="feat-text"><strong>{{ plan.max_units }}</strong> Units</span>
+                </li>
+                <li>
+                  <VaIcon name="check_circle" size="18px" class="feat-icon" />
+                  <span class="feat-text"><strong>{{ plan.max_tenants }}</strong> Tenants</span>
+                </li>
+                <li :class="{ 'dimmed': !plan.sms_notifications }">
+                  <VaIcon :name="plan.sms_notifications ? 'check_circle' : 'cancel'" size="18px" class="feat-icon" />
+                  <span class="feat-text">SMS Notifications</span>
+                </li>
+                <li :class="{ 'dimmed': !plan.contract_generation }">
+                  <VaIcon :name="plan.contract_generation ? 'check_circle' : 'cancel'" size="18px" class="feat-icon" />
+                  <span class="feat-text">Digital Contracts</span>
+                </li>
+                <li :class="{ 'dimmed': !plan.payment_tracking }">
+                  <VaIcon :name="plan.payment_tracking ? 'check_circle' : 'cancel'" size="18px" class="feat-icon" />
+                  <span class="feat-text">Payment Tracking</span>
+                </li>
+                <li :class="{ 'dimmed': !plan.reports_analytics }">
+                  <VaIcon :name="plan.reports_analytics ? 'check_circle' : 'cancel'" size="18px" class="feat-icon" />
+                  <span class="feat-text">Advanced Analytics</span>
+                </li>
+              </ul>
+            </div>
+
+            <VaButton
+              v-if="!isCurrentPlan(plan.id) && !plan.is_free_tier"
+              class="plan-btn upgrade-btn"
+              @click.stop.prevent="selectPlan(plan)"
+              block
+            >
+              Select Plan
+            </VaButton>
+
+            <VaButton
+              v-else-if="isCurrentPlan(plan.id)"
+              class="plan-btn current-btn"
+              disabled
+              block
+            >
+              Active Plan
+            </VaButton>
+
+            <VaButton
+              v-else
+              class="plan-btn free-btn"
+              disabled
+              block
+            >
+              Free Access
+            </VaButton>
+          </VaCardContent>
+        </VaCard>
+      </div>
     </div>
   </div>
 
   <!-- Payment Modal -->
-  <VaModal v-model="showPaymentModal" title="Complete Payment" size="small">
-    <div class="payment-form" v-if="selectedPlan">
-      <p class="mb-4">
-        You are upgrading to <strong>{{ selectedPlan.name }}</strong> for
-        <strong>{{ selectedPlan.price }} {{ selectedPlan.currency }}</strong>
-      </p>
+  <VaModal v-model="showPaymentModal" hide-default-actions size="medium" class="payment-modal">
+    <template #header>
+      <div class="modal-header">
+        <VaIcon name="payments" color="primary" size="large" />
+        <h2 class="modal-title">Secure Checkout</h2>
+      </div>
+    </template>
 
-      <VaAlert color="info" class="mb-4">
-        Enter your mobile money details to complete the subscription
-      </VaAlert>
+    <div class="payment-modal-body" v-if="selectedPlan">
+      <div class="order-summary">
+        <div class="order-label">Selected Plan</div>
+        <div class="order-plan-details">
+          <span class="order-plan-name">{{ selectedPlan.name }}</span>
+          <span class="order-plan-price">{{ selectedPlan.currency }} {{ formatPrice(selectedPlan.price) }}</span>
+        </div>
+      </div>
 
-      <VaInput
-        v-model="paymentData.account_number"
-        label="Phone Number"
-        placeholder="0712345678"
-        class="mb-4"
-        :rules="[
-          (v: string) => !!v || 'Phone number is required',
-          (v: string) =>
-            /^\d{9,12}$/.test(v.replace(/[^\d]/g, '')) ||
-            'Invalid phone number format',
-        ]"
-      />
+      <div class="payment-instructions">
+        <div class="instr-icon"><VaIcon name="smartphone" /></div>
+        <p>Complete your payment via Mobile Money. We will send a prompt to your phone.</p>
+      </div>
 
-      <VaSelect
-        v-model="paymentData.provider"
-        label="Mobile Money Provider"
-        value-by="value"
-        text-by="text"
-        :options="[
-          { text: 'M-Pesa', value: 'mpesa' },
-          { text: 'Airtel Money', value: 'airtel' },
-          { text: 'Tigo Pesa', value: 'tigo' },
-          { text: 'Halopesa', value: 'halopesa' },
-          { text: 'Azampesa', value: 'azampesa' },
-        ]"
-        class="mb-4"
-        :rules="[(v: any) => !!v || 'Provider is required']"
-      />
+      <VaForm ref="paymentForm" class="mt-4">
+        <VaInput
+          v-model="paymentData.account_number"
+          label="Mobile Number"
+          placeholder="07xxxxxxxx"
+          preset="bordered"
+          class="mb-4 payment-input"
+          :rules="[
+            (v: string) => !!v || 'Phone number is required',
+            (v: string) => /^\d{10}$/.test(v) || 'Enter a valid 10-digit number',
+          ]"
+        >
+          <template #prependInner><VaIcon name="phone" size="small" /></template>
+        </VaInput>
+
+        <VaSelect
+          v-model="paymentData.provider"
+          label="Payment Provider"
+          value-by="value"
+          text-by="text"
+          preset="bordered"
+          class="mb-4 payment-input"
+          :options="[
+            { text: 'Vodacom M-Pesa', value: 'mpesa' },
+            { text: 'Airtel Money', value: 'airtel' },
+            { text: 'Tigo Pesa', value: 'tigo' },
+            { text: 'Halopesa', value: 'halopesa' },
+            { text: 'Azampesa', value: 'azampesa' },
+          ]"
+        >
+          <template #prependInner><VaIcon name="account_balance_wallet" size="small" /></template>
+        </VaSelect>
+      </VaForm>
     </div>
 
     <template #footer>
-      <VaButton preset="secondary" @click="showPaymentModal = false">
-        Cancel
-      </VaButton>
-      <VaButton :loading="subscriptionsStore.loading" @click="processUpgrade">
-        Confirm Payment
-      </VaButton>
+      <div class="modal-footer-btns">
+        <VaButton preset="secondary" @click="showPaymentModal = false" class="cancel-btn">
+          Cancel
+        </VaButton>
+        <VaButton :loading="subscriptionsStore.loading" @click="processUpgrade" class="confirm-btn">
+          Pay & Upgrade
+          <VaIcon name="arrow_forward" size="small" class="ml-2" />
+        </VaButton>
+      </div>
     </template>
   </VaModal>
 </template>
@@ -236,6 +247,7 @@ const subscriptionsStore = useSubscriptionsStore();
 
 const showPaymentModal = ref(false);
 const selectedPlan = ref<any>(null);
+const paymentForm = ref<any>(null);
 
 const paymentData = ref({
   account_number: "",
@@ -243,56 +255,34 @@ const paymentData = ref({
 });
 
 const isCurrentPlan = (planId: number) => {
-  // Use profile data which contains subscription
   const currentPlanId = profilesStore.profile?.subscription?.plan?.id;
-  const isCurrent = currentPlanId === planId;
-  return isCurrent;
+  return currentPlanId === planId;
+};
+
+const formatPrice = (price: any) => {
+  return parseFloat(price || 0).toLocaleString();
 };
 
 const loadPlans = async () => {
   try {
     await subscriptionsStore.fetchPlans();
   } catch (err: any) {
-    console.error("Failed to load plans:", err);
     error("Failed to load subscription plans. Please try again later.");
-  }
-};
-
-const fetchCurrentSubscription = async () => {
-  try {
-    await subscriptionsStore.fetchCurrentSubscription();
-  } catch (err: any) {
-    console.error("Failed to fetch current subscription:", err);
-    // Don't show error to user for this call, it's optional
-  }
-};
-
-const checkPaymentStatus = async (paymentId: number) => {
-  try {
-    return await subscriptionsStore.checkPaymentStatus(paymentId);
-  } catch (err: any) {
-    console.error("Failed to check payment status:", err);
-    return null;
   }
 };
 
 const selectPlan = (plan: any) => {
   if (!plan) return;
-
   selectedPlan.value = plan;
-
-  // Reset payment data
-  paymentData.value = {
-    account_number: "",
-    provider: "mpesa",
-  };
-
-  // Open modal
+  paymentData.value = { account_number: "", provider: "mpesa" };
   showPaymentModal.value = true;
 };
 
 const processUpgrade = async () => {
   if (!selectedPlan.value) return;
+
+  const isValid = await paymentForm.value?.validate();
+  if (!isValid) return;
 
   try {
     const data = await subscriptionsStore.upgradeSubscription({
@@ -302,242 +292,105 @@ const processUpgrade = async () => {
     });
 
     if (data.success) {
-      let message = `Successfully upgraded to ${selectedPlan.value.name}!`;
-
-      if (data.status === "pending") {
-        message = `Payment initiated! USSD push sent to ${paymentData.value.account_number}. Please complete the payment.`;
-      } else if (data.status === "completed") {
-        message = `Successfully upgraded to ${selectedPlan.value.name}!`;
-      }
-
-      success(message);
+      success(data.status === "pending" 
+        ? `Payment initiated! Please check your phone for the USSD prompt.`
+        : `Successfully upgraded to ${selectedPlan.value.name}!`);
+      
       showPaymentModal.value = false;
-
-      // Refresh profile to get updated subscription
       await profilesStore.fetchCurrentProfile();
-
-      // Redirect to profile
       router.push("/admin/profiles");
     } else {
       error(data.message || "Upgrade failed. Please try again.");
     }
   } catch (err: any) {
-    console.error("Subscription upgrade error:", err);
-    const errorMessage =
-      err.response?.data?.error ||
-      err.response?.data?.message ||
-      "Payment failed. Please try again.";
-    error(errorMessage);
+    error(err.response?.data?.error || "Payment failed. Please try again.");
   }
 };
 
 onMounted(() => {
   loadPlans();
   profilesStore.fetchCurrentProfile();
-  fetchCurrentSubscription();
+  subscriptionsStore.fetchCurrentSubscription();
 });
 </script>
 
 <style scoped>
 .subscription-plans-page {
-  padding: 2rem 1rem;
-  max-width: 1400px;
+  padding: 3rem 1.5rem;
+  max-width: 1200px;
   margin: 0 auto;
-  background: #f8f9fa;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--va-background-primary);
   min-height: 100vh;
 }
 
+/* Hero Section */
 .page-header {
-  margin-bottom: 3rem;
   text-align: center;
+  margin-bottom: 4rem;
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--va-background-element);
+  border: 1px solid var(--va-background-border);
+  padding: 0.4rem 1rem;
+  border-radius: 50px;
+  color: var(--va-primary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 1.5rem;
+}
+
+.badge-dot {
+  width: 6px;
+  height: 6px;
+  background: #22c55e;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #22c55e;
 }
 
 .title {
-  margin: 0;
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: #2d3748;
+  font-size: 3rem;
+  font-weight: 800;
+  color: var(--va-text-primary);
+  margin-bottom: 1rem;
+  letter-spacing: -0.02em;
 }
 
 .subtitle {
-  margin: 1rem 0 0;
   font-size: 1.125rem;
-  color: #4a5568;
-  font-weight: 400;
-}
-
-.plans-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 2rem;
-  margin-bottom: 2rem;
-}
-
-.plan-card {
-  border: none;
-  border-radius: 16px;
-  transition: all 0.3s ease;
-  background: white;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
-  overflow: hidden;
-  position: relative;
-}
-
-.plan-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
-}
-
-.plan-card.current-plan {
-  border: 3px solid #4299e1;
-  background: #ebf8ff;
-  box-shadow: 0 8px 16px rgba(66, 153, 225, 0.2);
-}
-
-.plan-card.current-plan::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 5px;
-  background: #4299e1;
-}
-
-.plan-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem 1.5rem 0;
-}
-
-.plan-header h3 {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #2d3748;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.plan-price {
-  margin: 1.5rem 0;
-  padding: 1.5rem;
-  background: #f7fafc;
-  border-radius: 12px;
-  text-align: center;
-  border: 1px solid #e2e8f0;
-}
-
-.price {
-  font-size: 3rem;
-  font-weight: 800;
-  color: #2d3748;
-  display: block;
-  line-height: 1;
-}
-
-.currency {
-  font-size: 1.25rem;
-  color: #718096;
-  margin-left: 0.5rem;
-}
-
-.duration {
-  display: block;
-  font-size: 0.875rem;
-  color: #718096;
-  margin-top: 0.5rem;
-  font-weight: 500;
-}
-
-.plan-description {
-  margin: 1rem 0;
-  color: #4a5568;
+  color: var(--va-text-secondary);
+  max-width: 600px;
+  margin: 0 auto;
   line-height: 1.6;
-  font-size: 0.95rem;
 }
 
-.plan-features {
-  margin: 1.5rem 0;
+/* Current Subscription Card */
+.current-sub-wrapper {
+  margin-bottom: 4rem;
+  animation: fadeInUp 1s ease-out;
 }
 
-.plan-features h4 {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #2d3748;
-  margin-bottom: 1rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.plan-features ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.plan-features li {
-  padding: 0.75rem 0;
-  border-bottom: 1px solid #e2e8f0;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  color: #4a5568;
-  font-size: 0.95rem;
-}
-
-.plan-features li:last-child {
-  border-bottom: none;
-}
-
-.payment-form {
-  padding: 1rem 0;
-}
-
-.plan-features h4 {
-  margin: 0 0 1rem;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #2d3748;
-}
-
-.plan-features ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.plan-features li {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0;
-  color: #4a5568;
-}
-
-.payment-form {
-  padding: 1rem 0;
-}
-
-/* Current Subscription Card Styles */
 .current-subscription-card {
-  background: white;
-  border: 2px solid #4299e1;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  background: var(--va-background-card-primary) !important;
+  border: 1px solid var(--va-background-border) !important;
+  border-radius: 20px !important;
   overflow: hidden;
   position: relative;
+  backdrop-filter: blur(10px);
 }
 
-.current-subscription-card::before {
-  content: "";
+.card-glow {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: #4299e1;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(34, 197, 94, 0.05) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -546,84 +399,239 @@ onMounted(() => {
   align-items: center;
   gap: 2rem;
   padding: 1rem;
-  position: relative;
-  z-index: 1;
 }
 
-.subscription-icon {
-  background: #ebf8ff;
-  border-radius: 50%;
-  width: 80px;
-  height: 80px;
+.icon-circle {
+  width: 70px;
+  height: 70px;
+  background: linear-gradient(135deg, #22c55e, #10b981);
+  border-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  flex-shrink: 0;
+  color: #fff;
+  box-shadow: 0 8px 16px rgba(34, 197, 94, 0.2);
 }
 
-.subscription-details {
-  flex: 1;
-  color: #2d3748;
-}
+.subscription-details { flex: 1; }
 
 .subscription-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 1rem;
 }
 
-.subscription-header h3 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #2d3748;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.subscription-info .plan-name {
-  font-size: 2rem;
-  font-weight: 800;
-  color: #2d3748;
-  margin-bottom: 1rem;
-}
-
-.plan-details {
+.status-indicator {
   display: flex;
-  gap: 2rem;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #22c55e;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  background: #22c55e;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.pulse-dot.is-expired {
+  background: #ef4444;
+  animation: none;
+}
+
+.plan-name-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--va-text-primary);
+  margin: 0;
+}
+
+.days-remaining {
+  text-align: right;
+  background: var(--va-background-element);
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--va-background-border);
+}
+
+.days-num {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #22c55e;
+  line-height: 1;
+}
+
+.days-label {
+  font-size: 0.7rem;
+  color: var(--va-text-secondary);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.subscription-footer {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  border-top: 1px solid var(--va-background-border);
+  padding-top: 1rem;
 }
 
 .detail-item {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #4a5568;
-  font-size: 0.95rem;
-  font-weight: 500;
+  color: var(--va-text-secondary);
+  font-size: 0.85rem;
 }
 
-.detail-item .va-icon {
-  color: #4299e1;
+.divider-dot {
+  width: 4px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+}
+
+/* Plans Grid */
+.plans-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 2rem;
+  animation: fadeInUp 1.2s ease-out;
+}
+
+.plan-card-wrapper {
+  position: relative;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.plan-card-wrapper:hover { transform: translateY(-10px); }
+
+.plan-card {
+  height: 100%;
+  background: var(--va-background-card-primary) !important;
+  border: 1px solid var(--va-background-border) !important;
+  border-radius: 24px !important;
+  overflow: visible !important;
+}
+
+.plan-card-wrapper.is-current .plan-card {
+  border: 2px solid #22c55e !important;
+  background: rgba(34, 197, 94, 0.02) !important;
+  box-shadow: 0 0 30px rgba(34, 197, 94, 0.1);
+}
+
+.popular-ribbon {
+  position: absolute;
+  top: -12px;
+  right: 20px;
+  background: #22c55e;
+  color: #fff;
+  padding: 0.35rem 1rem;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3);
+  z-index: 2;
+}
+
+.plan-content {
+  display: flex;
+  flex-direction: column;
+  padding: 2.5rem 2rem !important;
+  height: 100%;
+}
+
+.plan-name { font-size: 1.25rem; font-weight: 700; color: var(--va-text-primary); margin-bottom: 0.5rem; }
+.plan-desc { font-size: 0.85rem; color: var(--va-text-secondary); margin-bottom: 2rem; min-height: 2.5rem; }
+
+.plan-pricing { margin-bottom: 2rem; }
+.price-container { display: flex; align-items: baseline; gap: 0.25rem; }
+.currency { font-size: 1.125rem; font-weight: 600; color: #22c55e; }
+.price-val { font-size: 2.5rem; font-weight: 800; color: var(--va-text-primary); letter-spacing: -1px; }
+.duration { font-size: 0.85rem; color: var(--va-text-secondary); }
+
+.plan-features { flex: 1; margin-bottom: 2.5rem; }
+.features-label { font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1.25rem; }
+.features-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 1rem; }
+.features-list li { display: flex; align-items: center; gap: 0.75rem; color: var(--va-text-primary); font-size: 0.95rem; }
+.features-list li.dimmed { color: var(--va-text-disabled); }
+.feat-icon { color: #22c55e; flex-shrink: 0; }
+.features-list li.dimmed .feat-icon { color: var(--va-text-disabled); }
+
+.plan-btn {
+  border-radius: 12px !important;
+  font-weight: 700 !important;
+  padding: 0.8rem !important;
+  transition: all 0.3s !important;
+}
+
+.upgrade-btn {
+  background: #22c55e !important;
+  color: #fff !important;
+  box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3) !important;
+}
+
+.upgrade-btn:hover {
+  background: #10b981 !important;
+  box-shadow: 0 8px 25px rgba(34, 197, 94, 0.4) !important;
+}
+
+.current-btn { background: var(--va-background-element) !important; color: var(--va-text-secondary) !important; border: 1px solid var(--va-background-border) !important; }
+
+/* Payment Modal */
+.modal-header { display: flex; align-items: center; gap: 1rem; padding-bottom: 1rem; }
+.modal-title { font-size: 1.5rem; font-weight: 800; color: #fff; margin: 0; }
+.payment-modal-body { padding: 1rem 0; }
+.order-summary {
+  background: var(--va-background-element);
+  padding: 1.25rem;
+  border-radius: 14px;
+  border: 1px solid var(--va-background-border);
+  margin-bottom: 1.5rem;
+}
+.order-label { font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.5rem; }
+.order-plan-details { display: flex; justify-content: space-between; align-items: center; }
+.order-plan-name { font-size: 1.1rem; font-weight: 700; color: var(--va-text-primary); }
+.order-plan-price { font-size: 1.1rem; font-weight: 800; color: #22c55e; }
+
+.payment-instructions { display: flex; gap: 1rem; color: var(--va-text-secondary); font-size: 0.85rem; line-height: 1.5; align-items: center; }
+.instr-icon { color: #22c55e; }
+
+.payment-input { margin-bottom: 1rem; }
+
+.modal-footer-btns { display: grid; grid-template-columns: 1fr 2.5fr; gap: 1rem; width: 100%; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 1.5rem; }
+.cancel-btn { border-radius: 12px !important; }
+.confirm-btn {
+  background: #22c55e !important; color: #fff !important;
+  border-radius: 12px !important; font-weight: 700 !important;
+  box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3) !important;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+  70% { transform: scale(1.1); box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
 }
 
 @media (max-width: 768px) {
-  .current-subscription-content {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .subscription-header {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .plan-details {
-    flex-direction: column;
-    gap: 0.75rem;
-    align-items: center;
-  }
+  .title { font-size: 2.25rem; }
+  .current-subscription-content { flex-direction: column; text-align: center; }
+  .subscription-header { flex-direction: column; align-items: center; gap: 1rem; }
+  .days-remaining { text-align: center; }
+  .subscription-footer { flex-direction: column; gap: 0.75rem; }
+  .modal-footer-btns { grid-template-columns: 1fr; }
 }
 </style>
