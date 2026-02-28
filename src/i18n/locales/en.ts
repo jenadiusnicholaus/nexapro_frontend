@@ -19,6 +19,7 @@ export default {
     payments: 'Payments',
     notifications: 'Notifications',
     profiles: 'Profiles',
+    subscription: 'Subscription',
   },
   sidebar: {
     moveInTenant: 'Move-in tenant +',

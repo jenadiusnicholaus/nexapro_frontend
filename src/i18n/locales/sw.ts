@@ -19,6 +19,7 @@ export default {
     payments: 'Malipo',
     notifications: 'Arifa',
     profiles: 'Wasifu',
+    subscription: 'Usajili',
   },
   sidebar: {
     moveInTenant: 'Ingiza mkodisha +',

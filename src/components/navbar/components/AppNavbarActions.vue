@@ -94,6 +94,18 @@
       <VaIcon :name="isDark ? 'light_mode' : 'dark_mode'" color="#22c55e" />
     </VaButton>
 
+    <!-- Subscription Badge -->
+    <div v-if="!isMobile && currentPlanName" class="subscription-nav-badge-wrap">
+      <div
+        class="premium-plan-badge"
+        @click="goToSubscription"
+        title="View Subscription Plans"
+      >
+        <VaIcon name="workspace_premium" size="14px" class="mr-1" />
+        {{ currentPlanName }}
+      </div>
+    </div>
+
     <!-- Account Premium -->
     <VaDropdown
       placement="bottom-end"
@@ -256,6 +268,10 @@ const userImage = computed(() => {
   return profilesStore.profile?.image || null;
 });
 
+const currentPlanName = computed(() => {
+  return profilesStore.profile?.subscription?.plan?.name || null;
+});
+
 function getLocaleFlag(l: string) {
   return localeFlags[l as Locale] ?? "🇺🇸";
 }
@@ -272,13 +288,24 @@ function goToSettings() {
   router.push({ name: "profiles" });
 }
 
+function goToSubscription() {
+  router.push({ name: "subscription-plans" });
+}
+
 const handleLogout = () => {
   authStore.logout();
   router.push({ name: "login" });
 };
 
-onMounted(() => {
-  profilesStore.fetchCurrentProfile().catch(() => {});
+onMounted(async () => {
+  try {
+    const profile = await profilesStore.fetchCurrentProfile();
+    console.log('[NavBadge] Profile data:', JSON.stringify(profile));
+    console.log('[NavBadge] Subscription:', profile?.subscription);
+    console.log('[NavBadge] Plan name:', profile?.subscription?.plan?.name);
+  } catch (e) {
+    console.error('[NavBadge] Error fetching profile:', e);
+  }
 });
 </script>
 
@@ -321,6 +348,34 @@ onMounted(() => {
   background: #22c55e;
   border-radius: 50%;
   box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+}
+
+/* Subscription Badge */
+.subscription-nav-badge-wrap {
+  display: flex;
+  align-items: center;
+}
+
+.premium-plan-badge {
+  cursor: pointer;
+  display: flex !important;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.75rem !important;
+  border-radius: 50px !important;
+  font-weight: 700 !important;
+  font-size: 0.75rem !important;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  transition: all 0.2s;
+  background: rgba(34, 197, 94, 0.1) !important;
+  color: #22c55e !important;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.premium-plan-badge:hover {
+  background: rgba(34, 197, 94, 0.2) !important;
+  transform: scale(1.05);
 }
 
 /* Dropdown Card */

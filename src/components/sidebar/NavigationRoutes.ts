@@ -50,7 +50,7 @@ const config: NavigationConfig = {
     {
       name: "subscription-plans",
       path: "/subscription/plans",
-      displayName: "Subscription",
+      displayName: "menu.subscription",
       meta: { icon: "workspace_premium" },
     },
     {

@@ -19,6 +19,7 @@ export interface SubscriptionPlan {
   priority_support: boolean;
   is_active: boolean;
   is_free_tier: boolean;
+  is_popular?: boolean;
 }
 
 export interface Subscription {

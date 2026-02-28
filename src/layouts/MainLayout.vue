@@ -341,7 +341,8 @@ const goToSubscriptionPlans = () => {
   display: flex;
   flex-wrap: wrap;
   min-height: 100vh;
-  background: #f8fafc;
+  background: var(--va-background-primary);
+  color: var(--va-text-primary);
 }
 
 /* App Bar - fixed at top */
@@ -355,20 +356,9 @@ const goToSubscriptionPlans = () => {
   align-items: center;
   padding: 0 1rem;
   gap: 1rem;
-  background: #ffffff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  background: var(--va-background-secondary);
+  border-bottom: 1px solid var(--va-background-border) !important;
   z-index: 1000;
-}
-
-.app-bar::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 5px;
-  background: #4299e1 !important;
-  z-index: 10;
 }
 
 .app-bar-menu-btn {
@@ -383,12 +373,12 @@ const goToSubscriptionPlans = () => {
   border-radius: 8px;
   background: transparent;
   cursor: pointer;
-  color: #5f6368;
+  color: var(--va-text-secondary);
 }
 
 .app-bar-menu-btn:hover {
-  background: rgba(66, 153, 225, 0.1);
-  color: #4299e1;
+  background: var(--va-background-element);
+  color: var(--va-text-primary);
 }
 
 .app-bar-menu-icon,
@@ -409,17 +399,18 @@ const goToSubscriptionPlans = () => {
 
 .search-input :deep(.va-input-wrapper) {
   border-radius: 8px;
-  background: #f1f3f4;
+  background: var(--va-background-element);
   border-color: transparent;
+  color: var(--va-text-primary);
 }
 
 .search-input :deep(.va-input-wrapper:focus-within) {
-  background: #fff;
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.08);
+  background: var(--va-background-primary);
+  box-shadow: 0 1px 1px var(--va-shadow);
 }
 
 .search-icon {
-  color: #5f6368 !important;
+  color: var(--va-text-secondary) !important;
 }
 
 .app-bar-right {
@@ -440,13 +431,13 @@ const goToSubscriptionPlans = () => {
   border-radius: 50%;
   background: transparent;
   cursor: pointer;
-  color: #5f6368;
+  color: var(--va-text-secondary);
   transition: all 0.2s ease;
 }
 
 .app-bar-icon-btn:hover {
-  background: rgba(66, 153, 225, 0.1);
-  color: #4299e1;
+  background: var(--va-background-element);
+  color: var(--va-text-primary);
   transform: scale(1.05);
 }
 
@@ -633,18 +624,18 @@ const goToSubscriptionPlans = () => {
   border: none;
   border-radius: 6px;
   background: transparent;
-  color: #5f6368;
+  color: var(--va-text-secondary);
   cursor: pointer;
 }
 
 .locale-btn:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: #202124;
+  background: var(--va-background-element);
+  color: var(--va-text-primary);
 }
 
 .locale-btn--active {
-  background: rgba(124, 58, 237, 0.12);
-  color: #7c3aed;
+  background: rgba(34, 197, 94, 0.12);
+  color: #22c55e;
 }
 
 .app-bar-user {
@@ -656,14 +647,14 @@ const goToSubscriptionPlans = () => {
 }
 
 .app-bar-user:hover {
-  background: rgba(0, 0, 0, 0.04);
+  background: var(--va-background-element);
 }
 
 .user-avatar {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%);
+  background: linear-gradient(135deg, #22c55e 0%, #10b981 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -687,8 +678,8 @@ const goToSubscriptionPlans = () => {
   left: 0;
   width: 260px;
   height: calc(100vh - 64px);
-  background: #ffffff;
-  border-right: 1px solid rgba(0, 0, 0, 0.06);
+  background: var(--va-background-secondary);
+  border-right: 1px solid var(--va-background-border);
   z-index: 900;
   transition: width 0.2s ease;
   overflow: hidden;
@@ -718,7 +709,7 @@ const goToSubscriptionPlans = () => {
   padding: 0.75rem 1.25rem;
   margin: 0.25rem 0.5rem;
   border-radius: 10px;
-  color: var(--va-text-primary);
+  color: var(--va-text-secondary);
   text-decoration: none;
   transition:
     background 0.2s,
@@ -726,16 +717,17 @@ const goToSubscriptionPlans = () => {
 }
 
 .sidebar-link:hover {
-  background: rgba(124, 58, 237, 0.08);
+  background: var(--va-background-element);
+  color: var(--va-text-primary);
 }
 
 .sidebar-link--active {
-  background: #7c3aed !important;
-  color: #ffffff !important;
+  background: rgba(34, 197, 94, 0.15) !important;
+  color: #22c55e !important;
 }
 
 .sidebar-link--active .sidebar-link-icon {
-  color: #ffffff !important;
+  color: #22c55e !important;
 }
 
 .sidebar-link-icon {
@@ -779,6 +771,7 @@ const goToSubscriptionPlans = () => {
   margin-top: 64px;
   min-height: calc(100vh - 64px);
   transition: margin-left 0.2s ease;
+  background: var(--va-background-primary);
 }
 
 .main-content--expanded {
@@ -788,7 +781,7 @@ const goToSubscriptionPlans = () => {
 .content-wrapper {
   padding: 1.5rem 2rem;
   min-height: calc(100vh - 64px);
-  background: #f8fafc;
+  background: var(--va-background-primary);
   width: 100%;
   max-width: 1600px;
   margin: 0 auto;

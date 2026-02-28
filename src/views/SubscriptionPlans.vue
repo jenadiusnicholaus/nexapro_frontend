@@ -78,6 +78,7 @@
       >
         <VaCard class="plan-card">
           <div v-if="plan.is_popular" class="popular-ribbon">Most Popular</div>
+          <div v-if="isCurrentPlan(plan.id)" class="current-plan-tag">Your Current Plan</div>
           
           <VaCardContent class="plan-content">
             <div class="plan-header">
@@ -131,30 +132,34 @@
             </div>
 
             <VaButton
-              v-if="!isCurrentPlan(plan.id) && !plan.is_free_tier"
+              v-if="isCurrentPlan(plan.id)"
+              class="plan-btn current-btn"
+              preset="primary"
+              border-color="primary"
+              block
+              disabled
+            >
+              <VaIcon name="check" size="small" class="mr-2" />
+              Active Plan
+            </VaButton>
+
+            <VaButton
+              v-else-if="plan.is_free_tier"
+              class="plan-btn free-btn"
+              preset="secondary"
+              block
+              disabled
+            >
+              Free Access
+            </VaButton>
+
+            <VaButton
+              v-else
               class="plan-btn upgrade-btn"
               @click.stop.prevent="selectPlan(plan)"
               block
             >
               Select Plan
-            </VaButton>
-
-            <VaButton
-              v-else-if="isCurrentPlan(plan.id)"
-              class="plan-btn current-btn"
-              disabled
-              block
-            >
-              Active Plan
-            </VaButton>
-
-            <VaButton
-              v-else
-              class="plan-btn free-btn"
-              disabled
-              block
-            >
-              Free Access
             </VaButton>
           </VaCardContent>
         </VaCard>
@@ -532,6 +537,14 @@ onMounted(() => {
   position: absolute;
   top: -12px;
   right: 20px;
+  box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3);
+  z-index: 2;
+}
+
+.current-plan-tag {
+  position: absolute;
+  top: -12px;
+  left: 20px;
   background: #22c55e;
   color: #fff;
   padding: 0.35rem 1rem;

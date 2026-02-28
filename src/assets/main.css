@@ -15,7 +15,8 @@ body {
   font-family: var(--va-font-family);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--va-background-secondary);
+  background-color: var(--va-background-primary);
+  color: var(--va-text-primary);
 }
 
 /* Smooth scrolling */

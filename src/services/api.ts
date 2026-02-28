@@ -70,6 +70,14 @@ function handleSessionExpired() {
   localStorage.removeItem("access_token");
   localStorage.removeItem("refresh_token");
 
+  // Don't redirect if already on the login or auth pages
+  if (typeof window !== "undefined") {
+    const currentPath = window.location.pathname;
+    if (currentPath.includes("/auth/") || currentPath.includes("/login")) {
+      return; // Already on auth page, no redirect needed
+    }
+  }
+
   // Show notification to user
   const message = "Your session has expired. Please log in again.";
 
@@ -98,9 +106,6 @@ function handleSessionExpired() {
       document.body.removeChild(toast);
       window.location.href = "/auth/login";
     }, 2000);
-  } else {
-    // Fallback: immediate redirect
-    window.location.href = "/auth/login";
   }
 }
 

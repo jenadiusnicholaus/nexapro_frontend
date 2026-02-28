@@ -153,7 +153,6 @@ watch(() => route.fullPath, setActiveExpand, { immediate: true });
 
 <style scoped>
 .app-sidebar {
-  box-shadow: 1px 0 12px rgba(0, 0, 0, 0.3);
   border-right: 1px solid rgba(255, 255, 255, 0.04);
 }
 

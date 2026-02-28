@@ -64,7 +64,7 @@
 
           <VaInput
             v-model="password"
-            type="password"
+            :type="showPassword ? 'text' : 'password'"
             :label="t('auth.password')"
             :placeholder="t('auth.passwordPlaceholder')"
             :rules="[validators.required]"
@@ -73,6 +73,17 @@
           >
             <template #prependInner>
               <VaIcon name="lock" size="small" />
+            </template>
+            <template #appendInner>
+              <VaButton
+                preset="plain"
+                size="small"
+                class="password-toggle-btn"
+                @click="showPassword = !showPassword"
+                :aria-label="showPassword ? 'Hide password' : 'Show password'"
+              >
+                <VaIcon :name="showPassword ? 'visibility_off' : 'visibility'" size="small" color="#64748b" />
+              </VaButton>
             </template>
           </VaInput>
 
@@ -137,6 +148,7 @@ const testUsers = {
 const username = ref(testUsers.admin.username);
 const password = ref(testUsers.admin.password);
 const loginForm = ref(null);
+const showPassword = ref(false);
 
 const fillTestUser = (key) => {
   const u = testUsers[key];
