@@ -87,12 +87,6 @@
             </template>
           </VaInput>
 
-          <div class="test-users mb-3">
-            <span class="test-users-label">{{ t('auth.quickFill') }}</span>
-            <VaButton preset="plain" size="small" class="test-user-btn" @click="fillTestUser('admin')">Admin</VaButton>
-            <VaButton preset="plain" size="small" class="test-user-btn" @click="fillTestUser('property_owner')">Property Owner</VaButton>
-          </div>
-
           <VaButton type="submit" :loading="authStore.loading" block size="large" class="login-button">
             {{ t('auth.signIn') }}
             <VaIcon name="arrow_forward" size="small" />
@@ -130,33 +124,10 @@ const router = useRouter();
 const authStore = useAuthStore();
 const { t } = useI18n({ useScope: 'global' });
 
-const testUsers = {
-  admin: {
-    username: import.meta.env.VITE_TEST_ADMIN_USERNAME ?? "admin",
-    password: import.meta.env.VITE_TEST_ADMIN_PASSWORD ?? "admin123",
-    label: "Admin",
-    access: "Full access to everything",
-  },
-  property_owner: {
-    username: import.meta.env.VITE_TEST_OWNER_USERNAME ?? "property_owner",
-    password: import.meta.env.VITE_TEST_OWNER_PASSWORD ?? "property_owner123",
-    label: "Property Owner",
-    access: "Only data for their linked Owner",
-  },
-};
-
-const username = ref(testUsers.admin.username);
-const password = ref(testUsers.admin.password);
+const username = ref("");
+const password = ref("");
 const loginForm = ref(null);
 const showPassword = ref(false);
-
-const fillTestUser = (key) => {
-  const u = testUsers[key];
-  if (u) {
-    username.value = u.username;
-    password.value = u.password;
-  }
-};
 
 const handleLogin = async () => {
   const isValid = await loginForm.value.validate();
@@ -267,21 +238,6 @@ const handleLogin = async () => {
   box-shadow: 0 8px 30px rgba(34, 197, 94, .5) !important;
   background: #16a34a !important;
 }
-
-.test-users {
-  display: flex; align-items: center; flex-wrap: wrap; gap: .5rem;
-  padding: .65rem .85rem;
-  background: rgba(34,197,94,.06);
-  border-radius: 10px;
-  border: 1px solid rgba(34,197,94,.12);
-}
-.test-users-label { font-size: .8rem; color: #94a3b8; margin-right: .25rem; font-weight: 500; }
-.test-user-btn {
-  min-height: auto !important; padding: .3rem .65rem !important; font-size: .8rem !important;
-  font-weight: 500 !important; border-radius: 6px !important;
-  color: #86efac !important;
-}
-.test-user-btn:hover { background: rgba(34, 197, 94, .15) !important; color: #fff !important; }
 
 .input-group { margin-bottom: .75rem; }
 .input-hint {
