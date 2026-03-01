@@ -17,7 +17,7 @@
           </a>
         </div>
         <div class="navbar-actions flex items-center">
-          <VaButton preset="secondary" @click="goToLogin" class="btn-outlined btn-secondary-outline nav-login-btn">{{ t('home.nav.login') }}</VaButton>
+          <button class="nav-login-btn-plain" @click="goToLogin">{{ t('home.nav.login') }}</button>
           <VaButton @click="getStarted" class="nav-btn-solid">
             {{ t('home.nav.getStarted') }}
           </VaButton>
@@ -611,13 +611,34 @@ onUnmounted(() => {
   z-index: 1; /* Lowest */
 }
 
-.home-page.light-theme .section-title,
-.home-page.light-theme .feature-title,
-.home-page.light-theme .service-title,
-.home-page.light-theme .author-name,
-.home-page.light-theme .cta-title {
-  color: #0f172a;
+/* Only apply dark colors to light sections, NOT to dark sections */
+.home-page.light-theme .section-light .section-title,
+.home-page.light-theme .section-light .feature-title,
+.home-page.light-theme .section-light .service-title,
+.home-page.light-theme .section-light .author-name,
+.home-page.light-theme .section-light .cta-title {
+  color: #0f172a !important;
 }
+
+/* Dark sections ALWAYS use white text, highest priority */
+.section-dark .section-title,
+.section-dark .feature-title,
+.section-dark .service-title,
+.section-dark .author-name,
+.section-dark .cta-title,
+.section-dark h2,
+.section-dark h3 {
+  color: #ffffff !important;
+}
+/* Only these specific text elements in dark sections get muted white */
+.section-dark .section-subtitle,
+.section-dark .feature-description,
+.section-dark .service-description,
+.section-dark .author-role,
+.section-dark .cta-subtitle {
+  color: rgba(255,255,255,0.75) !important;
+}
+/* Do NOT override .showcase-subtitle here — it has its own rule */
 
 
 
@@ -1173,6 +1194,25 @@ onUnmounted(() => {
 .nav-login-btn:hover {
   background: rgba(255, 255, 255, 0.1) !important;
   border-color: #ffffff !important;
+}
+
+/* Plain native button for navbar login - bypasses VaButton overrides */
+.nav-login-btn-plain {
+  background: transparent;
+  border: 1.5px solid rgba(255, 255, 255, 0.45);
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 0.55rem 1.6rem;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  letter-spacing: 0.01em;
+}
+.nav-login-btn-plain:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #ffffff;
 }
 
 /* Divider Styles */
