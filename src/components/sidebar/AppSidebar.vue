@@ -14,13 +14,15 @@
       >
         <template #header="{ value: isCollapsed }">
           <VaSidebarItem
-            :to="route.children ? undefined : { name: route.name }"
+            :to="getItemRoute(route)"
             :active="routeHasActiveChild(route)"
             :active-color="activeColor"
             :text-color="textColor(route)"
             :aria-label="`${route.children ? 'Open category ' : 'Visit'} ${t(route.displayName)}`"
             role="button"
             hover-opacity="0.10"
+            :class="{ 'sidebar-locked': isRouteLocked(route) }"
+            @click="onSidebarItemClick($event, route)"
           >
             <VaSidebarItemContent class="py-2 pr-2 pl-4">
               <VaIcon
@@ -35,6 +37,14 @@
               >
                 <span>{{ t(route.displayName) }}</span>
                 <div class="flex items-center gap-2">
+                  <!-- Lock icon for restricted features -->
+                  <VaIcon
+                    v-if="isRouteLocked(route)"
+                    name="lock"
+                    size="16px"
+                    color="warning"
+                    class="sidebar-lock-icon"
+                  />
                   <VaBadge
                     v-if="
                       route.name === 'subscription-plans' && currentPlanName
@@ -81,10 +91,11 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { useColors } from "vuestic-ui";
 import { useProfilesStore } from "@/stores";
+import { useSubscription } from "@/composables/useSubscription";
 import NavigationRoutes from "./NavigationRoutes";
 import type { INavigationRoute } from "./NavigationRoutes";
 
@@ -102,13 +113,36 @@ const props = withDefaults(
 );
 
 const route = useRoute();
+const router = useRouter();
 const { t } = useI18n();
 const { getColor, colorToRgba } = useColors();
 const profilesStore = useProfilesStore();
+const { hasFeature, showUpgradePrompt } = useSubscription();
 
 const currentPlanName = computed(() => {
   return profilesStore.profile?.subscription?.plan?.name || null;
 });
+
+/** Returns true if the route requires a feature the current plan doesn't have */
+const isRouteLocked = (r: INavigationRoute): boolean => {
+  if (!r.requiredFeature) return false;
+  return !hasFeature(r.requiredFeature);
+};
+
+/** If route is locked, return undefined (no navigation). Otherwise return normal route. */
+const getItemRoute = (r: INavigationRoute) => {
+  if (isRouteLocked(r)) return undefined;
+  return r.children ? undefined : { name: r.name };
+};
+
+/** Intercept click on locked items to show upgrade prompt */
+const onSidebarItemClick = (event: MouseEvent, r: INavigationRoute) => {
+  if (isRouteLocked(r)) {
+    event.preventDefault();
+    event.stopPropagation();
+    showUpgradePrompt(r.requiredFeature);
+  }
+};
 
 const value = ref<boolean[]>([]);
 
@@ -142,9 +176,9 @@ const setActiveExpand = () => {
 };
 
 const iconColor = (r: INavigationRoute) =>
-  routeHasActiveChild(r) ? "primary" : "secondary";
+  isRouteLocked(r) ? "secondary" : routeHasActiveChild(r) ? "primary" : "secondary";
 const textColor = (r: INavigationRoute) =>
-  routeHasActiveChild(r) ? "primary" : "textPrimary";
+  isRouteLocked(r) ? "secondary" : routeHasActiveChild(r) ? "primary" : "textPrimary";
 const arrowDirection = (state: boolean) =>
   state ? "va-arrow-up" : "va-arrow-down";
 
@@ -191,5 +225,21 @@ watch(() => route.fullPath, setActiveExpand, { immediate: true });
   font-size: 0.7rem;
   padding: 0.125rem 0.5rem;
   font-weight: 600;
+}
+
+/* Locked sidebar items */
+.sidebar-locked {
+  opacity: 0.55;
+  cursor: not-allowed !important;
+}
+.sidebar-locked:hover {
+  opacity: 0.7;
+}
+.sidebar-lock-icon {
+  animation: pulse-lock 2s infinite;
+}
+@keyframes pulse-lock {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
 }
 </style>

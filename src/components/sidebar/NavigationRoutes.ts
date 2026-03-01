@@ -3,6 +3,8 @@
  * Used by sidebar and breadcrumbs.
  */
 
+import type { SubscriptionFeature } from "@/composables/useSubscription";
+
 export interface INavigationRoute {
   name: string;
   path: string;
@@ -10,6 +12,8 @@ export interface INavigationRoute {
   displayNameKey?: string;
   meta?: { icon?: string };
   children?: INavigationRoute[];
+  /** When set, the route is only accessible if the user's plan includes this feature */
+  requiredFeature?: SubscriptionFeature;
 }
 
 export interface NavigationConfig {
@@ -58,12 +62,14 @@ const config: NavigationConfig = {
       path: "/bills",
       displayName: "menu.bills",
       meta: { icon: "receipt" },
+      requiredFeature: "payment_tracking",
     },
     {
       name: "payments",
       path: "/payments",
       displayName: "menu.payments",
       meta: { icon: "payment" },
+      requiredFeature: "payment_tracking",
     },
     {
       name: "profiles",

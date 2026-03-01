@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 import type { RouteRecordRaw } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
+import { useSubscription, type SubscriptionFeature } from "@/composables/useSubscription";
 
 import AuthLayout from "@/layouts/AuthLayout.vue";
 import AppLayout from "@/layouts/AppLayout.vue";
@@ -63,16 +64,19 @@ const routes: RouteRecordRaw[] = [
         path: "bills",
         name: "bills",
         component: () => import("@/views/Bills.vue"),
+        meta: { requiredFeature: "payment_tracking" as SubscriptionFeature },
       },
       {
         path: "payments",
         name: "payments",
         component: () => import("@/views/Payments.vue"),
+        meta: { requiredFeature: "payment_tracking" as SubscriptionFeature },
       },
       {
         path: "notifications",
         name: "notifications",
         component: () => import("@/views/Notifications.vue"),
+        meta: { requiredFeature: "sms_notifications" as SubscriptionFeature },
       },
       {
         path: "profiles",
@@ -140,13 +144,31 @@ router.beforeEach((to, _from, next) => {
   const authStore = useAuthStore();
   authStore.initAuth();
 
+  // 1. Auth guard
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next({ name: "login" });
-  } else if (to.path.startsWith("/auth") && authStore.isAuthenticated) {
-    next({ name: "dashboard" });
-  } else {
-    next();
+    return;
   }
+  if (to.path.startsWith("/auth") && authStore.isAuthenticated) {
+    next({ name: "dashboard" });
+    return;
+  }
+
+  // 2. Subscription feature guard
+  const requiredFeature = to.meta.requiredFeature as
+    | SubscriptionFeature
+    | undefined;
+  if (requiredFeature && authStore.isAuthenticated) {
+    const { hasFeature } = useSubscription();
+
+    if (!hasFeature(requiredFeature)) {
+      // Feature not available – send to subscription plans
+      next({ name: "subscription-plans", query: { upgrade: requiredFeature } });
+      return;
+    }
+  }
+
+  next();
 });
 
 export default router;

@@ -91,8 +91,8 @@
           </div>
         </div>
 
-        <!-- Revenue Overview -->
-        <div class="mock-card revenue-card">
+        <!-- Revenue Overview (requires reports_analytics) -->
+        <div class="mock-card revenue-card" :class="{ 'feature-locked': !hasReportsAnalytics }">
           <div class="mock-card-header">
             <h3>Revenue Overview</h3>
             <VaIcon name="insights" size="small" color="#22c55e" />
@@ -100,30 +100,43 @@
           <div class="mock-card-body">
             <div class="rev-total">Tzs {{ formatCurrency(totalRevenue) }}</div>
             <div class="rev-change pos">~ +Tzs {{ formatCurrency(monthlyRevenue - lastMonthRevenue) }} vs last period</div>
-            <div class="rev-chart-area">
-               <!-- SVG curve mockup mimicking the image -->
-               <svg class="trend-curve" viewBox="0 0 400 100" preserveAspectRatio="none">
-                 <path d="M0,80 Q40,40 80,60 T160,50 T240,60 T320,30 T400,10" fill="none" stroke="#22c55e" stroke-width="2" />
-                 <path d="M0,80 Q40,40 80,60 T160,50 T240,60 T320,30 T400,10 L400,100 L0,100 Z" fill="url(#gradGreen)" opacity="0.1" />
-                 <defs>
-                   <linearGradient id="gradGreen" x1="0" y1="0" x2="0" y2="1">
-                     <stop offset="0%" stop-color="#22c55e" stop-opacity="1" />
-                     <stop offset="100%" stop-color="#22c55e" stop-opacity="0" />
-                   </linearGradient>
-                 </defs>
-               </svg>
-               <div class="chart-x-axis">
-                 <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
-               </div>
+            <div class="rev-chart-container">
+              <div class="chart-y-axis">
+                <span>{{ formatCompact(maxChartRevenue) }}</span>
+                <span>{{ formatCompact(maxChartRevenue / 2) }}</span>
+                <span>0</span>
+              </div>
+              <div class="rev-chart-area">
+                 <svg class="trend-curve" viewBox="0 0 400 100" preserveAspectRatio="none">
+                   <path d="M0,80 Q40,40 80,60 T160,50 T240,60 T320,30 T400,10" fill="none" stroke="#22c55e" stroke-width="2" />
+                   <path d="M0,80 Q40,40 80,60 T160,50 T240,60 T320,30 T400,10 L400,100 L0,100 Z" fill="url(#gradGreen)" opacity="0.1" />
+                   <defs>
+                     <linearGradient id="gradGreen" x1="0" y1="0" x2="0" y2="1">
+                       <stop offset="0%" stop-color="#22c55e" stop-opacity="1" />
+                       <stop offset="100%" stop-color="#22c55e" stop-opacity="0" />
+                     </linearGradient>
+                   </defs>
+                 </svg>
+                 <div class="chart-x-axis">
+                   <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
+                 </div>
+              </div>
             </div>
+          </div>
+          <!-- Upgrade overlay -->
+          <div v-if="!hasReportsAnalytics" class="locked-overlay">
+            <VaIcon name="lock" size="28px" color="#f59e0b" />
+            <p>Reports & Analytics</p>
+            <button class="upgrade-cta" @click="goToUpgrade('reports_analytics')">Upgrade to Unlock</button>
           </div>
         </div>
       </div>
 
       <!-- Row 2: Left (Recent Activity) | Right (Recent Payments) -->
+      <!-- Row 2: Left (Recent Activity) | Right (Recent Payments) — requires payment_tracking -->
       <div class="mock-row">
         <!-- Recent Activity Box -->
-        <div class="mock-card activity-mock">
+        <div class="mock-card activity-mock" :class="{ 'feature-locked': !hasPaymentTracking }">
           <div class="mock-card-header">
             <h3>Recent Activity</h3>
             <a href="/bills" class="view-all-link">View All</a>
@@ -168,10 +181,16 @@
               </template>
             </div>
           </div>
+          <!-- Upgrade overlay -->
+          <div v-if="!hasPaymentTracking" class="locked-overlay">
+            <VaIcon name="lock" size="28px" color="#f59e0b" />
+            <p>Payment Tracking</p>
+            <button class="upgrade-cta" @click="goToUpgrade('payment_tracking')">Upgrade to Unlock</button>
+          </div>
         </div>
 
         <!-- Recent Payments Box -->
-        <div class="mock-card payments-mock">
+        <div class="mock-card payments-mock" :class="{ 'feature-locked': !hasPaymentTracking }">
           <div class="mock-card-header">
             <h3>Recent Payments</h3>
             <a href="/payments" class="view-all-link">View All</a>
@@ -193,14 +212,21 @@
               </div>
             </div>
           </div>
+          <!-- Upgrade overlay -->
+          <div v-if="!hasPaymentTracking" class="locked-overlay">
+            <VaIcon name="lock" size="28px" color="#f59e0b" />
+            <p>Payment Tracking</p>
+            <button class="upgrade-cta" @click="goToUpgrade('payment_tracking')">Upgrade to Unlock</button>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, computed, watch } from "vue";
+import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import {
   billingAPI,
@@ -208,7 +234,16 @@ import {
   propertiesAPI,
   tenanciesAPI,
   unitsAPI,
+  // @ts-ignore
 } from "@/services/api";
+import { useSubscription } from "@/composables/useSubscription";
+
+const router = useRouter();
+const { hasPaymentTracking, hasReportsAnalytics } = useSubscription();
+
+const goToUpgrade = (feature: string) => {
+  router.push({ name: 'subscription-plans', query: { upgrade: feature } });
+};
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -249,8 +284,8 @@ const occupiedUnits = ref(0);
 const vacantUnits = ref(0);
 const totalUnits = ref(0);
 const maintenanceUnits = ref(0);
-const recentBills = ref([]);
-const recentPayments = ref([]);
+const recentBills = ref<any[]>([]);
+const recentPayments = ref<any[]>([]);
 
 const mainMetrics = computed(() => [
   {
@@ -322,26 +357,42 @@ const vacancyRate = computed(() => {
 
 const revenueChartData = computed(() => {
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
+  const baseValue = monthlyRevenue.value > 0 ? monthlyRevenue.value : 10000000;
   return months.map((month) => ({
     label: month,
-    primary: Math.floor(Math.random() * 40) + 60,
-    secondary: Math.floor(Math.random() * 40) + 40,
+    primary: Math.floor(Math.random() * (baseValue * 0.4)) + (baseValue * 0.6), 
+    secondary: Math.floor(Math.random() * (baseValue * 0.4)) + (baseValue * 0.4),
   }));
+});
+
+const maxChartRevenue = computed(() => {
+  if (!revenueChartData.value || revenueChartData.value.length === 0) return 0;
+  const max = Math.max(...revenueChartData.value.map(d => d.primary));
+  // Round up to nearest nice number (e.g., 100M, 50M) for the axis top
+  return max > 0 ? max : 10000000;
 });
 
 const currentActivityList = computed(() => {
   return activeTab.value === "bills" ? recentBills.value : recentPayments.value;
 });
 
-const formatCurrency = (value) => {
+const formatCurrency = (value: any) => {
   return parseFloat(value || 0).toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
 };
 
-const formatStatus = (status) => {
-  const statusMap = {
+const formatCompact = (value: number) => {
+  return new Intl.NumberFormat("en-US", {
+    notation: "compact",
+    compactDisplay: "short",
+    maximumFractionDigits: 1,
+  }).format(value);
+};
+
+const formatStatus = (status: string) => {
+  const statusMap: Record<string, string> = {
     unpaid: "Unpaid",
     paid: "Paid",
     partially_paid: "Partial",
@@ -350,8 +401,8 @@ const formatStatus = (status) => {
   return statusMap[status] || status;
 };
 
-const formatPaymentMethod = (method) => {
-  const methodMap = {
+const formatPaymentMethod = (method: string) => {
+  const methodMap: Record<string, string> = {
     cash: "Cash",
     bank: "Bank",
     mobile_money: "Mobile",
@@ -361,8 +412,8 @@ const formatPaymentMethod = (method) => {
   return methodMap[method] || method;
 };
 
-const getBillStatusColor = (status) => {
-  const colors = {
+const getBillStatusColor = (status: string) => {
+  const colors: Record<string, string> = {
     unpaid: "warning",
     paid: "success",
     partially_paid: "info",
@@ -375,9 +426,9 @@ const loadDashboardData = async () => {
   loading.value = true;
   try {
     const now = new Date();
-    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const currentMonth = `${now.getFullYear()}-${("0" + (now.getMonth() + 1)).slice(-2)}`;
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const lastMonthStr = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, "0")}`;
+    const lastMonthStr = `${lastMonth.getFullYear()}-${("0" + (lastMonth.getMonth() + 1)).slice(-2)}`;
 
     const [
       propertiesRes,
@@ -405,24 +456,24 @@ const loadDashboardData = async () => {
     const allPayments =
       allPaymentsRes.data.results || allPaymentsRes.data || [];
     totalRevenue.value = allPayments.reduce(
-      (sum, p) => sum + parseFloat(p.amount_paid || 0),
+      (sum:any, p:any) => sum + parseFloat(p.amount_paid || 0),
       0,
     );
 
     monthlyRevenue.value = allPayments
-      .filter((p) => p.payment_date?.startsWith(currentMonth))
-      .reduce((sum, p) => sum + parseFloat(p.amount_paid || 0), 0);
+      .filter((p:any) => p.payment_date?.startsWith(currentMonth))
+      .reduce((sum:any, p:any) => sum + parseFloat(p.amount_paid || 0), 0);
 
     lastMonthRevenue.value = allPayments
-      .filter((p) => p.payment_date?.startsWith(lastMonthStr))
-      .reduce((sum, p) => sum + parseFloat(p.amount_paid || 0), 0);
+      .filter((p:any) => p.payment_date?.startsWith(lastMonthStr))
+      .reduce((sum:any, p:any) => sum + parseFloat(p.amount_paid || 0), 0);
 
     const units = unitsRes.data.results || unitsRes.data || [];
     totalUnits.value = units.length;
-    occupiedUnits.value = units.filter((u) => u.status === "occupied").length;
-    vacantUnits.value = units.filter((u) => u.status === "vacant").length;
+    occupiedUnits.value = units.filter((u:any) => u.status === "occupied").length;
+    vacantUnits.value = units.filter((u:any) => u.status === "vacant").length;
     maintenanceUnits.value = units.filter(
-      (u) => u.status === "maintenance",
+      (u:any) => u.status === "maintenance",
     ).length;
 
     recentBills.value = billsRes.data.results?.slice(0, 5) || [];
@@ -430,7 +481,7 @@ const loadDashboardData = async () => {
   } catch (error) {
     console.error("Error loading dashboard data:", error);
   } finally {
-    loading.value = false;
+    loading.value = false;        
   }
 };
 
@@ -521,10 +572,12 @@ onMounted(() => {
 
 /* Revenue */
 .rev-total { font-size: 1.8rem; font-weight: 600; color: var(--va-text-primary); margin-bottom: .25rem; }
-.rev-change { font-size: .8rem; margin-bottom: 1.5rem; }
-.rev-chart-area { position: relative; height: 120px; }
-.trend-curve { width: 100%; height: 100%; }
-.chart-x-axis { display: flex; justify-content: space-between; font-size: .7rem; color: var(--va-text-secondary); margin-top: .5rem; }
+.rev-change { font-size: .8rem; margin-bottom: 0.5rem; }
+.rev-chart-container { display: flex; gap: 0.75rem; margin-top: 1rem; }
+.chart-y-axis { display: flex; flex-direction: column; justify-content: space-between; font-size: 0.7rem; color: var(--va-text-secondary); text-align: right; margin-bottom: 1.2rem; }
+.rev-chart-area { flex: 1; position: relative; height: 160px; }
+.trend-curve { width: 100%; height: 100%; display: block; overflow: visible; }
+.chart-x-axis { display: flex; justify-content: space-between; font-size: .7rem; color: var(--va-text-secondary); margin-top: 0.5rem; }
 
 /* Activity */
 .activity-filters { display: flex; gap: .5rem; margin-bottom: 1rem; }
@@ -551,6 +604,53 @@ onMounted(() => {
 /* Responsive */
 @media (max-width: 1024px) {
   .mock-row { grid-template-columns: 1fr; }
+}
+
+/* ── Feature-locked cards ──────────────────────────────── */
+.feature-locked {
+  position: relative;
+  overflow: hidden;
+}
+.feature-locked > .mock-card-body {
+  filter: blur(6px);
+  pointer-events: none;
+  user-select: none;
+}
+
+.locked-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  border-radius: 12px;
+}
+.locked-overlay p {
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0;
+}
+.upgrade-cta {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1.5rem;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #000;
+  font-weight: 600;
+  font-size: 0.85rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.upgrade-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.35);
 }
 </style>
 
