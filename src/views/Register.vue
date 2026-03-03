@@ -237,7 +237,7 @@ const verifyToken = async () => {
   errorMessage.value = "";
   loading.value = true;
   try {
-    const response = await axios.post(`${API_BASE}/owners/register/verify-token/`, { phone: phone.value, token: token.value });
+    const response = await axios.post(`${API_BASE}/owners/register/verify/`, { phone: phone.value, token: token.value });
     if (response.data.success) {
       success("Code verified! Please complete your registration.");
       step.value = 3;

@@ -89,16 +89,16 @@
         </div>
       </div>
 
-      <!-- Asymmetric Curved Divider -->
-      <div class="section-divider-curved">
-        <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-          <path d="M0 120L1440 120V0C1440 0 1200 120 720 120C240 120 0 0 0 0V120Z" fill="#01160d"/>
-        </svg>
-      </div>
+      <!-- No SVG Divider here, using CSS Folder border instead -->
     </section>
 
     <!-- Dashboard Showcase Section -->
     <section class="dashboard-showcase-section section-dark">
+      <div class="wave-divider" style="color: #020d02;">
+        <svg viewBox="0 0 1440 100" preserveAspectRatio="none">
+          <path d="M0,0 C480,100 960,100 1440,0 V100 H0 Z" fill="currentColor"></path>
+        </svg>
+      </div>
       <div class="showcase-bg">
         <div class="showcase-gradient-1"></div>
         <div class="showcase-gradient-2"></div>
@@ -134,8 +134,13 @@
 
     <!-- NexaProperty Features - Automated System Section -->
     <section id="automation" class="automation-section section-light">
+      <div class="wave-divider" style="color: #f8fafc;">
+        <svg viewBox="0 0 1440 100" preserveAspectRatio="none">
+          <path d="M0,0 C480,100 960,100 1440,0 V100 H0 Z" fill="currentColor"></path>
+        </svg>
+      </div>
       <div class="container" style="max-width: 1300px;">
-        <div class="section-header reveal" :class="{ 'reveal-visible': featuresVisible }">
+        <div class="section-header reveal" :class="{ 'reveal-visible': automationVisible }">
           <span class="section-tag section-tag-gold">🚀 Features</span>
           <h2 class="section-title">Automated Property Management</h2>
           <p class="section-subtitle">Let our 24/7 automated system handle the details while you focus on growing your business!</p>
@@ -144,7 +149,7 @@
         <!-- 24/7 Schedule Auto System -->
         <div class="automation-grid">
           <!-- Left: Schedule -->
-          <div class="auto-schedule-panel reveal" :class="{ 'reveal-visible': featuresVisible }">
+          <div class="auto-schedule-panel reveal" :class="{ 'reveal-visible': automationVisible }">
             <div class="panel-header">
               <VaIcon name="update" size="large" color="#f59e0b" class="mr-2" />
               <h3 class="panel-title">24/7 Smart Automation Schedule</h3>
@@ -192,27 +197,30 @@
 
           <!-- Right: Key Features & Benefits -->
           <div class="auto-benefits-panel">
-            <div class="benefit-card reveal" :class="{ 'reveal-visible': featuresVisible }" style="transition-delay: 0.1s;">
+            <div class="benefit-card reveal" :class="{ 'reveal-visible': automationVisible }" style="transition-delay: 0.05s;">
               <div class="benefit-icon bg-blue"><VaIcon name="sms" color="#ffffff" /></div>
               <div class="benefit-content">
                 <h4 class="benefit-title">Smart SMS Notifications</h4>
                 <p class="benefit-text">Automatic 7-day warnings for contract expirations and clear rent reminders to prevent delays.</p>
                 <div class="sms-preview">
                   <span class="sms-tag">Sample Alert</span>
-                  "CONTRACT EXPIRES IN 7 DAYS: John Doe at Sunrise Apartment expires on 07/03. Final bill: TZS 50,000."
+                  <div class="sms-text-flex">
+                    <span class="sms-content">"CONTRACT EXPIRES IN 7 DAYS: John Doe at Sunrise Apartment expires on 07/03. Final bill: TZS 50,000."</span>
+                    <VaIcon name="content_copy" size="1.2rem" class="sms-copy-icon" tooltip="Copy Alert" />
+                  </div>
                 </div>
               </div>
             </div>
             
-            <div class="benefit-card reveal" :class="{ 'reveal-visible': featuresVisible }" style="transition-delay: 0.2s;">
+            <div class="benefit-card reveal" :class="{ 'reveal-visible': automationVisible }" style="transition-delay: 0.1s;">
               <div class="benefit-icon bg-green"><VaIcon name="payments" color="#ffffff" /></div>
               <div class="benefit-content">
                 <h4 class="benefit-title">"Set it and forget it" Billing</h4>
                 <p class="benefit-text">Monthly bills created automatically on the 1st. Overdue tracking and instant payment confirmations.</p>
               </div>
             </div>
-
-            <div class="benefit-card reveal" :class="{ 'reveal-visible': featuresVisible }" style="transition-delay: 0.3s;">
+ 
+            <div class="benefit-card reveal" :class="{ 'reveal-visible': automationVisible }" style="transition-delay: 0.15s;">
               <div class="benefit-icon bg-purple"><VaIcon name="trending_up" color="#ffffff" /></div>
               <div class="benefit-content">
                 <h4 class="benefit-title">Business Impact</h4>
@@ -229,8 +237,12 @@
     </section>
 
     <!-- Detailed Features Section -->
-
     <section id="features" class="features-section section-dark">
+      <div class="wave-divider" style="color: #01160d;">
+        <svg viewBox="0 0 1440 100" preserveAspectRatio="none">
+          <path d="M0,0 C480,100 960,100 1440,0 V100 H0 Z" fill="currentColor"></path>
+        </svg>
+      </div>
       <div class="container">
         <div class="section-header reveal" :class="{ 'reveal-visible': featuresVisible }">
           <span class="section-tag">{{ t('home.sections.features') }}</span>
@@ -250,8 +262,13 @@
       </div>
     </section>
 
-    <!-- Services Section -->
+    <!-- Our Services Section -->
     <section id="services" class="services-section section-light">
+      <div class="wave-divider" style="color: #f8fafc;">
+        <svg viewBox="0 0 1440 100" preserveAspectRatio="none">
+          <path d="M0,0 C480,100 960,100 1440,0 V100 H0 Z" fill="currentColor"></path>
+        </svg>
+      </div>
       <div class="container">
         <div class="section-header reveal" :class="{ 'reveal-visible': servicesVisible }">
           <span class="section-tag">{{ t('home.sections.services') }}</span>
@@ -272,6 +289,11 @@
 
     <!-- Testimonials Section -->
     <section id="testimonials" class="testimonials-section section-dark">
+      <div class="wave-divider" style="color: #01160d;">
+        <svg viewBox="0 0 1440 100" preserveAspectRatio="none">
+          <path d="M0,0 C480,100 960,100 1440,0 V100 H0 Z" fill="currentColor"></path>
+        </svg>
+      </div>
       <div class="container">
         <div class="section-header reveal" :class="{ 'reveal-visible': testimonialsVisible }">
           <span class="section-tag">{{ t('home.sections.testimonials') }}</span>
@@ -299,6 +321,11 @@
 
     <!-- Clients Marquee Section -->
     <section class="clients-section section-light">
+      <div class="wave-divider" style="color: #f8fafc;">
+        <svg viewBox="0 0 1440 100" preserveAspectRatio="none">
+          <path d="M0,0 C480,100 960,100 1440,0 V100 H0 Z" fill="currentColor"></path>
+        </svg>
+      </div>
       <div class="container">
         <div class="section-header reveal" :class="{ 'reveal-visible': clientsVisible }">
           <span class="section-tag">{{ t('home.sections.partners') }}</span>
@@ -316,8 +343,13 @@
     </section>
 
     <!-- CTA Section -->
-    <section id="contact" class="cta-section section-dark">
-      <div class="cta-bg-gradient"></div>
+    <section class="final-cta-section section-dark">
+      <div class="wave-divider" style="color: #01160d;">
+        <svg viewBox="0 0 1440 100" preserveAspectRatio="none">
+          <path d="M0,0 C480,100 960,100 1440,0 V100 H0 Z" fill="currentColor"></path>
+        </svg>
+      </div>
+      <div class="container" style="max-width: 1200px;"></div>
       <div class="container" style="position:relative;z-index:2">
         <div class="cta-content reveal" :class="{ 'reveal-visible': ctaVisible }">
           <h2 class="cta-title">{{ t('home.cta.title') }}</h2>
@@ -393,6 +425,7 @@ const heroStats = computed(() => {
 });
 
 // Section visibility for scroll reveals
+const automationVisible = ref(false);
 const featuresVisible = ref(false);
 const servicesVisible = ref(false);
 const testimonialsVisible = ref(false);
@@ -490,16 +523,17 @@ onMounted(() => {
     entries.forEach((e) => {
       if (e.isIntersecting) {
         const id = e.target.id;
-        if (id === "features") featuresVisible.value = true;
+        if (id === "automation") automationVisible.value = true;
+        else if (id === "features") featuresVisible.value = true;
         else if (id === "services") servicesVisible.value = true;
         else if (id === "testimonials") testimonialsVisible.value = true;
         else if (id === "contact") ctaVisible.value = true;
         else if (e.target.classList.contains("clients-section")) clientsVisible.value = true;
       }
     });
-  }, { threshold: 0.15 });
+  }, { threshold: 0.1, rootMargin: "0px 0px -50px 0px" });
 
-  document.querySelectorAll("#features, #services, #testimonials, #contact, .clients-section").forEach((el) => observer!.observe(el));
+  document.querySelectorAll("#automation, #features, #services, #testimonials, #contact, .clients-section").forEach((el) => observer!.observe(el));
 });
 
 onUnmounted(() => {
@@ -541,63 +575,51 @@ onUnmounted(() => {
 }
 
 /* ═══════════════════════ THEMES ═══════════════════════ */
+/* ═══════════════════════ SECTION LAYOUT (Smooth Wave Dividers) ═══════════════════════ */
 .section-light {
   background: #f8fafc !important;
-  color: #0f172a !important;
+  color: #1e293b;
   position: relative;
-  z-index: 2;
-  padding-top: 6rem;
+  z-index: 10;
+  padding-top: 10rem;
+  padding-bottom: 8rem;
 }
-.section-light .section-title, .section-light .feature-title, 
+.section-light .section-title, .section-light .feature-title,
 .section-light .service-title, .section-light .author-name, .section-light .cta-title {
-  color: #0f172a !important;
+  color: #011d16 !important;
 }
-.section-light .section-subtitle, .section-light .feature-description, 
+.section-light .section-subtitle, .section-light .feature-description,
 .section-light .service-description, .section-light .author-role, .section-light .cta-subtitle {
   color: #475569 !important;
 }
 .section-light .container { max-width: 1300px; }
-/* Wave at top of light sections (dark → light transition) */
-.section-light::before {
-  content: '';
-  position: absolute;
-  top: -79px;
-  left: 0;
-  width: 100%;
-  height: 80px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 80' preserveAspectRatio='none'%3E%3Cpath d='M0 80L0 35C240 58 500 20 720 48C950 70 1200 15 1440 45L1440 80Z' fill='%23f8fafc'/%3E%3C/svg%3E");
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  z-index: 3;
-}
-
-
 
 .section-dark {
   background: #01160d !important;
   color: #fff;
   position: relative;
-  z-index: 2;
-  padding-top: 5rem;
+  z-index: 10;
+  padding-top: 10rem;
+  padding-bottom: 8rem;
 }
 
-/* Wave at the top of each dark section (light → dark transition) */
-.section-dark::before {
-  content: '';
+/* Smooth Wave Divider Styles */
+.wave-divider {
   position: absolute;
-  top: -79px;
+  top: 0;
   left: 0;
   width: 100%;
-  height: 80px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 80' preserveAspectRatio='none'%3E%3Cpath d='M0 80L0 45C180 10 400 70 720 48C1000 26 1250 58 1440 35L1440 80Z' fill='%2301160d'/%3E%3C/svg%3E");
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  z-index: 3;
+  overflow: hidden;
+  line-height: 0;
+  transform: translateY(-99%); /* Overlap slightly to prevent gaps */
+  z-index: 5;
 }
 
-/* Do not apply wave before to hero-direct dashboard showcase (first dark after hero has the SVG divider already) */
-.hero-section + .section-dark::before {
-  display: none;
+.wave-divider svg {
+  position: relative;
+  display: block;
+  width: calc(100% + 1.3px);
+  height: 100px; /* Subtle height as per image */
 }
 
 .hero-section {
@@ -695,46 +717,45 @@ onUnmounted(() => {
 }
 
 /* ═══════════════════════ BUTTONS (OUTLINED SMALL) ═════════════ */
+/* ═══════════════════════ BUTTONS (OUTLINED SMALL) ═════════════ */
 .btn-outlined {
-  background: transparent !important;
-  border-radius: 50px !important;
-  font-size: 0.85rem !important;
-  padding: 0.4rem 1.25rem !important;
-  font-weight: 500 !important;
   transition: all 0.3s var(--ease) !important;
+  font-weight: 850 !important;
+  font-size: 1rem !important;
+  padding: 0.75rem 2rem !important;
+  border-radius: 50px !important;
   text-transform: none !important;
+  border: 2.5px solid currentColor !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(12px) !important;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  min-height: 0 !important;
+  height: auto !important;
+  line-height: normal !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
+.btn-primary-outline { color: #22c55e !important; border-color: #22c55e !important; }
+.btn-primary-outline:hover { background: #22c55e !important; color: #01160d !important; }
+.btn-secondary-outline { color: #f8fafc !important; border-color: rgba(255,255,255,0.45) !important; }
+.btn-secondary-outline:hover { background: #f8fafc !important; color: #011d16 !important; }
 
-.btn-primary-outline {
-  color: #22c55e !important;
-  border: 1px solid rgba(34, 197, 94, 0.4) !important;
-}
-.btn-primary-outline:hover {
-  background: rgba(34, 197, 94, 0.1) !important;
-  border-color: #22c55e !important;
-}
-
-.btn-secondary-outline {
-  color: #ffffff !important;
-  border: 1px solid rgba(255, 255, 255, 0.4) !important;
-}
-.btn-secondary-outline:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
-  border-color: rgba(255, 255, 255, 0.8) !important;
-}
-
+/* Light theme button context */
 .section-light .btn-secondary-outline {
-  color: #475569 !important;
-  border-color: rgba(0,0,0,0.15) !important;
+  color: #011d16 !important;
+  border-color: rgba(1, 29, 22, 0.35) !important;
+  background: rgba(1, 29, 22, 0.03) !important;
 }
 .section-light .btn-secondary-outline:hover {
-  background: rgba(0,0,0,0.03) !important;
-  border-color: rgba(0,0,0,0.4) !important;
+  background: #011d16 !important;
+  color: #fff !important;
 }
 
 /* ═══════════════════════ REVEAL ═══════════════════════ */
-.reveal { opacity: 0; transform: translateY(30px); transition: opacity .7s var(--ease), transform .7s var(--ease); }
-.reveal-visible { opacity: 1;  transform: translateY(10px); }
+/* ═══════════════════════ REVEAL ═══════════════════════ */
+.reveal { opacity: 0; transform: translateY(20px); transition: opacity .4s ease-out, transform .4s ease-out; }
+.reveal-visible { opacity: 1 !important;  transform: translateY(0) !important; }
 
 /* ═══════════════════════ CONTAINERS ═══════════════════════ */
 .container {
@@ -904,27 +925,37 @@ onUnmounted(() => {
 
 /* Details */
 .sms-preview {
-  margin-top: 1rem;
+  margin-top: 1.25rem;
+  background: rgba(0,0,0,0.03);
   padding: 1rem;
-  background: rgba(59, 130, 246, 0.05);
-  border: 1px solid rgba(59, 130, 246, 0.15);
-  border-radius: 10px;
+  border-left: 3px solid #3b82f6;
+  border-radius: 8px;
   font-size: 0.85rem;
-  color: var(--c-text);
-  font-style: italic;
-  position: relative;
+  color: #475569;
+  line-height: 1.5;
+  font-family: monospace;
 }
 .sms-tag {
-  position: absolute;
-  top: -10px; left: 1rem;
-  background: #3b82f6;
-  color: #fff;
-  font-size: 0.65rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  padding: 0.15rem 0.5rem;
   border-radius: 4px;
   font-style: normal;
+}
+.sms-text-flex {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.sms-content { flex: 1; }
+.sms-copy-icon {
+  opacity: 0.5;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 2px;
+}
+.sms-copy-icon:hover {
+  opacity: 1;
+  color: #3b82f6;
+  transform: scale(1.1);
 }
 .impact-list {
   list-style: none;
@@ -1199,10 +1230,10 @@ onUnmounted(() => {
 /* Plain native button for navbar login - bypasses VaButton overrides */
 .nav-login-btn-plain {
   background: transparent;
-  border: 1.5px solid rgba(255, 255, 255, 0.45);
+  border: 2px solid rgba(255, 255, 255, 0.4); 
   color: #ffffff;
   font-size: 0.95rem;
-  font-weight: 700;
+  font-weight: 800;
   padding: 0.55rem 1.6rem;
   border-radius: 50px;
   cursor: pointer;
@@ -1210,9 +1241,20 @@ onUnmounted(() => {
   font-family: inherit;
   letter-spacing: 0.01em;
 }
+.landing-navbar.scrolled .nav-login-btn-plain {
+  color: #ffffff !important;
+  border-color: #22c55e !important;
+  background: rgba(34, 197, 94, 0.1) !important;
+}
 .nav-login-btn-plain:hover {
   background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
   border-color: #ffffff;
+}
+.landing-navbar.scrolled .nav-login-btn-plain:hover {
+  background: #22c55e;
+  border-color: #22c55e;
+  color: #01160d;
 }
 
 /* Divider Styles */
@@ -1473,7 +1515,6 @@ onUnmounted(() => {
   position: relative;
   padding: 6rem 1rem 12rem;
   background: #020d02;
-  overflow: hidden;
 }
 .showcase-bg {
   position: absolute;
