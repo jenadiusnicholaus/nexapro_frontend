@@ -370,22 +370,7 @@ const saveProperty = async () => {
       err.response?.data?.detail ||
       "Failed to save property";
 
-    // Check for property limit or upgrade required messages
-    if (
-      message.includes("Property limit reached") ||
-      message.includes("Upgrade to") ||
-      message.includes("limit reached") ||
-      message.includes("subscription") ||
-      message.includes("upgrade")
-    ) {
-      // Redirect to subscription for property limit issues
-      error(message);
-      setTimeout(() => {
-        router.push("/subscription-plans");
-      }, 2000);
-    } else {
-      error(message);
-    }
+    error(message);
   } finally {
     saving.value = false;
   }

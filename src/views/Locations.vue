@@ -3,10 +3,12 @@
     <div class="page-header-premium">
       <div class="header-content">
         <h1 class="premium-title">Locations</h1>
-        <p class="premium-subtitle">Manage service areas and regional centers</p>
+        <p class="premium-subtitle">
+          Manage service areas and regional centers
+        </p>
       </div>
-      <VaButton 
-        size="large" 
+      <VaButton
+        size="large"
         class="premium-add-btn"
         icon="add"
         @click="showModal = true"
@@ -52,7 +54,9 @@
           <template #cell(area)="{ rowData }">
             <div class="location-area-cell">
               <span class="area-main">{{ rowData.area }}</span>
-              <span class="area-sub">{{ rowData.city }}, {{ rowData.region }}</span>
+              <span class="area-sub"
+                >{{ rowData.city }}, {{ rowData.region }}</span
+              >
             </div>
           </template>
 
@@ -88,7 +92,11 @@
       class="premium-modal"
     >
       <div class="modal-inner">
-        <VaForm ref="locationForm" @submit.prevent="saveLocation" class="premium-form">
+        <VaForm
+          ref="locationForm"
+          @submit.prevent="saveLocation"
+          class="premium-form"
+        >
           <div class="form-grid">
             <VaInput
               v-model="formData.country"
@@ -122,10 +130,20 @@
             />
           </div>
 
+          <!-- Location Search with Coordinates -->
+          <div class="location-search-section">
+            <LocationSearch
+              @location-selected="handleLocationSelected"
+              @location-cleared="handleLocationCleared"
+            />
+          </div>
+
           <div class="modal-footer">
-            <VaButton preset="secondary" @click="closeModal" class="cancel-btn">Cancel</VaButton>
+            <VaButton preset="secondary" @click="closeModal" class="cancel-btn"
+              >Cancel</VaButton
+            >
             <VaButton type="submit" :loading="saving" class="save-btn-premium">
-              {{ editingId ? 'Update Location' : 'Create Location' }}
+              {{ editingId ? "Update Location" : "Create Location" }}
             </VaButton>
           </div>
         </VaForm>
@@ -135,102 +153,128 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
-import AppDataTable from '@/components/AppDataTable.vue'
-import { useAppToast } from '@/composables/useAppToast'
-import { useLocationsStore } from '@/stores'
-import { validators } from '@/utils/validators'
+import { ref, onMounted, watch } from "vue";
+import AppDataTable from "@/components/AppDataTable.vue";
+import LocationSearch from "@/components/LocationSearch.vue";
+import { useAppToast } from "@/composables/useAppToast";
+import { useLocationsStore } from "@/stores";
+import { validators } from "@/utils/validators";
 
-const { success, error } = useAppToast()
-const locationsStore = useLocationsStore()
+const { success, error } = useAppToast();
+const locationsStore = useLocationsStore();
 
-const saving = ref(false)
-const showModal = ref(false)
-const editingId = ref(null)
-const searchQuery = ref('')
-const locationForm = ref(null)
+const saving = ref(false);
+const showModal = ref(false);
+const editingId = ref(null);
+const searchQuery = ref("");
+const locationForm = ref(null);
 
 const formData = ref({
-  country: '',
-  region: '',
-  city: '',
-  area: '',
-})
+  country: "",
+  region: "",
+  city: "",
+  area: "",
+  latitude: "",
+  longitude: "",
+});
 
 const columns = [
-  { key: 'area', label: 'Location Details', sortable: true },
-  { key: 'country', label: 'Country', sortable: true },
-  { key: 'actions', label: 'Actions', width: 120 },
-]
+  { key: "area", label: "Location Details", sortable: true },
+  { key: "country", label: "Country", sortable: true },
+  { key: "actions", label: "Actions", width: 120 },
+];
 
 const loadLocations = () => {
-  const params = searchQuery.value ? { search: searchQuery.value } : {}
-  return locationsStore.fetchList(params)
-}
+  const params = searchQuery.value ? { search: searchQuery.value } : {};
+  return locationsStore.fetchList(params);
+};
 
 const saveLocation = async () => {
-  const isValid = await locationForm.value?.validate()
-  if (!isValid) return
+  const isValid = await locationForm.value?.validate();
+  if (!isValid) return;
 
-  saving.value = true
+  saving.value = true;
   try {
     if (editingId.value) {
-      await locationsStore.updateItem(editingId.value, formData.value)
+      await locationsStore.updateItem(editingId.value, formData.value);
     } else {
-      await locationsStore.createItem(formData.value)
+      await locationsStore.createItem(formData.value);
     }
-    const wasEdit = !!editingId.value
-    closeModal()
-    success(wasEdit ? 'Location updated' : 'Location created')
+    const wasEdit = !!editingId.value;
+    closeModal();
+    success(wasEdit ? "Location updated" : "Location created");
   } catch (err) {
-    console.error('Error saving location:', err)
-    error('Failed to save location')
+    console.error("Error saving location:", err);
+    error("Failed to save location");
   } finally {
-    saving.value = false
+    saving.value = false;
   }
-}
+};
 
 const editLocation = (location) => {
-  editingId.value = location.id
-  formData.value = { ...location }
-  showModal.value = true
-}
+  editingId.value = location.id;
+  formData.value = { ...location };
+  showModal.value = true;
+};
+
+const handleLocationSelected = (location) => {
+  // Update form data with coordinates
+  formData.value.latitude = location.lat;
+  formData.value.longitude = location.lon;
+
+  // Auto-fill address fields if available
+  if (location.address) {
+    formData.value.country = location.address.country || formData.value.country;
+    formData.value.region = location.address.region || formData.value.region;
+    formData.value.city = location.address.city || formData.value.city;
+    formData.value.area = location.address.area || formData.value.area;
+  }
+};
+
+const handleLocationCleared = () => {
+  formData.value.latitude = "";
+  formData.value.longitude = "";
+};
 
 const deleteLocation = async (id) => {
-  if (!confirm('Are you sure you want to delete this location?')) return
+  if (!confirm("Are you sure you want to delete this location?")) return;
 
   try {
-    await locationsStore.deleteItem(id)
-    success('Location deleted')
+    await locationsStore.deleteItem(id);
+    success("Location deleted");
   } catch (err) {
-    console.error('Error deleting location:', err)
-    error('Failed to delete location')
+    console.error("Error deleting location:", err);
+    error("Failed to delete location");
   }
-}
+};
 
 const closeModal = () => {
-  showModal.value = false
-  editingId.value = null
+  showModal.value = false;
+  editingId.value = null;
   formData.value = {
-    country: '',
-    region: '',
-    city: '',
-    area: '',
-  }
-}
+    country: "",
+    region: "",
+    city: "",
+    area: "",
+  };
+};
 
 onMounted(() => {
-  loadLocations().catch((err) => console.error('Error loading locations:', err))
-})
+  loadLocations().catch((err) =>
+    console.error("Error loading locations:", err),
+  );
+});
 
-const searchDebounce = ref(null)
+const searchDebounce = ref(null);
 watch(searchQuery, () => {
-  if (searchDebounce.value) clearTimeout(searchDebounce.value)
+  if (searchDebounce.value) clearTimeout(searchDebounce.value);
   searchDebounce.value = setTimeout(() => {
-    loadLocations().catch((err) => console.error('Error loading locations:', err))
-    searchDebounce.value = null
-  }, 300)
-})
+    loadLocations().catch((err) =>
+      console.error("Error loading locations:", err),
+    );
+    searchDebounce.value = null;
+  }, 300);
+});
 </script>
 
 <style scoped>
@@ -403,6 +447,11 @@ watch(searchQuery, () => {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
+}
+
+.location-search-section {
+  grid-column: 1 / -1;
+  margin-top: 1rem;
 }
 
 .modal-footer {
