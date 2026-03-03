@@ -161,6 +161,23 @@
                 </template>
               </VaInput>
 
+              <VaInput
+                v-model="formData.password"
+                label="Password"
+                placeholder="Enter your password"
+                type="password"
+                :rules="[
+                  (v) => !!v || 'Password is required',
+                  (v) =>
+                    v.length >= 8 || 'Password must be at least 8 characters',
+                ]"
+                class="verification-input"
+              >
+                <template #prepend>
+                  <VaIcon name="lock" />
+                </template>
+              </VaInput>
+
               <div class="verification-info">
                 <span v-if="expiresIn > 0" class="timer">
                   <VaIcon name="schedule" size="small" />
@@ -304,6 +321,7 @@ const verifyToken = async () => {
       token: token.value,
       name: formData.value.name,
       email: formData.value.email,
+      password: formData.value.password,
       owner_type: formData.value.owner_type,
       address: formData.value.address,
       contact_person: formData.value.contact_person,
