@@ -251,7 +251,7 @@ const formData = ref({
   email: "",
   password: "",
   password_confirm: "",
-  owner_type: "individual",
+  owner_type: "individual" as string | { value: string; text: string },
   address: "",
   contact_person: "",
 });
@@ -322,7 +322,10 @@ const verifyToken = async () => {
       name: formData.value.name,
       email: formData.value.email,
       password: formData.value.password,
-      owner_type: formData.value.owner_type,
+      owner_type:
+        typeof formData.value.owner_type === "object"
+          ? formData.value.owner_type.value
+          : formData.value.owner_type,
       address: formData.value.address,
       contact_person: formData.value.contact_person,
     });
