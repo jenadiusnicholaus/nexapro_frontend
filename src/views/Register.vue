@@ -335,49 +335,18 @@ const verifyToken = async () => {
       stopCountdown();
       router.push("/login");
     } else {
-      // Check for property limit or upgrade required messages
-      const message =
+      errorMessage.value =
         response.data.message ||
         response.data.detail ||
         "Invalid verification code";
-
-      if (
-        message.includes("Property limit reached") ||
-        message.includes("Upgrade to") ||
-        message.includes("limit reached") ||
-        message.includes("subscription") ||
-        message.includes("upgrade")
-      ) {
-        // Redirect to subscription for property limit issues
-        error("Property limit reached. Redirecting to subscription plans...");
-        setTimeout(() => {
-          router.push("/subscription-plans");
-        }, 2000);
-      } else {
-        errorMessage.value = message;
-      }
     }
   } catch (err: any) {
-    const message =
-      err.response?.data?.message ||
-      err.response?.data?.detail ||
-      "Registration failed. Please try again.";
-
-    // Check for property limit or upgrade required messages in error responses
-    if (
-      message.includes("Property limit reached") ||
-      message.includes("Upgrade to") ||
-      message.includes("limit reached") ||
-      message.includes("subscription") ||
-      message.includes("upgrade")
-    ) {
-      // Redirect to subscription for property limit issues
-      error("Property limit reached. Redirecting to subscription plans...");
-      setTimeout(() => {
-        router.push("/subscription-plans");
-      }, 2000);
+    if (err.response?.data?.message) {
+      errorMessage.value = err.response.data.message;
+    } else if (err.response?.data?.detail) {
+      errorMessage.value = err.response.data.detail;
     } else {
-      errorMessage.value = message;
+      errorMessage.value = "Registration failed. Please try again.";
     }
   } finally {
     loading.value = false;

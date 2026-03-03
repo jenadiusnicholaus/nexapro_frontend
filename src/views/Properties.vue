@@ -3,10 +3,12 @@
     <div class="page-header-premium">
       <div class="header-content">
         <h1 class="premium-title">Properties</h1>
-        <p class="premium-subtitle">Manage and monitor your real estate portfolio</p>
+        <p class="premium-subtitle">
+          Manage and monitor your real estate portfolio
+        </p>
       </div>
-      <VaButton 
-        size="large" 
+      <VaButton
+        size="large"
         class="premium-add-btn"
         icon="add"
         @click="showModal = true"
@@ -75,7 +77,7 @@
               </div>
             </div>
           </template>
-          
+
           <template #cell(property_name)="{ rowData }">
             <div class="property-name-cell">
               <span class="name-main">{{ rowData.property_name }}</span>
@@ -122,7 +124,11 @@
       class="premium-modal"
     >
       <div class="modal-inner">
-        <VaForm ref="propertyForm" @submit.prevent="saveProperty" class="premium-form">
+        <VaForm
+          ref="propertyForm"
+          @submit.prevent="saveProperty"
+          class="premium-form"
+        >
           <div class="form-grid">
             <VaSelect
               v-model="formData.owner"
@@ -144,7 +150,7 @@
               background="rgba(255,255,255,0.03)"
             />
           </div>
-          
+
           <VaInput
             v-model="formData.property_name"
             label="Property Name"
@@ -152,7 +158,7 @@
             class="mb-4"
             background="rgba(255,255,255,0.03)"
           />
-          
+
           <div class="form-grid">
             <VaSelect
               v-model="formData.property_type"
@@ -214,9 +220,11 @@
           </div>
 
           <div class="modal-footer">
-            <VaButton preset="secondary" @click="closeModal" class="cancel-btn">Cancel</VaButton>
+            <VaButton preset="secondary" @click="closeModal" class="cancel-btn"
+              >Cancel</VaButton
+            >
             <VaButton type="submit" :loading="saving" class="save-btn-premium">
-              {{ editingId ? 'Update Property' : 'Create Property' }}
+              {{ editingId ? "Update Property" : "Create Property" }}
             </VaButton>
           </div>
         </VaForm>
@@ -357,7 +365,27 @@ const saveProperty = async () => {
     success(wasEdit ? "Property updated" : "Property created");
   } catch (err: any) {
     console.error("Error saving property:", err);
-    error(err.response?.data?.message || "Failed to save property");
+    const message =
+      err.response?.data?.message ||
+      err.response?.data?.detail ||
+      "Failed to save property";
+
+    // Check for property limit or upgrade required messages
+    if (
+      message.includes("Property limit reached") ||
+      message.includes("Upgrade to") ||
+      message.includes("limit reached") ||
+      message.includes("subscription") ||
+      message.includes("upgrade")
+    ) {
+      // Redirect to subscription for property limit issues
+      error(message);
+      setTimeout(() => {
+        router.push("/subscription-plans");
+      }, 2000);
+    } else {
+      error(message);
+    }
   } finally {
     saving.value = false;
   }
@@ -418,7 +446,9 @@ const closeModal = () => {
 };
 
 onMounted(() => {
-  loadProperties().catch((err) => console.error("Error loading properties:", err));
+  loadProperties().catch((err) =>
+    console.error("Error loading properties:", err),
+  );
   ownersStore.fetchList().catch(() => {});
   locationsStore.fetchList().catch(() => {});
 });
@@ -427,7 +457,9 @@ let filterDebounce: ReturnType<typeof setTimeout> | null = null;
 watch([searchQuery, filterType], () => {
   if (filterDebounce) clearTimeout(filterDebounce);
   filterDebounce = setTimeout(() => {
-    loadProperties().catch((err) => console.error("Error loading properties:", err));
+    loadProperties().catch((err) =>
+      console.error("Error loading properties:", err),
+    );
     filterDebounce = null;
   }, 300);
 });
@@ -567,8 +599,8 @@ watch([searchQuery, filterType], () => {
   height: 54px;
   border-radius: 12px;
   padding: 2px;
-  background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
-  border: 1px solid rgba(255,255,255,0.05);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), transparent);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .property-thumbnail-premium {
@@ -708,7 +740,7 @@ watch([searchQuery, filterType], () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -747,8 +779,12 @@ watch([searchQuery, filterType], () => {
   border-radius: 10px !important;
 }
 
-.mb-6 { margin-bottom: 1.5rem; }
-.block { display: block; }
+.mb-6 {
+  margin-bottom: 1.5rem;
+}
+.block {
+  display: block;
+}
 
 @media (max-width: 768px) {
   .page-header-premium {
