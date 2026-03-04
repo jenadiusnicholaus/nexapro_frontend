@@ -52,11 +52,11 @@
           :loading="locationsStore.loading"
         >
           <template #cell(area)="{ rowData }">
-            <div class="location-area-cell">
-              <span class="area-main">{{ rowData.area }}</span>
-              <span class="area-sub"
-                >{{ rowData.city }}, {{ rowData.region }}</span
-              >
+            <div class="location-info">
+              <div class="location-main">
+                {{ rowData.area }}{{ rowData.city ? `, ${rowData.city}` : "" }}
+              </div>
+              <div class="location-sub">{{ rowData.region }}</div>
             </div>
           </template>
 
@@ -97,42 +97,9 @@
           @submit.prevent="saveLocation"
           class="premium-form"
         >
-          <div class="form-grid">
-            <VaInput
-              v-model="formData.country"
-              label="Country"
-              :rules="[validators.required]"
-              class="mb-4"
-              background="rgba(255,255,255,0.03)"
-            />
-            <VaInput
-              v-model="formData.region"
-              label="Region"
-              :rules="[validators.required]"
-              class="mb-4"
-              background="rgba(255,255,255,0.03)"
-            />
-          </div>
-          <div class="form-grid">
-            <VaInput
-              v-model="formData.city"
-              label="City"
-              :rules="[validators.required]"
-              class="mb-4"
-              background="rgba(255,255,255,0.03)"
-            />
-            <VaInput
-              v-model="formData.area"
-              label="Area"
-              :rules="[validators.required]"
-              class="mb-4"
-              background="rgba(255,255,255,0.03)"
-            />
-          </div>
-
-          <!-- Location Search with Coordinates -->
-          <div class="location-search-section">
-            <LocationSearch
+          <!-- Geography Location Form -->
+          <div class="geography-location-section">
+            <GeographyLocationForm
               @location-selected="handleLocationSelected"
               @location-cleared="handleLocationCleared"
             />
@@ -155,7 +122,7 @@
 <script setup>
 import { ref, onMounted, watch } from "vue";
 import AppDataTable from "@/components/AppDataTable.vue";
-import LocationSearch from "@/components/LocationSearch.vue";
+import GeographyLocationForm from "@/components/GeographyLocationForm.vue";
 import { useAppToast } from "@/composables/useAppToast";
 import { useLocationsStore } from "@/stores";
 import { validators } from "@/utils/validators";
@@ -170,12 +137,10 @@ const searchQuery = ref("");
 const locationForm = ref(null);
 
 const formData = ref({
-  country: "",
-  region: "",
-  city: "",
+  country_obj: null,
+  city_obj: null,
+  region_obj: null,
   area: "",
-  latitude: "",
-  longitude: "",
 });
 
 const columns = [
@@ -190,15 +155,26 @@ const loadLocations = () => {
 };
 
 const saveLocation = async () => {
-  const isValid = await locationForm.value?.validate();
-  if (!isValid) return;
+  // Validate that required fields are present
+  if (!formData.value.country_obj || !formData.value.city_obj || !formData.value.area) {
+    error("Please select a country, city, and enter an area");
+    return;
+  }
+
+  // Build a clean payload with only numeric IDs
+  const payload = {
+    country_obj: Number(formData.value.country_obj),
+    region_obj: formData.value.region_obj ? Number(formData.value.region_obj) : null,
+    city_obj: Number(formData.value.city_obj),
+    area: formData.value.area,
+  };
 
   saving.value = true;
   try {
     if (editingId.value) {
-      await locationsStore.updateItem(editingId.value, formData.value);
+      await locationsStore.updateItem(editingId.value, payload);
     } else {
-      await locationsStore.createItem(formData.value);
+      await locationsStore.createItem(payload);
     }
     const wasEdit = !!editingId.value;
     closeModal();
@@ -217,23 +193,20 @@ const editLocation = (location) => {
   showModal.value = true;
 };
 
-const handleLocationSelected = (location) => {
-  // Update form data with coordinates
-  formData.value.latitude = location.lat;
-  formData.value.longitude = location.lon;
-
-  // Auto-fill address fields if available
-  if (location.address) {
-    formData.value.country = location.address.country || formData.value.country;
-    formData.value.region = location.address.region || formData.value.region;
-    formData.value.city = location.address.city || formData.value.city;
-    formData.value.area = location.address.area || formData.value.area;
-  }
+const handleLocationSelected = (locationData) => {
+  // Store clean numeric IDs from the child component
+  formData.value.country_obj = locationData.country_obj ? Number(locationData.country_obj) : null;
+  formData.value.region_obj = locationData.region_obj ? Number(locationData.region_obj) : null;
+  formData.value.city_obj = locationData.city_obj ? Number(locationData.city_obj) : null;
+  formData.value.area = locationData.area || "";
 };
 
 const handleLocationCleared = () => {
-  formData.value.latitude = "";
-  formData.value.longitude = "";
+  formData.value = {
+    country_obj: null,
+    city_obj: null,
+    area: "",
+  };
 };
 
 const deleteLocation = async (id) => {
@@ -252,9 +225,9 @@ const closeModal = () => {
   showModal.value = false;
   editingId.value = null;
   formData.value = {
-    country: "",
-    region: "",
-    city: "",
+    country_obj: null,
+    city_obj: null,
+    region_obj: null,
     area: "",
   };
 };
@@ -449,7 +422,7 @@ watch(searchQuery, () => {
   gap: 1rem;
 }
 
-.location-search-section {
+.geography-location-section {
   grid-column: 1 / -1;
   margin-top: 1rem;
 }

@@ -46,10 +46,25 @@ export interface Payment {
   provider: string;
 }
 
+export interface SMSUsage {
+  usage: {
+    sent: number;
+    limit: number;
+    remaining: number;
+    is_unlimited: boolean;
+    percentage_used: number;
+  };
+  can_send: boolean;
+  message: string;
+  plan_name: string;
+  is_free_tier: boolean;
+}
+
 export const useSubscriptionsStore = defineStore("subscriptions", () => {
   // State
   const plans = ref<SubscriptionPlan[]>([]);
   const currentSubscription = ref<Subscription | null>(null);
+  const smsUsage = ref<SMSUsage | null>(null);
   const payments = ref<Payment[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
@@ -94,6 +109,34 @@ export const useSubscriptionsStore = defineStore("subscriptions", () => {
     }
   };
 
+  const fetchMySubscription = async () => {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const response = await subscriptionsAPI.getMySubscription();
+      currentSubscription.value = response.data;
+    } catch (err: any) {
+      console.error("Failed to fetch my subscription:", err);
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const fetchSMSUsage = async () => {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const response = await subscriptionsAPI.getSMSUsage();
+      smsUsage.value = response.data;
+    } catch (err: any) {
+      console.error("Failed to fetch SMS usage:", err);
+    } finally {
+      loading.value = false;
+    }
+  };
+
   const upgradeSubscription = async (data: {
     plan_id: number;
     account_number: string;
@@ -122,7 +165,6 @@ export const useSubscriptionsStore = defineStore("subscriptions", () => {
   };
 
   const renewSubscription = async (data: {
-    plan_id: number;
     account_number: string;
     provider: string;
   }) => {
@@ -132,8 +174,8 @@ export const useSubscriptionsStore = defineStore("subscriptions", () => {
     try {
       const response = await subscriptionsAPI.renewSubscription(data);
 
-      // Refresh subscription data after renewal
-      await fetchCurrentSubscription();
+      // Refresh data after renewal
+      await Promise.all([fetchMySubscription(), fetchSMSUsage()]);
 
       return response.data;
     } catch (err: any) {
@@ -208,6 +250,7 @@ export const useSubscriptionsStore = defineStore("subscriptions", () => {
     // State
     plans,
     currentSubscription,
+    smsUsage,
     payments,
     loading,
     error,
@@ -215,6 +258,8 @@ export const useSubscriptionsStore = defineStore("subscriptions", () => {
     // Actions
     fetchPlans,
     fetchCurrentSubscription,
+    fetchMySubscription,
+    fetchSMSUsage,
     upgradeSubscription,
     renewSubscription,
     fetchPaymentHistory,

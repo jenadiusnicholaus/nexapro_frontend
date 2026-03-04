@@ -208,7 +208,13 @@ export default {
       today: 'Leo',
     }
   },
-  nav: {
-    home: 'Nyumbani',
+  vuestic: {
+    noOptions: "Hakuna chaguzi zilizopatikana",
+    selectPlaceholder: "Chagua chaguo",
+    searchPlaceholder: "Tafuta...",
+    search: "Tafuta",
+    select: "Chagua",
+    close: "Funga",
+    optionsFilter: "Kichujio cha chaguzi",
   },
-} as const
+} as const;

@@ -260,13 +260,14 @@ export const subscriptionsAPI = {
 
   // Subscription management
   getCurrentSubscription: () => apiClient.get("/subscriptions/subscriptions/"),
+  getMySubscription: () => apiClient.get("/subscriptions/subscriptions/my-subscription/"),
+  getSMSUsage: () => apiClient.get("/subscriptions/subscriptions/sms-usage/"),
   upgradeSubscription: (data: {
     plan_id: number;
     account_number: string;
     provider: string;
   }) => apiClient.post("/subscriptions/subscriptions/upgrade/", data),
   renewSubscription: (data: {
-    plan_id: number;
     account_number: string;
     provider: string;
   }) => apiClient.post("/subscriptions/subscriptions/renew/", data),

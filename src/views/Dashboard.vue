@@ -16,6 +16,23 @@
       <button class="alert-close"><VaIcon name="close" size="small" /></button>
     </div>
 
+    <!-- Subscription Alert Banner -->
+    <div v-if="subscriptionAlert" class="alert-banner" :class="subscriptionAlert.type">
+      <div class="alert-icon-wrap">
+        <VaIcon :name="subscriptionAlert.type === 'error' ? 'warning' : 'schedule'" :color="subscriptionAlert.type === 'error' ? '#ef4444' : '#f59e0b'" size="small" />
+      </div>
+      <div class="alert-content">
+        <h4>{{ subscriptionAlert.title }}</h4>
+        <p>{{ subscriptionAlert.message }}</p>
+        <div class="alert-action subscription-action">
+          <VaButton size="small" :color="subscriptionAlert.type === 'error' ? 'danger' : 'warning'" @click="router.push('/admin/subscription/plans')">
+            {{ subscriptionAlert.type === 'error' ? 'Renew Now' : 'Extend Plan' }}
+          </VaButton>
+        </div>
+      </div>
+      <button class="alert-close" @click="dismissSubscriptionAlertByMock"><VaIcon name="close" size="small" /></button>
+    </div>
+
     <!-- Header -->
     <div class="dashboard-header">
       <div class="header-content">
@@ -56,7 +73,6 @@
                 <div class="m-stat-info">
                   <div class="m-val">{{ totalUnits }}</div>
                   <div class="m-lbl">Total Properties</div>
-                  <div class="m-chg pos">~ -5%</div>
                 </div>
               </div>
               <div class="m-stat">
@@ -64,15 +80,13 @@
                 <div class="m-stat-info">
                   <div class="m-val">{{ vacantUnits }}</div>
                   <div class="m-lbl">Vacant Properties</div>
-                  <div class="m-chg pos">+1</div>
                 </div>
               </div>
               <div class="m-stat">
-                <div class="m-stat-icon"><VaIcon name="domain" size="small"/></div>
+                <div class="m-stat-icon sms-stat-icon"><VaIcon name="sms" size="small"/></div>
                 <div class="m-stat-info">
-                  <div class="m-val">{{ activeTenancies }}</div>
-                  <div class="m-lbl">Active Tenancies</div>
-                  <div class="m-chg pos">~ 23%</div>
+                  <div class="m-val">{{ smsUsage?.usage?.sent || 0 }}/{{ smsUsage?.usage?.is_unlimited ? '∞' : smsUsage?.usage?.limit || 0 }}</div>
+                  <div class="m-lbl">SMS Usage</div>
                 </div>
               </div>
             </div>
@@ -84,8 +98,18 @@
                 <div class="occ-bar-bg"><div class="occ-bar-fill" :style="{width: occupancyRate + '%'}"></div></div>
               </div>
               <div class="occ-box">
-                <div class="occ-val">Tot</div>
-                <div class="occ-lbl">~ -7% <span class="occ-right">65%</span></div>
+                <div class="occ-val" :class="{ 'text-danger': !canSendSMS }">
+                  {{ canSendSMS ? 'Active' : 'Locked' }}
+                </div>
+                <div class="occ-lbl">
+                  SMS Status 
+                  <span class="occ-right">
+                    {{ smsUsage?.usage?.is_unlimited ? 'Unlimited' : (smsUsage?.usage?.percentage_used?.toFixed(0) || 0) + '%' }}
+                  </span>
+                </div>
+                <div class="occ-bar-bg" v-if="!smsUsage?.usage?.is_unlimited">
+                  <div class="occ-bar-fill sms-bar" :style="{width: (smsUsage?.usage?.percentage_used || 0) + '%', background: canSendSMS ? '#0ea5e9' : '#ef4444'}"></div>
+                </div>
               </div>
             </div>
           </div>
@@ -237,9 +261,43 @@ import {
   // @ts-ignore
 } from "@/services/api";
 import { useSubscription } from "@/composables/useSubscription";
+import { useProfilesStore, useSubscriptionsStore } from "@/stores";
 
 const router = useRouter();
+const profilesStore = useProfilesStore();
+const subscriptionsStore = useSubscriptionsStore();
 const { hasPaymentTracking, hasReportsAnalytics } = useSubscription();
+
+const profile = computed(() => profilesStore.profile);
+const smsUsage = computed(() => subscriptionsStore.smsUsage);
+const canSendSMS = computed(() => smsUsage.value?.can_send ?? true);
+
+const subscriptionAlert = computed(() => {
+  const sub = profile.value?.subscription;
+  if (!sub) return null;
+
+  if (sub.is_expired) {
+    return {
+      type: "error",
+      title: "Subscription Expired",
+      message: `Your ${sub.plan.name} has expired. Access to premium features is limited.`,
+    };
+  }
+
+  if (sub.days_remaining <= 7) {
+    return {
+      type: "warning",
+      title: "Subscription Expiring Soon",
+      message: `Your ${sub.plan.name} expires in ${sub.days_remaining} days. Renew now to avoid interruption.`,
+    };
+  }
+
+  return null;
+});
+
+const dismissSubscriptionAlertByMock = () => {
+  // Logic to hide locally if needed
+};
 
 const goToUpgrade = (feature: string) => {
   router.push({ name: 'subscription-plans', query: { upgrade: feature } });
@@ -249,9 +307,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const loading = ref(false);
 const dateRange = ref("last_28_days");
-const selectedRevenuePeriod = ref("6months");
 const activeTab = ref("bills");
-
 const dateRangeOptions = [
   { value: "last_7_days", text: "Last 7 days" },
   { value: "last_28_days", text: "Last 28 days" },
@@ -260,19 +316,6 @@ const dateRangeOptions = [
   { value: "last_month", text: "Last month" },
 ];
 
-const revenuePeriods = [
-  { value: "1month", label: "1M" },
-  { value: "3months", label: "3M" },
-  { value: "6months", label: "6M" },
-  { value: "1year", label: "1Y" },
-];
-
-const quickActions = [
-  { label: "Add Property", icon: "add_home", route: "/properties" },
-  { label: "New Tenancy", icon: "person_add", route: "/tenancies" },
-  { label: "Generate Bill", icon: "receipt_long", route: "/bills" },
-  { label: "Record Payment", icon: "payments", route: "/payments" },
-];
 
 const totalProperties = ref(0);
 const activeTenancies = ref(0);
@@ -287,73 +330,13 @@ const maintenanceUnits = ref(0);
 const recentBills = ref<any[]>([]);
 const recentPayments = ref<any[]>([]);
 
-const mainMetrics = computed(() => [
-  {
-    label: "Total Properties",
-    value: totalProperties.value.toLocaleString(),
-    icon: "apartment",
-    color: "blue",
-    change: "+12%",
-    changeType: "positive",
-  },
-  {
-    label: "Active Tenancies",
-    value: activeTenancies.value.toLocaleString(),
-    icon: "groups",
-    color: "green",
-    change: "+5%",
-    changeType: "positive",
-  },
-  {
-    label: "Unpaid Bills",
-    value: unpaidBills.value.toLocaleString(),
-    icon: "warning",
-    color: "orange",
-    change: "-8%",
-    changeType: "positive",
-  },
-  {
-    label: "Total Units",
-    value: totalUnits.value.toLocaleString(),
-    icon: "home",
-    color: "purple",
-    change: `${vacantUnits.value} vacant`,
-    changeType: "positive",
-  },
-]);
 
-const insights = computed(() => {
-  const items = [];
-  if (unpaidBills.value > 5) {
-    items.push({
-      title: `${unpaidBills.value} unpaid bills need attention`,
-      date: "Today",
-    });
-  }
-  if (occupancyRate.value > 90) {
-    items.push({
-      title: `Excellent occupancy rate at ${occupancyRate.value}%`,
-      date: "Today",
-    });
-  }
-  if (monthlyRevenue.value > lastMonthRevenue.value * 1.1) {
-    items.push({
-      title: `Revenue up ${Math.round(((monthlyRevenue.value - lastMonthRevenue.value) / lastMonthRevenue.value) * 100)}% from last month`,
-      date: "Today",
-    });
-  }
-  return items.slice(0, 3);
-});
 
 const occupancyRate = computed(() => {
   if (totalUnits.value === 0) return 0;
   return Math.round((occupiedUnits.value / totalUnits.value) * 100);
 });
 
-const vacancyRate = computed(() => {
-  if (totalUnits.value === 0) return 0;
-  return Math.round((vacantUnits.value / totalUnits.value) * 100);
-});
 
 const revenueChartData = computed(() => {
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
@@ -372,9 +355,6 @@ const maxChartRevenue = computed(() => {
   return max > 0 ? max : 10000000;
 });
 
-const currentActivityList = computed(() => {
-  return activeTab.value === "bills" ? recentBills.value : recentPayments.value;
-});
 
 const formatCurrency = (value: any) => {
   return parseFloat(value || 0).toLocaleString("en-US", {
@@ -391,36 +371,8 @@ const formatCompact = (value: number) => {
   }).format(value);
 };
 
-const formatStatus = (status: string) => {
-  const statusMap: Record<string, string> = {
-    unpaid: "Unpaid",
-    paid: "Paid",
-    partially_paid: "Partial",
-    overdue: "Overdue",
-  };
-  return statusMap[status] || status;
-};
 
-const formatPaymentMethod = (method: string) => {
-  const methodMap: Record<string, string> = {
-    cash: "Cash",
-    bank: "Bank",
-    mobile_money: "Mobile",
-    cheque: "Cheque",
-    other: "Other",
-  };
-  return methodMap[method] || method;
-};
 
-const getBillStatusColor = (status: string) => {
-  const colors: Record<string, string> = {
-    unpaid: "warning",
-    paid: "success",
-    partially_paid: "info",
-    overdue: "danger",
-  };
-  return colors[status] || "secondary";
-};
 
 const loadDashboardData = async () => {
   loading.value = true;
@@ -491,6 +443,8 @@ watch([activeTab, dateRange], () => {
 
 onMounted(() => {
   loadDashboardData();
+  profilesStore.fetchCurrentProfile();
+  subscriptionsStore.fetchSMSUsage();
 });
 </script>
 
@@ -519,9 +473,20 @@ onMounted(() => {
 .alert-content h4 { color: var(--va-text-primary); margin: 0 0 .25rem 0; font-size: 1.05rem; font-weight: 500; }
 .alert-content p { color: var(--va-text-secondary); margin: 0 0 .75rem 0; font-size: 0.9rem; }
 .alert-action { display: flex; align-items: center; gap: .5rem; color: #22c55e; font-size: .85rem; font-weight: 500; }
+.subscription-action { margin-top: 0.5rem; justify-content: flex-start; }
 .alert-avatar { width: 24px; height: 24px; border-radius: 50%; overflow: hidden; }
 .alert-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .alert-close { position: absolute; right: 1rem; top: 1rem; background: none; border: none; color: var(--va-text-secondary); cursor: pointer; }
+
+.alert-banner.error {
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.alert-banner.warning {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.05);
+}
 
 /* Header */
 .dashboard-header { margin-bottom: 2rem; }
@@ -557,6 +522,7 @@ onMounted(() => {
 .prop-stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
 .m-stat { display: flex; align-items: center; gap: .75rem; }
 .m-stat-icon { width: 36px; height: 36px; border-radius: 8px; background: rgba(34,197,94,0.15); color: #22c55e; display: flex; align-items: center; justify-content: center; }
+.sms-stat-icon { background: rgba(14, 165, 233, 0.15); color: #0ea5e9; }
 .m-val { font-size: 1.25rem; font-weight: 600; color: var(--va-text-primary); line-height: 1.2; }
 .m-lbl { font-size: .75rem; color: var(--va-text-secondary); margin: .15rem 0; }
 .m-chg { font-size: .7rem; }

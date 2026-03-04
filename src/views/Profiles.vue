@@ -99,71 +99,133 @@
         </VaCardContent>
       </VaCard>
 
-      <!-- Subscription Status Card -->
-      <VaCard v-if="profile?.subscription" class="premium-card subscription-detail-card">
+      <!-- Right Column -->
+      <div class="profile-right-column">
+        <!-- Subscription Status Card -->
+        <VaCard v-if="profile?.subscription" class="premium-card subscription-detail-card mb-4">
+          <VaCardContent>
+            <div class="subscription-header-premium">
+              <div class="icon-circle"><VaIcon name="card_membership" /></div>
+              <div class="title-wrap">
+                <h3 class="card-title">Active Plan</h3>
+                <div class="status-pill" :class="{ expired: profile.subscription.is_expired }">
+                  {{ profile.subscription.status }}
+                </div>
+              </div>
+            </div>
+
+            <div class="plan-display-premium">
+              <h2 class="plan-name-premium">{{ profile.subscription.plan.name }}</h2>
+              <div class="plan-price-premium">
+                <span class="amount">{{ profile.subscription.plan.price }}</span>
+                <span class="currency">{{ profile.subscription.plan.currency }}</span>
+                <span class="period" v-if="profile.subscription.plan.price > 0">/ {{ profile.subscription.plan.duration_days }} days</span>
+              </div>
+            </div>
+
+            <div class="usage-progress-premium">
+              <div class="usage-header">
+                <span>Time Remaining</span>
+                <span>{{ profile.subscription.days_remaining }} Days</span>
+              </div>
+              <VaProgressBar 
+                :model-value="(profile.subscription.days_remaining / profile.subscription.plan.duration_days) * 100" 
+                color="#22c55e"
+                class="premium-progress"
+              />
+            </div>
+
+            <div class="limits-mini-grid">
+              <div class="limit-mini">
+                <VaIcon name="business" size="18px" />
+                <span>{{ profile.subscription.plan.max_properties }} Properties</span>
+              </div>
+              <div class="limit-mini">
+                <VaIcon name="home" size="18px" />
+                <span>{{ profile.subscription.plan.max_units }} Units</span>
+              </div>
+              <div class="limit-mini">
+                <VaIcon name="people" size="18px" />
+                <span>{{ profile.subscription.plan.max_tenants }} Tenants</span>
+              </div>
+            </div>
+
+            <div class="subscription-footer-premium">
+              <VaButton 
+                v-if="profile.subscription.plan.is_free_tier"
+                class="upgrade-btn-premium"
+                @click="goToUpgrade"
+                block
+              >
+                Upgrade Plan
+              </VaButton>
+              <VaButton v-else preset="secondary" class="renew-btn-glass" @click="goToRenew" block>
+                Renew Subscription
+              </VaButton>
+            </div>
+          </VaCardContent>
+        </VaCard>
+
+      <!-- SMS Usage Card -->
+      <VaCard class="premium-card sms-usage-card">
         <VaCardContent>
           <div class="subscription-header-premium">
-            <div class="icon-circle"><VaIcon name="card_membership" /></div>
+            <div class="icon-circle sms-icon"><VaIcon name="sms" /></div>
             <div class="title-wrap">
-              <h3 class="card-title">Active Plan</h3>
-              <div class="status-pill" :class="{ expired: profile.subscription.is_expired }">
-                {{ profile.subscription.status }}
+              <h3 class="card-title">SMS Notifications</h3>
+              <div class="status-pill">
+                {{ smsUsage?.plan_name || "Free Tier" }}
               </div>
             </div>
           </div>
 
-          <div class="plan-display-premium">
-            <h2 class="plan-name-premium">{{ profile.subscription.plan.name }}</h2>
-            <div class="plan-price-premium">
-              <span class="amount">{{ profile.subscription.plan.price }}</span>
-              <span class="currency">{{ profile.subscription.plan.currency }}</span>
-              <span class="period" v-if="profile.subscription.plan.price > 0">/ {{ profile.subscription.plan.duration_days }} days</span>
+          <div v-if="smsUsage" class="sms-display-premium">
+            <div v-if="smsUsage.usage.is_unlimited" class="unlimited-badge">
+              <VaIcon name="infinity" size="24px" />
+              <span>Unlimited SMS</span>
+            </div>
+            <div v-else class="usage-stats">
+              <div class="usage-main-stat">
+                <span class="sent">{{ smsUsage.usage.sent }}</span>
+                <span class="separator">/</span>
+                <span class="limit">{{ smsUsage.usage.limit }}</span>
+              </div>
+              <p class="usage-hint">{{ smsUsage.message }}</p>
             </div>
           </div>
 
-          <div class="usage-progress-premium">
+          <div v-if="smsUsage && !smsUsage.usage.is_unlimited" class="usage-progress-premium">
             <div class="usage-header">
-              <span>Time Remaining</span>
-              <span>{{ profile.subscription.days_remaining }} Days</span>
+              <span>Usage Percentage</span>
+              <span>{{ smsUsage.usage.percentage_used.toFixed(1) }}%</span>
             </div>
             <VaProgressBar 
-              :model-value="(profile.subscription.days_remaining / profile.subscription.plan.duration_days) * 100" 
-              color="#22c55e"
+              :model-value="smsUsage.usage.percentage_used" 
+              :color="smsUsage.can_send ? '#22c55e' : '#ef4444'"
               class="premium-progress"
             />
           </div>
 
-          <div class="limits-mini-grid">
-            <div class="limit-mini">
-              <VaIcon name="business" size="18px" />
-              <span>{{ profile.subscription.plan.max_properties }} Properties</span>
-            </div>
-            <div class="limit-mini">
-              <VaIcon name="home" size="18px" />
-              <span>{{ profile.subscription.plan.max_units }} Units</span>
-            </div>
-            <div class="limit-mini">
-              <VaIcon name="people" size="18px" />
-              <span>{{ profile.subscription.plan.max_tenants }} Tenants</span>
-            </div>
+          <div v-if="smsUsage?.can_send === false" class="limit-warning">
+            <VaIcon name="warning" size="small" />
+            <span>Monthly limit reached. Upgrade to send more.</span>
           </div>
 
           <div class="subscription-footer-premium">
             <VaButton 
-              v-if="profile.subscription.plan.is_free_tier"
-              class="upgrade-btn-premium"
-              @click="goToUpgrade"
+              preset="secondary" 
+              class="renew-btn-glass" 
+              @click="goToUpgrade" 
               block
+              v-if="!smsUsage?.usage.is_unlimited"
             >
-              Ugrade Plan
-            </VaButton>
-            <VaButton v-else preset="secondary" class="renew-btn-glass" @click="goToRenew" block>
-              Renew Subscription
+              Get More SMS
             </VaButton>
           </div>
         </VaCardContent>
       </VaCard>
     </div>
+  </div>
 
     <!-- Edit Profile Modal Premium -->
     <VaModal v-model="showEditModal" title="Edit Profile" hide-default-actions size="medium" class="premium-modal">
@@ -200,14 +262,16 @@
 import { ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useAppToast } from "@/composables/useAppToast";
-import { useProfilesStore } from "@/stores";
+import { useProfilesStore, useSubscriptionsStore } from "@/stores";
 import PhoneInput from "@/components/PhoneInput.vue";
 
 const { success, error } = useAppToast();
 const profilesStore = useProfilesStore();
+const subscriptionsStore = useSubscriptionsStore();
 const router = useRouter();
 
 const profile = ref<any>(null);
+const smsUsage = computed(() => subscriptionsStore.smsUsage);
 const showEditModal = ref(false);
 const saving = ref(false);
 
@@ -225,16 +289,6 @@ const initials = computed(() => {
     .join("")
     .toUpperCase();
 });
-
-const formatDate = (dateString: string) => {
-  if (!dateString) return "N/A";
-  const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-};
 
 const goToUpgrade = () => {
   router.push("/admin/subscription/upgrade");
@@ -307,7 +361,15 @@ const handleAvatarUpload = async (event: Event) => {
   }
 };
 
-onMounted(loadProfile);
+const loadData = async () => {
+  await Promise.all([
+    loadProfile(),
+    subscriptionsStore.fetchSMSUsage(),
+    subscriptionsStore.fetchCurrentSubscription()
+  ]);
+};
+
+onMounted(loadData);
 </script>
 
 <style scoped>
@@ -633,10 +695,90 @@ onMounted(loadProfile);
   border-radius: 12px !important;
 }
 
+/* SMS Usage Styling */
+.sms-icon {
+  background: linear-gradient(135deg, #0ea5e9, #2563eb) !important;
+  box-shadow: 0 0 15px rgba(14, 165, 233, 0.3) !important;
+}
+
+.sms-display-premium {
+  padding: 1.5rem 0;
+  text-align: center;
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.05) 0%, transparent 70%);
+  border-radius: 20px;
+  margin-bottom: 1.5rem;
+}
+
+.unlimited-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: #0ea5e9;
+}
+
+.unlimited-badge span {
+  font-weight: 800;
+  font-size: 1.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.usage-main-stat {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.usage-main-stat .sent {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--va-text-primary);
+}
+
+.usage-main-stat .separator {
+  font-size: 1.5rem;
+  color: #64748b;
+}
+
+.usage-main-stat .limit {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.usage-hint {
+  color: #94a3b8;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.limit-warning {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 10px;
+  color: #ef4444;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+
 /* Modal Premium */
 .premium-modal {
   --va-modal-background: var(--va-background-primary);
   --va-modal-border-radius: 24px;
+}
+
+.profile-right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
 }
 
 .modal-inner {

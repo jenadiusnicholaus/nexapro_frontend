@@ -131,17 +131,28 @@
               </ul>
             </div>
 
-            <VaButton
-              v-if="isCurrentPlan(plan.id)"
-              class="plan-btn current-btn"
-              preset="primary"
-              border-color="primary"
-              block
-              disabled
-            >
-              <VaIcon name="check" size="small" class="mr-2" />
-              Active Plan
-            </VaButton>
+            <div v-if="isCurrentPlan(plan.id)" class="active-plan-actions">
+              <VaButton
+                class="plan-btn current-btn mb-2"
+                preset="primary"
+                border-color="primary"
+                block
+                disabled
+              >
+                <VaIcon name="check" size="small" class="mr-2" />
+                Active Plan
+              </VaButton>
+              <VaButton
+                v-if="!plan.is_free_tier"
+                class="plan-btn renew-btn"
+                @click.stop.prevent="openRenewModal(plan)"
+                block
+                color="success"
+              >
+                <VaIcon name="refresh" size="small" class="mr-2" />
+                Renew Plan
+              </VaButton>
+            </div>
 
             <VaButton
               v-else-if="plan.is_free_tier"
@@ -171,14 +182,14 @@
   <VaModal v-model="showPaymentModal" hide-default-actions size="medium" class="payment-modal">
     <template #header>
       <div class="modal-header">
-        <VaIcon name="payments" color="primary" size="large" />
-        <h2 class="modal-title">Secure Checkout</h2>
+        <VaIcon :name="isRenewal ? 'refresh' : 'payments'" color="primary" size="large" />
+        <h2 class="modal-title">{{ isRenewal ? 'Renew Subscription' : 'Secure Checkout' }}</h2>
       </div>
     </template>
 
     <div class="payment-modal-body" v-if="selectedPlan">
       <div class="order-summary">
-        <div class="order-label">Selected Plan</div>
+        <div class="order-label">{{ isRenewal ? 'Renewing' : 'Selected' }} Plan</div>
         <div class="order-plan-details">
           <span class="order-plan-name">{{ selectedPlan.name }}</span>
           <span class="order-plan-price">{{ selectedPlan.currency }} {{ formatPrice(selectedPlan.price) }}</span>
@@ -230,8 +241,8 @@
         <VaButton preset="secondary" @click="showPaymentModal = false" class="cancel-btn">
           Cancel
         </VaButton>
-        <VaButton :loading="subscriptionsStore.loading" @click="processUpgrade" class="confirm-btn">
-          Pay & Upgrade
+        <VaButton :loading="subscriptionsStore.loading" @click="handlePayment" class="confirm-btn">
+          {{ isRenewal ? 'Pay & Renew' : 'Pay & Upgrade' }}
           <VaIcon name="arrow_forward" size="small" class="ml-2" />
         </VaButton>
       </div>
@@ -251,6 +262,7 @@ const profilesStore = useProfilesStore();
 const subscriptionsStore = useSubscriptionsStore();
 
 const showPaymentModal = ref(false);
+const isRenewal = ref(false);
 const selectedPlan = ref<any>(null);
 const paymentForm = ref<any>(null);
 
@@ -279,8 +291,25 @@ const loadPlans = async () => {
 const selectPlan = (plan: any) => {
   if (!plan) return;
   selectedPlan.value = plan;
+  isRenewal.value = false;
   paymentData.value = { account_number: "", provider: "mpesa" };
   showPaymentModal.value = true;
+};
+
+const openRenewModal = (plan: any) => {
+  if (!plan) return;
+  selectedPlan.value = plan;
+  isRenewal.value = true;
+  paymentData.value = { account_number: "", provider: "mpesa" };
+  showPaymentModal.value = true;
+};
+
+const handlePayment = async () => {
+  if (isRenewal.value) {
+    await processRenewal();
+  } else {
+    await processUpgrade();
+  }
 };
 
 const processUpgrade = async () => {
@@ -309,6 +338,29 @@ const processUpgrade = async () => {
     }
   } catch (err: any) {
     error(err.response?.data?.error || "Payment failed. Please try again.");
+  }
+};
+
+const processRenewal = async () => {
+  const isValid = await paymentForm.value?.validate();
+  if (!isValid) return;
+
+  try {
+    const data = await subscriptionsStore.renewSubscription({
+      account_number: paymentData.value.account_number,
+      provider: paymentData.value.provider,
+    });
+
+    if (data.success) {
+      success("Renewal initiated! Please check your phone for the USSD prompt.");
+      showPaymentModal.value = false;
+      await profilesStore.fetchCurrentProfile();
+      router.push("/admin/profiles");
+    } else {
+      error(data.message || "Renewal failed. Please try again.");
+    }
+  } catch (err: any) {
+    error(err.response?.data?.error || err.response?.data?.message || "Renewal failed. Please try again.");
   }
 };
 
