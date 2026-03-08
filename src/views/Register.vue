@@ -4,7 +4,7 @@
       <div class="register-card">
         <div class="register-header">
           <img
-            src="/images/transparent_longo.png"
+            src="/images/log1.png"
             alt="NexaPro"
             class="register-logo"
           />

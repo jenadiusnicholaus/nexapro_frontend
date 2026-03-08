@@ -4,7 +4,7 @@
     <nav class="navbar">
       <div class="navbar-container">
         <div class="navbar-logo">
-          <img src="/images/logo.png" alt="NexaPro" class="logo-img" />
+          <img src="/images/log1.png" alt="NexaPro" class="logo-img" />
         </div>
         <div class="navbar-menu" :class="{ active: mobileMenuOpen }">
           <a href="#home" @click="scrollToSection('home')" class="nav-link"

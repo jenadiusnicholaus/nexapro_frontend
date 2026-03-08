@@ -79,13 +79,28 @@ export default {
       contact: 'Wasiliana',
     },
     hero: {
-      badge: '#1 Jukwaa la Usimamizi wa Nyumba',
-      title1: 'Usimamizi wa Kisasa',
-      title2: 'wa Nyumba',
-      title3: 'Umerahisishwa',
-      description: 'Rahisisha uendeshaji wa nyumba zako na mifumo otomatiki, taarifa za wakati halisi, na usimamizi bora wa wapangaji.',
-      startTrial: 'Anza Jaribio la Bure',
-      watchDemo: 'Tazama Demo',
+      badge: "🚀 Baadaye ya Usimamizi wa Nyumba",
+      title1: "NexaProperty: Usimamizi",
+      title2: "Smart",
+      title3: "Umerahisishwa",
+      subHeadline: "Usimamizi wa nyumba unaofanya kazi ukiwa umelala.",
+      description: "Fanya mkusanyiko wa kodi kuwa otomatiki, fuatilia kila malipo, na fanya mawasiliano na wapangaji kuwa ya kitaalamu.",
+      startTrial: "Anza",
+      watchDemo: "Demo",
+      benefits: {
+        automated: {
+          title: "Otomatiki Kamili",
+          desc: "Bili zinatengenezwa saa sita usiku.",
+        },
+        reminders: {
+          title: "Kumbushio Smart",
+          desc: "SMS za kiotomatiki kwa wapangaji.",
+        },
+        payments: {
+          title: "Malipo Bila Kukosa",
+          desc: "Ufuatiliaji kamili wa kifedha.",
+        },
+      }
     },
     stats: {
       properties: 'Nyumba Zinazosimamiwa',

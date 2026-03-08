@@ -72,82 +72,159 @@ export default {
   },
   home: {
     nav: {
+      home: "Home",
       login: "Login",
       getStarted: "Get Started",
       features: "Features",
-      services: "Services",
+      howItWorks: "How It Works",
       testimonials: "Testimonials",
       contact: "Contact",
     },
     hero: {
-      badge: "#1 Property Management Platform",
-      title1: "Modern Property",
+      badge: "🚀 The Future of Property Management",
+      title1: "NexaProperty: Smart",
       title2: "Management",
-      title3: "Made Simple",
-      description:
-        "Streamline your property operations with intelligent automation, real-time insights, and seamless tenant management.",
-      startTrial: "Start Free Trial",
-      watchDemo: "Watch Demo",
+      title3: "Simplified",
+      subHeadline: "Property management that works while you sleep.",
+      description: "Automate rent collection, track every payment, and professionalize tenant communication in one sleek platform.",
+      startTrial: "Get Started",
+      watchDemo: "Demo",
+      benefits: {
+        automated: {
+          title: "Total Automation",
+          desc: "Set-and-forget billing at midnight.",
+        },
+        reminders: {
+          title: "Smart Reminders",
+          desc: "Automated SMS alerts for tenants.",
+        },
+        payments: {
+          title: "No Missed Payments",
+          desc: "Complete financial history tracking.",
+        },
+      }
     },
     stats: {
       properties: "Properties Managed",
       tenants: "Active Tenants",
-      uptime: "Uptime SLA",
+      automation: "24/7 Automation",
+      missedPayments: "0% Missed Payments",
+      timeSavings: "95% Time Savings",
+      accuracy: "100% Accuracy",
     },
     sections: {
-      features: "Features",
-      featuresTitle: "Comprehensive Property Management",
-      featuresSubtitle:
-        "Everything you need to manage properties efficiently in one platform",
-      services: "Services",
-      servicesTitle: "Our Services",
-      testimonials: "Testimonials",
-      testimonialsTitle: "Trusted by Property Owners",
-      testimonialsSubtitle: "See what our clients say about NexaPro",
-      partners: "Partners",
-      partnersTitle: "Trusted By Leading Property Owners",
+      features: "⚡ Feature Highlights",
+      featuresTitle: "Comprehensive Automation",
+      featuresSubtitle: "Let our system handle the details while you grow your business",
+      howItWorks: "🔧 How It Works",
+      howItWorksTitle: "Simple 3-Step Setup",
+      testimonials: "🎉 Customer Testimonials",
+      painPoints: "🎯 Pain Points & Solutions",
+      mobile: "📱 Mobile Highlights",
+      trust: "🏆 Trust Badges",
+      premium: "💎 Premium Features",
     },
-    featureList: {
-      propTitle: "Property Management",
-      propDesc: "Manage multiple properties and tenants from one dashboard",
-      billTitle: "Automated Billing",
-      billDesc: "Generate invoices and track payments automatically",
-      contractTitle: "Digital Contracts",
-      contractDesc: "Create and manage contracts digitally with e-signatures",
-      reportTitle: "Financial Reports",
-      reportDesc: "Real-time insights into revenue and expenses",
-      smsTitle: "SMS Reminders",
-      smsDesc: "Automated rent reminders via SMS to tenants",
-      cloudTitle: "Cloud Storage",
-      cloudDesc: "Secure storage for documents and images",
+    featureHighlight: {
+      billing: {
+        title: "Automatic Bill Generation",
+        desc: "Monthly bills created automatically on the 1st of every month at midnight. No manual intervention required - set it up once and forget it!",
+      },
+      reminders: {
+        title: "Intelligent SMS Reminders",
+        desc: "Smart reminders sent at the perfect time: 7 days before due date, on due date, and after due date. Both tenant and owner automatically notified!",
+      },
+      tracking: {
+        title: "Complete Payment Tracking",
+        desc: "Every payment automatically recorded with separate rows, linked to bills and tenancies, with multiple payment methods supported.",
+      },
+      overdue: {
+        title: "Smart Overdue Management",
+        desc: "Automatic overdue status updates, escalation notifications, and complete tracking. No more manual follow-ups required!",
+      },
     },
-    serviceList: {
-      resTitle: "Residential Management",
-      resDesc: "Complete solution for residential properties",
-      comTitle: "Commercial Properties",
-      comDesc: "Specialized tools for commercial management",
-      supTitle: "24/7 Support",
-      supDesc: "Round-the-clock support for all your needs",
+    painPoints: {
+      before: {
+        title: "Before NexaProperty",
+        points: [
+          "Manual bill creation every month",
+          "Forgetting to send reminders",
+          "Chasing late payments manually",
+          "Lost payment records",
+          "Hours of administrative work",
+        ]
+      },
+      after: {
+        title: "After NexaProperty",
+        points: [
+          "100% Automated - Zero manual work",
+          "Smart Reminders - Never miss a payment",
+          "Complete Tracking - Every payment recorded",
+          "Professional Management - Impress your tenants",
+          "Time Savings - Focus on your business",
+        ]
+      }
+    },
+    howItWorks: {
+      steps: [
+        { title: "Add Your Properties", desc: "Import your units and tenant details" },
+        { title: "Set Payment Terms", desc: "Define rent amounts and due dates" },
+        { title: "Relax", desc: "Everything else happens automatically!" },
+      ],
+      timeline: [
+        { day: "Day 1", title: "Monthly bills created" },
+        { day: "7 Days Before", title: "Reminder SMS sent" },
+        { day: "Due Date", title: "PAY TODAY SMS sent" },
+        { day: "After Due Date", title: "Overdue status updated" },
+        { day: "Payment", title: "Automatic recording + receipt" },
+      ]
+    },
+    trust: {
+      badges: [
+        { label: "Trusted by 500+ Property Managers" },
+        { label: "10,000+ Payments Monthly" },
+        { label: "50,000+ SMS Reminders Sent" },
+        { label: "4.9/5 Customer Rating" },
+        { label: "Bank-Level Security" },
+      ]
+    },
+    mobile: {
+      title: "Manage On-The-Go",
+      features: [
+        "Mobile-responsive design",
+        "Instant notifications",
+        "Quick payment recording",
+        "Real-time dashboard",
+        "Tenant management",
+      ]
+    },
+    premium: {
+      features: [
+        "Contract expiration reminders (7 days before)",
+        "Automatic tenancy completion",
+        "Financial reporting & analytics",
+        "Bulk SMS capabilities",
+        "Custom reminder scheduling",
+      ]
     },
     testimonialList: {
-      t1: "NexaPro has transformed how I manage my rental units. Highly recommended!",
-      t2: "The best property management software I've used. Complete visibility!",
-      t3: "Managing properties has never been easier. Worth every penny!",
-      roleOwner: "Property Owner",
-      roleManager: "Real Estate Manager",
-      roleLandlord: "Landlord",
+      t1: "NexaProperty transformed my business. I used to spend hours every month creating bills and chasing payments. Now everything happens automatically. My tenants love the professional reminders, and I've never missed a payment since switching!",
+      t2: "The automatic SMS reminders are a game-changer. My tenants pay on time every month, and I get notified instantly when payments are made. It's like having a personal assistant working 24/7!",
+      author1: "Sarah M.",
+      role1: "Property Manager (15 units)",
+      author2: "John K.",
+      role2: "Landlord (8 units)",
     },
     cta: {
-      title: "Ready to Get Started?",
-      subtitle:
-        "Join hundreds of property owners managing their properties with NexaPro",
-      startFile: "Start Free Trial",
-      contactSales: "Contact Sales",
+      title: "Ready to Automate Your Property Management?",
+      subtitle: "Join hundreds of property managers who've eliminated administrative work",
+      bottomTitle: "Stop Managing Properties. Start Automating Them.",
+      bottomSubtitle: "Save 20+ hours per month • Never miss a payment • Professional tenant communication • Complete financial tracking",
+      primary: "Start Your Free Trial",
+      secondary: "Schedule a Demo",
     },
     footer: {
-      description:
-        "Modern property management software for landlords and property managers. Streamline operations, automate workflows, and grow your business.",
-      copyright: "© 2024 NexaPro. All rights reserved.",
+      description: "Modern property management software for landlords and property managers. Streamline operations, automate workflows, and grow your business.",
+      copyright: "© 2024 NexaProperty. All rights reserved.",
       sitemap: "Sitemap",
       accessibility: "Accessibility",
       col1Title: "Product",
@@ -155,19 +232,9 @@ export default {
       col2Title: "Company",
       col2Links: ["About Us", "Careers", "Blog", "Press Kit"],
       col3Title: "Support",
-      col3Links: [
-        "Help Center",
-        "Contact Us",
-        "Documentation",
-        "System Status",
-      ],
+      col3Links: ["Help Center", "Contact Us", "Documentation", "System Status"],
       col4Title: "Legal",
-      col4Links: [
-        "Privacy Policy",
-        "Terms of Service",
-        "Security",
-        "Cookie Policy",
-      ],
+      col4Links: ["Privacy Policy", "Terms of Service", "Security", "Cookie Policy"],
     },
   },
   dashboard: {

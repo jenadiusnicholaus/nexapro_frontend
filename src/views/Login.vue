@@ -36,7 +36,7 @@
       <div class="login-form-wrapper">
         <div class="login-header">
           <div class="login-logo">
-            <img src="/images/transparent_longo.png" alt="NexaPro" class="login-logo-img" />
+            <img src="/images/log1.png" alt="NexaPro" class="login-logo-img" />
           </div>
           <h1 class="login-title">{{ t('auth.welcomeBack') }}</h1>
           <p class="login-subtitle">{{ t('auth.signInContinuing') }}</p>

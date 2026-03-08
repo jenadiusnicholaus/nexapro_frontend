@@ -1,7 +1,7 @@
 <template>
   <span class="app-logo">
     <img
-      src="/images/transparent_longo.png"
+      src="/images/log1.png"
       alt="NexaProperty Logo"
       class="app-logo__image"
     />

@@ -16,8 +16,15 @@
           <div v-else class="property-image-placeholder">
             <VaIcon name="home" size="large" />
           </div>
-          <div>
-            <h1 class="property-title">{{ property.property_name }}</h1>
+          <div class="property-title-section">
+            <div class="title-with-badge">
+              <h1 class="property-title">{{ property.property_name }}</h1>
+              <VaBadge
+                :text="property.is_public ? 'Public' : 'Private'"
+                :color="property.is_public ? 'success' : 'warning'"
+                class="visibility-badge"
+              />
+            </div>
             <p class="property-meta">
               <VaIcon name="location_on" size="small" />
               {{ getLocationDisplay(property) }}
@@ -146,7 +153,7 @@
                   Contract
                 </VaButton>
                 <VaButton
-                  v-if="rowData.status === 'active'"
+                  v-if="isTenancyDueDate(rowData)"
                   icon="sms"
                   size="small"
                   color="success"
@@ -350,9 +357,7 @@
         </div>
 
         <div class="modal-actions">
-          <VaButton preset="secondary" @click="closeTenancyModal"
-            >Cancel</VaButton
-          >
+          <VaButton preset="secondary" @click="closeTenancyModal">Cancel</VaButton>
           <VaButton type="submit" :loading="saving">Save</VaButton>
         </div>
       </VaForm>
@@ -398,12 +403,8 @@
           class="mb-4"
         />
         <div class="modal-actions">
-          <VaButton preset="secondary" @click="closeAddTenantModal"
-            >Cancel</VaButton
-          >
-          <VaButton type="submit" :loading="creatingTenant"
-            >Create Tenant</VaButton
-          >
+          <VaButton preset="secondary" @click="closeAddTenantModal">Cancel</VaButton>
+          <VaButton type="submit" :loading="creatingTenant">Create Tenant</VaButton>
         </div>
       </VaForm>
     </VaModal>
@@ -491,9 +492,7 @@
           class="mb-4"
         />
         <div class="modal-actions">
-          <VaButton preset="secondary" @click="closeMoveOutModal"
-            >Cancel</VaButton
-          >
+          <VaButton preset="secondary" @click="closeMoveOutModal">Cancel</VaButton>
           <VaButton type="submit" :loading="movingOut">Move Out</VaButton>
         </div>
       </VaForm>
@@ -506,152 +505,102 @@
       size="medium"
       hide-default-actions
     >
-      <div v-if="selectedTenancyForView" class="tenancy-details-content">
-        <div class="detail-grid">
-          <div class="detail-item">
-            <label class="detail-label">Tenant Name</label>
-            <p class="detail-value">{{ selectedTenancyForView.tenant_name }}</p>
+        <div class="tenancy-premium-header">
+          <div class="tenant-avatar-large">
+            {{ selectedTenancyForView.tenant_name?.charAt(0) || 'T' }}
           </div>
-
-          <div class="detail-item">
-            <label class="detail-label">Unit Number</label>
-            <p class="detail-value">{{ selectedTenancyForView.unit_number }}</p>
-          </div>
-
-          <div class="detail-item">
-            <label class="detail-label">Property</label>
-            <p class="detail-value">
-              {{ selectedTenancyForView.property_name }}
-            </p>
-          </div>
-
-          <div class="detail-item">
-            <label class="detail-label">Move-In Date</label>
-            <p class="detail-value">
-              {{ selectedTenancyForView.move_in_date }}
-            </p>
-          </div>
-
-          <div class="detail-item">
-            <label class="detail-label">Contract Start</label>
-            <p class="detail-value">
-              {{ selectedTenancyForView.contract_start || "N/A" }}
-            </p>
-          </div>
-
-          <div class="detail-item">
-            <label class="detail-label">Contract End</label>
-            <p class="detail-value">
-              {{ selectedTenancyForView.contract_end || "N/A" }}
-            </p>
-          </div>
-
-          <div class="detail-item">
-            <label class="detail-label">Rent Amount</label>
-            <p class="detail-value">
-              {{ selectedTenancyForView.currency || "TZS" }}
-              {{ Number(selectedTenancyForView.rent_amount).toLocaleString() }}
-              <span v-if="selectedTenancyForView.rent_period">
-                / {{ selectedTenancyForView.rent_period }}</span
-              >
-            </p>
-          </div>
-
-          <div class="detail-item">
-            <label class="detail-label">Deposit Amount</label>
-            <p class="detail-value">
-              {{ selectedTenancyForView.currency || "TZS" }}
-              {{
-                Number(
-                  selectedTenancyForView.deposit_amount || 0,
-                ).toLocaleString()
-              }}
-            </p>
-          </div>
-
-          <div class="detail-item">
-            <label class="detail-label">Deposit Paid</label>
-            <p class="detail-value">
-              <VaBadge
-                :color="
-                  selectedTenancyForView.deposit_paid ? 'success' : 'warning'
-                "
-              >
-                {{ selectedTenancyForView.deposit_paid ? "Yes" : "No" }}
-              </VaBadge>
-            </p>
-          </div>
-
-          <div
-            class="detail-item"
-            v-if="selectedTenancyForView.deposit_payment_method"
-          >
-            <label class="detail-label">Payment Method</label>
-            <p class="detail-value">
-              {{ selectedTenancyForView.deposit_payment_method }}
-            </p>
-          </div>
-
-          <div class="detail-item">
-            <label class="detail-label">Status</label>
-            <p class="detail-value">
-              <VaBadge
-                :color="
-                  selectedTenancyForView.status === 'active'
-                    ? 'success'
-                    : selectedTenancyForView.status === 'completed'
-                      ? 'info'
-                      : 'danger'
-                "
-              >
-                {{ selectedTenancyForView.status }}
-              </VaBadge>
-            </p>
-          </div>
-
-          <div class="detail-item">
-            <label class="detail-label">Duration</label>
-            <p class="detail-value">
-              <span v-if="selectedTenancyForView.stay_duration_value">
-                {{ selectedTenancyForView.stay_duration_value }}
-                {{ selectedTenancyForView.stay_duration_unit || "months" }}
-              </span>
-              <span v-else-if="selectedTenancyForView.duration_months">
-                {{ selectedTenancyForView.duration_months }} months
-              </span>
-              <span
-                v-else-if="
-                  selectedTenancyForView.contract_start &&
-                  selectedTenancyForView.contract_end
-                "
-              >
-                {{
-                  calculateDuration(
-                    selectedTenancyForView.contract_start,
-                    selectedTenancyForView.contract_end,
-                  )
-                }}
-              </span>
-              <span v-else>N/A</span>
-            </p>
+          <div class="tenant-info-main">
+            <h3>{{ selectedTenancyForView.tenant_name }}</h3>
+            <VaBadge
+              :color="getTenancyStatusColor(selectedTenancyForView.status)"
+              class="status-badge-premium"
+            >
+              {{ selectedTenancyForView.status.toUpperCase() }}
+            </VaBadge>
           </div>
         </div>
 
-        <div class="modal-actions mt-4">
+        <div class="premium-detail-grid">
+          <div class="premium-detail-card">
+            <div class="card-icon"><VaIcon name="meeting_room" color="#10b981" /></div>
+            <div class="card-content">
+              <label>Unit</label>
+              <p>{{ selectedTenancyForView.unit_number }}</p>
+            </div>
+          </div>
+
+          <div class="premium-detail-card">
+            <div class="card-icon"><VaIcon name="event" color="#3b82f6" /></div>
+            <div class="card-content">
+              <label>Move-In Date</label>
+              <p>{{ selectedTenancyForView.move_in_date }}</p>
+            </div>
+          </div>
+
+          <div class="premium-detail-card">
+            <div class="card-icon"><VaIcon name="payments" color="#22c55e" /></div>
+            <div class="card-content">
+              <label>Rent Amount</label>
+              <p>
+                {{ selectedTenancyForView.currency || "TZS" }}
+                {{ Number(selectedTenancyForView.rent_amount).toLocaleString() }}
+                <span class="period">/ {{ selectedTenancyForView.rent_period }}</span>
+              </p>
+            </div>
+          </div>
+
+          <div class="premium-detail-card">
+            <div class="card-icon"><VaIcon name="account_balance_wallet" color="#f59e0b" /></div>
+            <div class="card-content">
+              <label>Deposit</label>
+              <p>
+                {{ selectedTenancyForView.currency || "TZS" }}
+                {{ Number(selectedTenancyForView.deposit_amount || 0).toLocaleString() }}
+              </p>
+            </div>
+          </div>
+
+          <div class="premium-detail-card full-width">
+            <div class="card-icon"><VaIcon name="calendar_month" color="#8b5cf6" /></div>
+            <div class="card-content flex-row">
+              <div class="date-item">
+                <label>Contract Start</label>
+                <p>{{ selectedTenancyForView.contract_start || "N/A" }}</p>
+              </div>
+              <div class="date-divider"></div>
+              <div class="date-item">
+                <label>Contract End</label>
+                <p>{{ selectedTenancyForView.contract_end || "N/A" }}</p>
+              </div>
+              <div class="date-divider"></div>
+              <div class="date-item">
+                <label>Duration</label>
+                <p>
+                  <span v-if="selectedTenancyForView.stay_duration_value">
+                    {{ selectedTenancyForView.stay_duration_value }} {{ selectedTenancyForView.stay_duration_unit || "months" }}
+                  </span>
+                  <span v-else>N/A</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions-premium mt-6">
           <VaButton
             preset="primary"
             icon="download"
+            class="premium-btn shadow-sm"
             @click="downloadUnsignedContract(selectedTenancyForView)"
             :loading="generatingContractId === selectedTenancyForView.id"
           >
-            Download Unsigned Contract
+            Unsigned Contract
           </VaButton>
-          <VaButton preset="secondary" @click="closeTenancyDetailsModal">
+          <VaButton preset="secondary" @click="closeTenancyDetailsModal" class="premium-btn">
             Close
           </VaButton>
         </div>
-      </div>
-    </VaModal>
+      </VaModal>
 
     <!-- Signature Upload Modal -->
     <VaModal
@@ -660,68 +609,92 @@
       hide-default-actions
       size="large"
     >
-      <div class="signature-upload-container">
-        <p class="mb-4">
-          Please upload signatures before generating the contract.
-        </p>
+      <div class="signature-premium-container">
+        <div class="signature-header-info">
+          <VaIcon name="draw" size="44px" color="#10b981" />
+          <div class="info-text">
+            <h3>Contract Digital Signatures</h3>
+            <p>Upload signatures and stamps to include in the generated tenancy contract.</p>
+          </div>
+        </div>
 
-        <!-- Owner Signature Section -->
-        <div class="signature-section mb-6">
-          <h3 class="mb-3">Owner Signature & Stamp</h3>
-          <div class="upload-grid">
-            <div class="upload-item">
-              <label class="upload-label">Owner Signature</label>
-              <input
-                type="file"
-                ref="ownerSignatureInput"
-                accept="image/*"
-                @change="handleOwnerSignatureSelect"
-                class="file-input"
-              />
-              <div v-if="ownerSignaturePreview" class="preview-image">
-                <img :src="ownerSignaturePreview" alt="Owner Signature" />
+        <div class="signature-sections-grid">
+          <!-- Owner Section -->
+          <div class="signature-card">
+            <div class="card-badge owner">LANDLORD / OWNER</div>
+            <div class="signature-upload-areas">
+              <div class="upload-box-premium">
+                <label>Signature</label>
+                <div class="upload-zone" @click="ownerSignatureInput?.click()">
+                  <div v-if="ownerSignaturePreview" class="preview">
+                    <img :src="ownerSignaturePreview" />
+                  </div>
+                  <div v-else class="placeholder">
+                    <VaIcon name="upload" />
+                    <span>Click to upload</span>
+                  </div>
+                </div>
+                <input type="file" ref="ownerSignatureInput" accept="image/*" @change="handleOwnerSignatureSelect" hidden />
+              </div>
+
+              <div class="upload-box-premium">
+                <label>Stamp (Optional)</label>
+                <div class="upload-zone" @click="ownerStampInput?.click()">
+                  <div v-if="ownerStampPreview" class="preview">
+                    <img :src="ownerStampPreview" />
+                  </div>
+                  <div v-else class="placeholder">
+                    <VaIcon name="upload" />
+                    <span>Click to upload</span>
+                  </div>
+                </div>
+                <input type="file" ref="ownerStampInput" accept="image/*" @change="handleOwnerStampSelect" hidden />
               </div>
             </div>
-            <div class="upload-item">
-              <label class="upload-label">Owner Stamp</label>
-              <input
-                type="file"
-                ref="ownerStampInput"
-                accept="image/*"
-                @change="handleOwnerStampSelect"
-                class="file-input"
-              />
-              <div v-if="ownerStampPreview" class="preview-image">
-                <img :src="ownerStampPreview" alt="Owner Stamp" />
+          </div>
+
+          <!-- Tenant Section -->
+          <div class="signature-card">
+            <div class="card-badge tenant">TENANT</div>
+            <div class="signature-upload-areas single">
+              <div class="upload-box-premium">
+                <label>Signature</label>
+                <div class="upload-zone" @click="tenantSignatureInput?.click()">
+                  <div v-if="tenantSignaturePreview" class="preview">
+                    <img :src="tenantSignaturePreview" />
+                  </div>
+                  <div v-else class="placeholder">
+                    <VaIcon name="upload" />
+                    <span>Click to upload</span>
+                  </div>
+                </div>
+                <input type="file" ref="tenantSignatureInput" accept="image/*" @change="handleTenantSignatureSelect" hidden />
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Tenant Signature Section -->
-        <div class="signature-section mb-6">
-          <h3 class="mb-3">Tenant Signature</h3>
-          <div class="upload-item">
-            <label class="upload-label">Tenant Signature</label>
-            <input
-              type="file"
-              ref="tenantSignatureInput"
-              accept="image/*"
-              @change="handleTenantSignatureSelect"
-              class="file-input"
-            />
-            <div v-if="tenantSignaturePreview" class="preview-image">
-              <img :src="tenantSignaturePreview" alt="Tenant Signature" />
-            </div>
-          </div>
-        </div>
-
-        <div class="modal-actions">
-          <VaButton preset="secondary" @click="closeSignatureModal"
-            >Cancel</VaButton
+        <div class="modal-actions-premium mt-8">
+          <VaButton
+            preset="primary"
+            icon="download"
+            class="premium-btn shadow-sm"
+            @click="currentTenancyForContract && downloadUnsignedContract(currentTenancyForContract)"
+            :loading="generatingContractId === currentTenancyForContract?.id"
           >
-          <VaButton @click="uploadSignatures" :loading="uploadingSignatures">
-            Upload & Generate Contract
+            Unsigned Contract
+          </VaButton>
+          <div class="flex-grow"></div>
+          <VaButton preset="secondary" @click="closeSignatureModal" class="premium-btn">
+            Cancel
+          </VaButton>
+          <VaButton
+            @click="uploadSignatures"
+            :loading="uploadingSignatures"
+            class="premium-btn primary-gradient"
+            icon="auto_awesome"
+          >
+            Finalize & Generate
           </VaButton>
         </div>
       </div>
@@ -737,8 +710,7 @@
       <div class="sms-modal-container">
         <p class="mb-4">
           Select who should receive the rent reminder SMS for
-          <strong>{{ currentTenancyForSms?.tenant_name }}</strong
-          >:
+          <strong>{{ currentTenancyForSms?.tenant_name }}</strong>:
         </p>
 
         <div class="recipient-selection mb-4">
@@ -998,6 +970,26 @@ const getTenantCurrentUnit = (tenantId: number) => {
   );
 
   return activeTenancy?.unit_number || "N/A";
+};
+
+/**
+ * Checks if current date is the rent due date for a tenancy.
+ * Due date is defined as the same day of the month as the contract start date.
+ */
+const isTenancyDueDate = (tenancy: any) => {
+  if (tenancy.status !== "active" || !tenancy.contract_start) return false;
+
+  const today = new Date();
+  const startDate = new Date(tenancy.contract_start);
+  const endDate = tenancy.contract_end ? new Date(tenancy.contract_end) : null;
+
+  // Show if today is the same day of month as start date
+  const isSameDayOfMonth = today.getDate() === startDate.getDate();
+
+  // Also show if past contract end date
+  const isPastEndDate = endDate ? today > endDate : false;
+
+  return isSameDayOfMonth || isPastEndDate;
 };
 
 const loadPropertyData = async () => {
@@ -1826,7 +1818,7 @@ watch(
   height: 120px;
   object-fit: cover;
   border-radius: 12px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--va-background-border);
 }
 
 .property-image-placeholder {
@@ -1835,17 +1827,38 @@ watch(
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f7fafc;
+  background: var(--va-background-secondary);
   border-radius: 12px;
-  border: 2px solid #e2e8f0;
-  color: #718096;
+  border: 2px solid var(--va-background-border);
+  color: var(--va-text-secondary);
+}
+
+.property-title-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.title-with-badge {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .property-title {
-  margin: 0 0 0.5rem 0;
-  font-size: 2rem;
+  margin: 0;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--va-text-primary) !important;
+  letter-spacing: -0.02em;
+}
+
+.visibility-badge {
+  font-size: 0.75rem;
   font-weight: 700;
-  color: #2d3748;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.25rem 0.75rem;
 }
 
 .property-meta {
@@ -1853,7 +1866,7 @@ watch(
   align-items: center;
   gap: 0.5rem;
   margin: 0.25rem 0;
-  color: #718096;
+  color: var(--va-text-secondary);
   font-size: 0.95rem;
 }
 
@@ -1880,7 +1893,7 @@ watch(
   margin: 0;
   font-size: 1.5rem;
   font-weight: 600;
-  color: #2d3748;
+  color: var(--va-text-primary);
 }
 
 .tab-actions {
@@ -1900,7 +1913,7 @@ watch(
   height: 60px;
   object-fit: cover;
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--va-background-border);
 }
 
 .unit-placeholder {
@@ -1909,10 +1922,10 @@ watch(
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f7fafc;
+  background: var(--va-background-secondary);
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  color: #718096;
+  border: 1px solid var(--va-background-border);
+  color: var(--va-text-secondary);
 }
 
 .modal-actions {
@@ -1949,7 +1962,7 @@ watch(
   position: relative;
   width: 100%;
   height: 200px;
-  border: 2px dashed #cbd5e0;
+  border: 2px dashed var(--va-background-border);
   border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
@@ -1957,7 +1970,7 @@ watch(
 }
 
 .image-upload-container:hover {
-  border-color: #4299e1;
+  border-color: var(--va-primary);
 }
 
 .image-preview {
@@ -1987,7 +2000,7 @@ watch(
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: #718096;
+  color: var(--va-text-secondary);
 }
 
 .image-upload-placeholder p {
@@ -2010,54 +2023,254 @@ watch(
 }
 
 .recipient-selection {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--va-background-border);
   border-radius: 8px;
   padding: 1.5rem;
-  background: #f7fafc;
+  background: var(--va-background-secondary);
 }
 
 .recipient-info {
   font-size: 0.875rem;
-  color: #718096;
+  color: var(--va-text-secondary);
   margin: 0.25rem 0 0 0;
 }
 
-/* Tenancy Details Modal */
-.tenancy-details-content {
-  padding: 1rem 0;
+/* Premium Tenancy Details Styles */
+.tenancy-premium-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(59, 130, 246, 0.1));
+  border-radius: 16px;
+  margin-bottom: 2rem;
 }
 
-.detail-grid {
+.tenant-avatar-large {
+  width: 64px;
+  height: 64px;
+  background: var(--va-primary);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 800;
+  box-shadow: 0 4px 12px rgba(var(--va-primary-rgb), 0.3);
+}
+
+.tenant-info-main h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.status-badge-premium {
+  margin-top: 0.5rem;
+}
+
+.premium-detail-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.premium-detail-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: var(--va-background-card-primary);
+  border: 1px solid var(--va-background-border);
+  border-radius: 12px;
+  transition: transform 0.2s;
+}
+
+.premium-detail-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--va-primary);
+}
+
+.premium-detail-card.full-width {
+  grid-column: span 2;
+}
+
+.card-icon {
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-content label {
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--va-text-secondary);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+
+.card-content p {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.card-content .period {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--va-text-secondary);
+}
+
+.flex-row {
+  display: flex;
+  align-items: center;
   gap: 1.5rem;
 }
 
-.detail-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+.date-divider {
+  width: 1px;
+  height: 30px;
+  background: var(--va-background-border);
 }
 
-.detail-label {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #4a5568;
-  text-transform: uppercase;
+/* Signature Redesign Styles */
+.signature-premium-container {
+  padding: 0.5rem;
+}
+
+.signature-header-info {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--va-background-border);
+}
+
+.signature-header-info h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.signature-header-info p {
+  margin: 0.25rem 0 0 0;
+  color: var(--va-text-secondary);
+}
+
+.signature-sections-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+}
+
+.signature-card {
+  background: var(--va-background-card-primary);
+  border: 1px solid var(--va-background-border);
+  border-radius: 20px;
+  padding: 2rem 1.5rem 1.5rem;
+  position: relative;
+}
+
+.card-badge {
+  position: absolute;
+  top: -12px;
+  left: 1.5rem;
+  padding: 0.25rem 1rem;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 800;
   letter-spacing: 0.05em;
 }
 
-.detail-value {
-  font-size: 1rem;
-  color: #1a202c;
-  margin: 0;
-  font-weight: 500;
+.card-badge.owner { background: #10b981; color: white; }
+.card-badge.tenant { background: #3b82f6; color: white; }
+
+.signature-upload-areas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
 }
 
-@media (max-width: 768px) {
-  .detail-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
+.signature-upload-areas.single {
+  grid-template-columns: 1fr;
+}
+
+.upload-box-premium label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  color: var(--va-text-secondary);
+}
+
+.upload-zone {
+  height: 120px;
+  border: 2px dashed var(--va-background-border);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: rgba(var(--va-primary-rgb), 0.02);
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.upload-zone:hover {
+  border-color: var(--va-primary);
+  background: rgba(var(--va-primary-rgb), 0.05);
+}
+
+.upload-zone .placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--va-text-secondary);
+  font-size: 0.8rem;
+  gap: 0.5rem;
+}
+
+.upload-zone .preview img {
+  max-width: 100%;
+  max-height: 110px;
+  object-fit: contain;
+}
+
+.modal-actions-premium {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.premium-btn {
+  border-radius: 12px !important;
+  font-weight: 700 !important;
+  padding-left: 1.5rem !important;
+  padding-right: 1.5rem !important;
+}
+
+.primary-gradient {
+  background: linear-gradient(135deg, #10b981, #3b82f6) !important;
+  color: white !important;
+}
+
+.shadow-sm {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 992px) {
+  .signature-sections-grid { grid-template-columns: 1fr; }
+  .premium-detail-grid { grid-template-columns: 1fr; }
+  .premium-detail-card.full-width { grid-column: span 1; }
+  .flex-row { flex-direction: column; align-items: flex-start; gap: 1rem; }
+  .date-divider { display: none; }
 }
 </style>
