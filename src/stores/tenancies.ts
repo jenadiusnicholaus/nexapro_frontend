@@ -37,6 +37,13 @@ export const useTenanciesStore = defineStore("tenancies", () => {
     await fetchList(refreshParams);
   }
 
+  async function updateItem(id: string | number, data: Record<string, unknown>) {
+    await tenanciesAPI.patch(id, data);
+    const refreshParams =
+      Object.keys(lastParams.value).length > 0 ? lastParams.value : {};
+    await fetchList(refreshParams);
+  }
+
   async function deleteItem(id: string | number) {
     await tenanciesAPI.delete(id);
     const refreshParams =
@@ -44,5 +51,5 @@ export const useTenanciesStore = defineStore("tenancies", () => {
     await fetchList(refreshParams);
   }
 
-  return { items, loading, fetchList, createItem, moveOut, deleteItem };
+  return { items, loading, fetchList, createItem, moveOut, updateItem, deleteItem };
 });

@@ -278,6 +278,11 @@ export const subscriptionsAPI = {
   getPaymentHistory: () => apiClient.get("/subscriptions/payments/"),
 };
 
+export const statsAPI = {
+  get: (params: Record<string, unknown> = {}) =>
+    apiClient.get("/stats/", { params }),
+};
+
 export const profilesAPI = {
   list: (params: Record<string, unknown> = {}) =>
     apiClient.get("/profiles/", { params }),

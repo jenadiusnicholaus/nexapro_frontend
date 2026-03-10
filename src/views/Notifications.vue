@@ -74,109 +74,151 @@
       </VaCardContent>
     </VaCard>
 
-    <!-- View Details Modal -->
+    <!-- View Details Modal Professional -->
     <VaModal
       v-model="showDetailsModal"
-      title="Notification Details"
       hide-default-actions
       size="medium"
+      class="premium-modal"
     >
-      <div v-if="selectedNotification" class="notification-details">
-        <div class="detail-row">
-          <label class="detail-label">Tenant:</label>
-          <p class="detail-value">
-            {{ selectedNotification.tenant_name || "N/A" }}
-          </p>
+      <template #header>
+        <div class="modal-premium-header">
+          <VaIcon name="notifications_active" color="primary" size="small" class="mr-2" />
+          <div class="header-text">
+            <h3 class="modal-title">Notification Details</h3>
+            <p class="modal-subtitle">Full message and transmission logs</p>
+          </div>
+        </div>
+      </template>
+
+      <div v-if="selectedNotification" class="notification-premium-details">
+        <div class="details-grid">
+          <div class="detail-field">
+            <span class="field-label">Recipient Tenant</span>
+            <div class="field-value-wrap">
+              <VaIcon name="person" size="small" color="secondary" class="field-icon" />
+              <p class="field-value">{{ selectedNotification.tenant_name || "N/A" }}</p>
+            </div>
+          </div>
+
+          <div class="detail-field">
+            <span class="field-label">Notification Type</span>
+            <div class="field-value-wrap">
+              <VaIcon name="category" size="small" color="secondary" class="field-icon" />
+              <p class="field-value capitalize">{{ String(selectedNotification.notification_type).replace('_', ' ') }}</p>
+            </div>
+          </div>
+
+          <div class="detail-field">
+            <span class="field-label">Channel</span>
+            <div class="field-value-wrap">
+              <VaIcon name="phonelink" size="small" color="secondary" class="field-icon" />
+              <p class="field-value">{{ selectedNotification.channel }}</p>
+            </div>
+          </div>
+
+          <div class="detail-field">
+            <span class="field-label">Status</span>
+            <div class="field-value-wrap">
+              <VaChip :color="getStatusColor(selectedNotification.status)" size="small" class="status-chip shadow-sm">
+                {{ selectedNotification.status }}
+              </VaChip>
+            </div>
+          </div>
         </div>
 
-        <div class="detail-row">
-          <label class="detail-label">Type:</label>
-          <p class="detail-value">
-            {{ selectedNotification.notification_type }}
-          </p>
+        <div class="detail-field full-width mt-6">
+          <span class="field-label">Subject</span>
+          <p class="subject-text">{{ selectedNotification.subject }}</p>
         </div>
 
-        <div class="detail-row">
-          <label class="detail-label">Channel:</label>
-          <p class="detail-value">{{ selectedNotification.channel }}</p>
-        </div>
-
-        <div class="detail-row">
-          <label class="detail-label">Subject:</label>
-          <p class="detail-value">{{ selectedNotification.subject }}</p>
-        </div>
-
-        <div class="detail-row">
-          <label class="detail-label">Message:</label>
-          <p class="detail-value message-content">
+        <div class="detail-field full-width mt-4">
+          <span class="field-label">Message Content</span>
+          <div class="message-box-premium">
             {{ selectedNotification.message }}
-          </p>
+          </div>
         </div>
 
-        <div class="detail-row">
-          <label class="detail-label">Status:</label>
-          <VaChip :color="getStatusColor(selectedNotification.status)">
-            {{ selectedNotification.status }}
-          </VaChip>
-        </div>
-
-        <div class="detail-row">
-          <label class="detail-label">Sent At:</label>
-          <p class="detail-value">
-            {{ selectedNotification.sent_at || "Not sent yet" }}
-          </p>
+        <div class="detail-field full-width mt-6">
+          <div class="timestamp-wrap">
+            <VaIcon name="schedule" size="small" color="secondary" class="mr-2" />
+            <span class="timestamp-label">Transmission Time:</span>
+            <span class="timestamp-value">
+               {{ selectedNotification.sent_at || "Awaiting dispatch..." }}
+            </span>
+          </div>
         </div>
       </div>
 
-      <div class="modal-actions">
-        <VaButton preset="secondary" @click="closeDetailsModal">Close</VaButton>
+      <div class="modal-footer-premium">
+        <VaButton preset="secondary" @click="closeDetailsModal" class="premium-btn">Dismiss</VaButton>
       </div>
     </VaModal>
 
-    <!-- Create Notification Modal -->
+    <!-- Create Notification Modal Premium -->
     <VaModal
       v-model="showModal"
-      title="Create Notification"
       hide-default-actions
       size="medium"
+      class="premium-modal"
     >
-      <VaForm ref="notificationForm" @submit.prevent="saveNotification">
-        <VaSelect
-          v-model="formData.tenancy"
-          label="Tenancy"
-          :options="tenancyOptions"
-          :rules="[validators.required]"
-          class="mb-4"
-        />
-        <VaSelect
-          v-model="formData.notification_type"
-          label="Notification Type"
-          :options="notificationTypes"
-          :rules="[validators.required]"
-          class="mb-4"
-        />
-        <VaSelect
-          v-model="formData.channel"
-          label="Channel"
-          :options="channels"
-          :rules="[validators.required]"
-          class="mb-4"
-        />
-        <VaInput
-          v-model="formData.subject"
-          label="Subject"
-          :rules="[validators.required]"
-          class="mb-4"
-        />
+      <template #header>
+        <div class="modal-premium-header">
+          <VaIcon name="add_circle" color="primary" size="small" class="mr-2" />
+          <div class="header-text">
+            <h3 class="modal-title">Create Notification</h3>
+            <p class="modal-subtitle">Dispatch a new message to a tenant</p>
+          </div>
+        </div>
+      </template>
+
+      <VaForm ref="notificationForm" @submit.prevent="saveNotification" class="premium-form mt-4">
+        <div class="details-grid">
+          <VaSelect
+            v-model="formData.tenancy"
+            label="Target Tenancy"
+            :options="tenancyOptions"
+            :rules="[validators.required]"
+            class="mb-4"
+            background="rgba(255,255,255,0.03)"
+          />
+          <VaSelect
+            v-model="formData.notification_type"
+            label="Type"
+            :options="notificationTypes"
+            :rules="[validators.required]"
+            class="mb-4"
+            background="rgba(255,255,255,0.03)"
+          />
+          <VaSelect
+            v-model="formData.channel"
+            label="Channel"
+            :options="channels"
+            :rules="[validators.required]"
+            class="mb-4"
+            background="rgba(255,255,255,0.03)"
+          />
+          <VaInput
+            v-model="formData.subject"
+            label="Subject"
+            :rules="[validators.required]"
+            class="mb-4"
+            background="rgba(255,255,255,0.03)"
+          />
+        </div>
+        
         <VaTextarea
           v-model="formData.message"
-          label="Message"
+          label="Message Body"
           :rules="[validators.required]"
-          class="mb-4"
+          class="mb-4 full-width"
+          background="rgba(255,255,255,0.03)"
+          :min-rows="4"
         />
-        <div class="modal-actions">
-          <VaButton preset="secondary" @click="closeModal">Cancel</VaButton>
-          <VaButton type="submit" :loading="saving">Save</VaButton>
+
+        <div class="modal-footer-premium">
+          <VaButton preset="secondary" @click="closeModal" class="premium-btn">Cancel</VaButton>
+          <VaButton type="submit" :loading="saving" class="premium-btn primary-gradient">Dispatch Notification</VaButton>
         </div>
       </VaForm>
     </VaModal>
@@ -363,51 +405,153 @@ watch([searchQuery, filterType, filterStatus], () => {
   margin-right: 0.5rem;
 }
 
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 1.5rem;
-}
-
-.notification-details {
+.notification-premium-details {
   padding: 1rem 0;
 }
 
-.detail-row {
+.modal-premium-header {
+  display: flex;
+  align-items: center;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--va-background-border);
+  width: 100%;
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--va-text-primary);
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.modal-subtitle {
+  font-size: 0.8rem;
+  color: var(--va-text-secondary);
+  margin: 0;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.detail-field {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid #e2e8f0;
 }
 
-.detail-row:last-child {
-  border-bottom: none;
-  margin-bottom: 0;
-}
-
-.detail-label {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #4a5568;
+.field-label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #10b981; /* Emerald accent */
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
 }
 
-.detail-value {
+.field-value-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.field-value {
   font-size: 1rem;
-  color: #1a202c;
+  font-weight: 600;
+  color: var(--va-text-primary);
   margin: 0;
-  line-height: 1.5;
 }
 
-.message-content {
+.subject-text {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--va-text-primary);
+  margin: 0.25rem 0 0;
+}
+
+.message-box-premium {
+  margin-top: 0.5rem;
+  background: rgba(var(--va-primary-rgb), 0.03);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--va-background-border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--va-text-primary);
   white-space: pre-wrap;
-  background: #f7fafc;
-  padding: 1rem;
-  border-radius: 8px;
-  border-left: 3px solid #7c3aed;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.timestamp-wrap {
+  display: flex;
+  align-items: center;
+  background: var(--va-background-secondary);
+  padding: 0.75rem 1.25rem;
+  border-radius: 12px;
+  width: fit-content;
+}
+
+.timestamp-label {
+  font-size: 0.8rem;
+  color: var(--va-text-secondary);
+  margin-right: 0.5rem;
+}
+
+.timestamp-value {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--va-text-primary);
+}
+
+.modal-footer-premium {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 2.5rem;
+  gap: 1rem;
+}
+
+.premium-btn {
+  border-radius: 12px !important;
+  font-weight: 700 !important;
+  padding: 0.6rem 2rem !important;
+}
+
+.primary-gradient {
+  background: linear-gradient(135deg, #10b981, #3b82f6) !important;
+  color: white !important;
+}
+
+.premium-form :deep(.va-input-wrapper) {
+  border-radius: 12px !important;
+  border: 1px solid var(--va-background-border) !important;
+}
+
+.full-width {
+  grid-column: span 2;
+}
+
+.status-chip {
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+.mr-2 { margin-right: 0.5rem; }
+.mt-4 { margin-top: 1rem; }
+.mt-6 { margin-top: 1.5rem; }
+.capitalize { text-transform: capitalize; }
+.shadow-sm { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+
+@media (max-width: 640px) {
+  .details-grid {
+    grid-template-columns: 1fr;
+  }
+  .full-width {
+    grid-column: span 1;
+  }
 }
 </style>

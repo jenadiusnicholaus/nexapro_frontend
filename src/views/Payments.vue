@@ -35,10 +35,9 @@
               v-model="searchQuery"
               placeholder="Search payments..."
               class="premium-input-search"
-              background="rgba(255,255,255,0.03)"
             >
               <template #prependInner>
-                <VaIcon name="search" color="#22c55e" />
+                <VaIcon name="search" color="primary" />
               </template>
             </VaInput>
           </div>
@@ -48,7 +47,6 @@
               :options="paymentMethods"
               placeholder="All Methods"
               class="premium-select"
-              background="rgba(255,255,255,0.03)"
             />
           </div>
         </div>
@@ -59,16 +57,27 @@
           :loading="paymentsStore.loading"
         >
           <template #cell(tenant_name)="{ rowData }">
-            <div class="tenant-cell">
-              <span class="tenant-name">{{ rowData.tenant_name }}</span>
-              <span class="bill-info">Period: {{ rowData.bill_period }}</span>
-            </div>
+            <span class="tenant-name">{{ rowData.tenant_name }}</span>
           </template>
 
           <template #cell(amount_paid)="{ rowData }">
             <span class="amount-cell-premium">
-              ${{ Number(rowData.amount_paid || 0).toLocaleString('en-US', { minimumFractionDigits: 2 }) }}
+              TZS {{ Number(rowData.amount_paid || 0).toLocaleString('en-US') }}
             </span>
+          </template>
+
+          <template #cell(status)="{ rowData }">
+            <VaChip
+              :color="rowData.status === 'success' ? 'success' : 'warning'"
+              size="small"
+              class="capitalize"
+            >
+              {{ rowData.status }}
+            </VaChip>
+          </template>
+
+          <template #cell(notes)="{ rowData }">
+            <span class="notes-cell">{{ rowData.notes || '—' }}</span>
           </template>
 
           <template #cell(payment_method)="{ rowData }">
@@ -95,7 +104,6 @@
             :options="billOptions"
             :rules="[validators.required]"
             class="mb-4"
-            background="rgba(255,255,255,0.03)"
           />
           <VaSelect
             v-model="formData.tenancy"
@@ -103,7 +111,6 @@
             :options="tenancyOptions"
             :rules="[validators.required]"
             class="mb-4"
-            background="rgba(255,255,255,0.03)"
           />
           <div class="form-grid">
             <VaInput
@@ -112,7 +119,6 @@
               type="number"
               :rules="[validators.required]"
               class="mb-4"
-              background="rgba(255,255,255,0.03)"
             />
             <VaInput
               v-model="formData.payment_date"
@@ -120,7 +126,6 @@
               type="date"
               :rules="[validators.required]"
               class="mb-4"
-              background="rgba(255,255,255,0.03)"
             />
           </div>
           <div class="form-grid">
@@ -130,24 +135,21 @@
               :options="paymentMethods"
               :rules="[validators.required]"
               class="mb-4"
-              background="rgba(255,255,255,0.03)"
             />
             <VaInput
               v-model="formData.reference_number"
               label="Reference Number"
               class="mb-4"
-              background="rgba(255,255,255,0.03)"
             />
           </div>
           <VaTextarea
             v-model="formData.notes"
             label="Notes"
             class="mb-4"
-            background="rgba(255,255,255,0.03)"
           />
           <div class="modal-footer">
             <VaButton preset="secondary" @click="closeModal" class="cancel-btn">Cancel</VaButton>
-            <VaButton type="submit" :loading="saving" class="save-btn-premium">Confirm Payment</VaButton>
+            <VaButton type="submit" :loading="saving" class="save-btn-premium primary-gradient">Confirm Payment</VaButton>
           </div>
         </VaForm>
       </div>
@@ -188,11 +190,14 @@ const formData = ref({
 })
 
 const columns = [
-  { key: 'tenant_name', label: 'Tenant & Period', sortable: true },
+  { key: 'tenant_name', label: 'Tenant', sortable: true },
+  { key: 'bill_period', label: 'Period', sortable: true },
   { key: 'amount_paid', label: 'Amount', sortable: true },
   { key: 'payment_date', label: 'Date', sortable: true },
   { key: 'payment_method', label: 'Method', sortable: true },
-  { key: 'reference_number', label: 'Reference' },
+  { key: 'reference_number', label: 'Ref #', sortable: true },
+  { key: 'status', label: 'Status' },
+  { key: 'notes', label: 'Notes' },
 ]
 
 const getMethodIcon = (method: string) => {
@@ -356,11 +361,12 @@ watch([searchQuery, filterMethod], () => {
   display: flex;
   align-items: center;
   gap: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .stat-icon-wrap.emerald {
-  background: rgba(34, 197, 94, 0.1);
-  color: #22c55e;
+  background: rgba(var(--va-success-rgb), 0.1);
+  color: var(--va-success);
   width: 44px;
   height: 44px;
   border-radius: 12px;
@@ -421,12 +427,12 @@ watch([searchQuery, filterMethod], () => {
 
 .tenant-name {
   font-weight: 700;
-  color: #f1f5f9;
+  color: var(--va-text-primary);
 }
 
 .bill-info {
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--va-text-secondary);
 }
 
 .amount-cell-premium {
@@ -438,16 +444,27 @@ watch([searchQuery, filterMethod], () => {
 .method-cell {
   display: flex;
   align-items: center;
-  color: #94a3b8;
+  color: var(--va-text-secondary);
 }
 
 .ref-code {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--va-background-secondary);
   padding: 0.2rem 0.5rem;
   border-radius: 4px;
-  color: #38bdf8;
+  color: var(--va-primary);
   font-family: 'Inter', monospace;
   font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.notes-cell {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  max-width: 200px;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Modal Premium */
@@ -479,9 +496,14 @@ watch([searchQuery, filterMethod], () => {
 }
 
 .save-btn-premium {
-  background: linear-gradient(135deg, #22c55e, #10b981) !important;
   border-radius: 10px !important;
   font-weight: 700 !important;
+}
+
+.primary-gradient {
+  background: linear-gradient(135deg, #22c55e, #10b981) !important;
+  color: white !important;
+  box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3) !important;
 }
 
 .cancel-btn {

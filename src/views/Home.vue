@@ -51,7 +51,7 @@
         <div class="container hero-grid-main">
           <div class="hero-text-content">
             <h1 class="hero-title hero-heading hero-visible">
-              {{ t('home.hero.title1') }} <span class="hero-highlight">{{ t('home.hero.title2') }}</span><br />
+              {{ t('home.hero.title1') }} <span class="hero-highlight">{{ t('home.hero.title2') }}</span>
               {{ t('home.hero.title3') }}
             </h1>
             <h2 class="hero-subheadline hero-visible">
@@ -357,44 +357,7 @@
       </div>
     </section>
 
-    <!-- Trust Badges & Stats Section -->
-    <section class="trust-section section-light">
-      <div class="wave-divider" style="color: #f8fafc;">
-        <svg viewBox="0 0 1440 100" preserveAspectRatio="none">
-          <path d="M0,0 C480,100 960,100 1440,0 V100 H0 Z" fill="currentColor"></path>
-        </svg>
-      </div>
-      <div class="container">
-        <div class="section-header reveal" :class="{ 'reveal-visible': clientsVisible }">
-           <span class="section-tag">{{ t('home.sections.trust') }}</span>
-           <h2 class="section-title">Powered by Automation</h2>
-        </div>
-        <div class="trust-grid reveal" :class="{ 'reveal-visible': clientsVisible }">
-           <div v-for="badge in tm('home.trust.badges')" :key="(badge as any).label" class="trust-badge-card">
-              <VaIcon name="verified" color="#22c55e" size="large" />
-              <div class="trust-label">{{ (badge as any).label }}</div>
-           </div>
-        </div>
-        <div class="stats-grid-automation reveal" :class="{ 'reveal-visible': clientsVisible }">
-           <div class="stat-item-auto">
-              <div class="stat-val">🤖 24/7</div>
-              <div class="stat-lbl">{{ t('home.stats.automation') }}</div>
-           </div>
-           <div class="stat-item-auto">
-              <div class="stat-val">💰 0%</div>
-              <div class="stat-lbl">{{ t('home.stats.missedPayments') }}</div>
-           </div>
-           <div class="stat-item-auto">
-              <div class="stat-val">⏰ 95%</div>
-              <div class="stat-lbl">{{ t('home.stats.timeSavings') }}</div>
-           </div>
-           <div class="stat-item-auto">
-              <div class="stat-val">📊 100%</div>
-              <div class="stat-lbl">{{ t('home.stats.accuracy') }}</div>
-           </div>
-        </div>
-      </div>
-    </section>
+
 
     <!-- CTA Section -->
     <section id="contact" class="final-cta-section section-dark">
@@ -468,14 +431,7 @@ const statsValues = reactive({
   uptime: "0%"
 });
 
-const heroStats = computed(() => {
-  locale.value; // Explicitly track locale changes
-  return [
-    { label: t('home.stats.properties'), display: statsValues.properties, target: 500, icon: "home_work" },
-    { label: t('home.stats.tenants'), display: statsValues.tenants, target: 1200, icon: "people" },
-    { label: t('home.stats.uptime'), display: statsValues.uptime, target: 99.8, icon: "trending_up" },
-  ];
-});
+
 
 // Section visibility for scroll reveals
 const automationVisible = ref(false);
@@ -485,7 +441,6 @@ const howItWorksVisible = ref(false);
 const mobileVisible = ref(false);
 const premiumVisible = ref(false);
 const testimonialsVisible = ref(false);
-const clientsVisible = ref(false);
 const ctaVisible = ref(false);
 
 const navLinks = computed(() => {
@@ -499,26 +454,7 @@ const navLinks = computed(() => {
   ];
 });
 
-const features = computed(() => {
-  locale.value; // Explicitly track locale changes
-  return [
-    { icon: "home_work", title: t('home.featureList.propTitle'), description: t('home.featureList.propDesc'), color: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" },
-    { icon: "receipt_long", title: t('home.featureList.billTitle'), description: t('home.featureList.billDesc'), color: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" },
-    { icon: "description", title: t('home.featureList.contractTitle'), description: t('home.featureList.contractDesc'), color: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)" },
-    { icon: "analytics", title: t('home.featureList.reportTitle'), description: t('home.featureList.reportDesc'), color: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)" },
-    { icon: "sms", title: t('home.featureList.smsTitle'), description: t('home.featureList.smsDesc'), color: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)" },
-    { icon: "cloud_upload", title: t('home.featureList.cloudTitle'), description: t('home.featureList.cloudDesc'), color: "linear-gradient(135deg, #30cfd0 0%, #330867 100%)" },
-  ];
-});
 
-const services = computed(() => {
-  locale.value; // Explicitly track locale changes
-  return [
-    { icon: "apartment", title: t('home.serviceList.resTitle'), description: t('home.serviceList.resDesc'), color: "#667eea" },
-    { icon: "business", title: t('home.serviceList.comTitle'), description: t('home.serviceList.comDesc'), color: "#f5576c" },
-    { icon: "support_agent", title: t('home.serviceList.supTitle'), description: t('home.serviceList.supDesc'), color: "#4facfe" },
-  ];
-});
 
 const testimonials = computed(() => {
   locale.value; // Explicitly track locale changes
@@ -528,14 +464,7 @@ const testimonials = computed(() => {
   ];
 });
 
-const clients = [
-  { name: "Skyline Properties", icon: "domain" },
-  { name: "Urban Estates", icon: "location_city" },
-  { name: "Prime Realty", icon: "apartment" },
-  { name: "Coastal Homes", icon: "home" },
-  { name: "Metro Living", icon: "business" },
-  { name: "Elite Properties", icon: "villa" },
-];
+
 
 const footerCols = computed(() => [
   { title: t('home.footer.col1Title'), links: tm('home.footer.col1Links') as string[] },
@@ -586,12 +515,11 @@ onMounted(() => {
         else if (id === "premium-features") premiumVisible.value = true;
         else if (id === "testimonials") testimonialsVisible.value = true;
         else if (id === "contact") ctaVisible.value = true;
-        else if (e.target.classList.contains("clients-section")) clientsVisible.value = true;
       }
     });
   }, { threshold: 0.1, rootMargin: "0px 0px -50px 0px" });
 
-  document.querySelectorAll("#automation, #features, #pain-points, #how-it-works, #mobile-highlights, #premium-features, #testimonials, #contact, .clients-section").forEach((el) => observer!.observe(el));
+  document.querySelectorAll("#automation, #features, #pain-points, #how-it-works, #mobile-highlights, #premium-features, #testimonials, #contact").forEach((el) => observer!.observe(el));
 });
 
 onUnmounted(() => {
@@ -686,7 +614,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   overflow: hidden;
-  padding: 10rem 8%;
+  padding: 10rem 4%;
   background-color: #f8fafc;
   z-index: 1; /* Lowest */
 }
@@ -1106,11 +1034,11 @@ onUnmounted(() => {
   align-items: center;
 }
 .hero-phone-frame {
-  width: 280px;
-  height: 560px;
+  width: 320px;
+  height: 640px;
   background: #111;
-  border: 10px solid #222;
-  border-radius: 40px;
+  border: 12px solid #222;
+  border-radius: 48px;
   position: relative;
   z-index: 5;
   transform: rotateY(-15deg) rotateX(5deg);
@@ -1155,7 +1083,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   overflow: hidden;
-  padding: 8rem 8% 6rem; /* Normalized padding */
+  padding: 10rem 4% 8rem; /* Normalized padding */
   background-color: #01160d;
   z-index: 1;
 }
@@ -1211,10 +1139,10 @@ onUnmounted(() => {
   position: absolute;
   top: -10%;
   right: -5%;
-  width: 600px;
-  height: 600px;
-  background: radial-gradient(circle, rgba(34,197,94,0.12) 0%, transparent 70%);
-  filter: blur(100px);
+  width: 800px;
+  height: 800px;
+  background: radial-gradient(circle, rgba(34,197,94,0.15) 0%, transparent 70%);
+  filter: blur(120px);
   z-index: 3;
 }
 .hero-glow-2 {
@@ -1230,12 +1158,13 @@ onUnmounted(() => {
 
 .hero-grid-main {
   display: grid;
-  grid-template-columns: 1.15fr 0.85fr; /* Optimized proportions */
+  grid-template-columns: 1.4fr 0.6fr; /* Text priority (70/30 split) */
   align-items: center;
-  gap: 4rem;
+  gap: 2rem; /* Reduced gap to keep visuals connected */
   position: relative;
   z-index: 5;
   width: 100%;
+  max-width: 1440px !important; /* Expansive layout */
 }
 
 @media (max-width: 1024px) {
@@ -1249,10 +1178,13 @@ onUnmounted(() => {
   }
 }
 
-.hero-text-content { max-width: 900px; }
+.hero-text-content { 
+  max-width: 100%; /* Allow text to breathe */
+  text-align: left;
+}
 
 .hero-title {
-  font-size: 3.75rem; /* Slightly smaller for more professional look */
+  font-size: 4.5rem; /* Slightly smaller for more professional look */
   font-weight: 850;
   color: #ffffff;
   line-height: 1.1;
@@ -1263,7 +1195,7 @@ onUnmounted(() => {
 }
 
 .hero-subheadline {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   font-weight: 700;
   color: #f1f5f9; /* Soft platinum color for professional distinction */
   margin-bottom: 2rem;
@@ -1274,7 +1206,7 @@ onUnmounted(() => {
 }
 
 .hero-description {
-  font-size: 1.15rem;
+  font-size: 1.25rem;
   color: #94a3b8; /* Muted slate for better hierarchy */
   max-width: 600px;
   margin: 0 0 3rem;
@@ -1490,7 +1422,7 @@ onUnmounted(() => {
 .hero-visual-content {
   position: relative;
   display: flex;
-  justify-content: center;
+  justify-content: flex-end; /* Align phone to the absolute right */
   align-items: center;
 }
 

@@ -1,5 +1,9 @@
 <template>
   <div class="modern-dashboard dark-premium-theme">
+    <div v-if="dashboardStore.loading" class="dashboard-loading-overlay">
+      <VaInnerLoading loading />
+    </div>
+
     <!-- Property Alert Banner (Mockup style) -->
     <div v-if="vacantUnits > 0" class="alert-banner">
       <div class="alert-icon-wrap">
@@ -69,27 +73,35 @@
           <div class="mock-card-body">
             <div class="prop-stats-row">
               <div class="m-stat">
-                <div class="m-stat-icon"><VaIcon name="apartment" size="small"/></div>
+                <div class="m-stat-icon prop-icon"><VaIcon name="apartment" size="small"/></div>
                 <div class="m-stat-info">
-                  <div class="m-val">{{ totalUnits }}</div>
-                  <div class="m-lbl">Total Properties</div>
+                  <div class="m-val">{{ totalProperties }}</div>
+                  <div class="m-lbl">Properties</div>
                 </div>
               </div>
               <div class="m-stat">
-                <div class="m-stat-icon"><VaIcon name="home" size="small"/></div>
+                <div class="m-stat-icon unit-icon"><VaIcon name="business" size="small"/></div>
+                <div class="m-stat-info">
+                  <div class="m-val">{{ totalUnits }}</div>
+                  <div class="m-lbl">Units</div>
+                </div>
+              </div>
+              <div class="m-stat">
+                <div class="m-stat-icon vacant-icon"><VaIcon name="event_busy" size="small"/></div>
                 <div class="m-stat-info">
                   <div class="m-val">{{ vacantUnits }}</div>
-                  <div class="m-lbl">Vacant Properties</div>
+                  <div class="m-lbl">Vacant</div>
                 </div>
               </div>
               <div class="m-stat">
                 <div class="m-stat-icon sms-stat-icon"><VaIcon name="sms" size="small"/></div>
                 <div class="m-stat-info">
                   <div class="m-val">{{ smsUsage?.usage?.sent || 0 }}/{{ smsUsage?.usage?.is_unlimited ? '∞' : smsUsage?.usage?.limit || 0 }}</div>
-                  <div class="m-lbl">SMS Usage</div>
+                  <div class="m-lbl">SMS</div>
                 </div>
               </div>
             </div>
+
             
             <div class="occupancy-row">
               <div class="occ-box">
@@ -146,6 +158,17 @@
                  </div>
               </div>
             </div>
+            <!-- Financial Footer -->
+            <div class="rev-footer">
+              <div class="rev-stat-item">
+                <span class="rev-stat-lbl">Outstanding</span>
+                <span class="rev-stat-val">Tzs {{ formatCurrency(outstandingAmount) }}</span>
+              </div>
+              <div class="rev-stat-item">
+                <span class="rev-stat-lbl">Overdue</span>
+                <span class="rev-stat-val text-danger">Tzs {{ formatCurrency(overdueAmount) }}</span>
+              </div>
+            </div>
           </div>
           <!-- Upgrade overlay -->
           <div v-if="!hasReportsAnalytics" class="locked-overlay">
@@ -163,16 +186,16 @@
         <div class="mock-card activity-mock" :class="{ 'feature-locked': !hasPaymentTracking }">
           <div class="mock-card-header">
             <h3>Recent Activity</h3>
-            <a href="/bills" class="view-all-link">View All</a>
+            <a href="/tenancies" class="view-all-link">View All</a>
           </div>
           <div class="mock-card-body">
             <div class="activity-filters">
               <button 
                 class="a-filter" 
-                :class="{ active: activeTab === 'bills' }" 
-                @click="activeTab = 'bills'"
+                :class="{ active: activeTab === 'tenancies' }" 
+                @click="activeTab = 'tenancies'"
               >
-                Bills
+                Tenancies
               </button>
               <button 
                 class="a-filter" 
@@ -183,24 +206,24 @@
               </button>
             </div>
             <div class="a-list">
-              <template v-if="activeTab === 'bills'">
-                <div v-for="bill in recentBills.slice(0,3)" :key="bill.id" class="a-item">
-                  <div class="a-icon"><VaIcon name="receipt" size="small" color="#f59e0b" /></div>
+              <template v-if="activeTab === 'tenancies'">
+                <div v-for="tenancy in recentTenancies.slice(0,3)" :key="tenancy.id" class="a-item">
+                  <div class="a-icon"><VaIcon name="person_add" size="small" color="#f59e0b" /></div>
                   <div class="a-details">
-                    <div class="a-title">{{ bill.tenant_name || 'Tenant' }}</div>
-                    <div class="a-sub">ID: {{ bill.id }} - {{ bill.billing_period }}</div>
+                    <div class="a-title">{{ tenancy.tenant || 'New Tenant' }}</div>
+                    <div class="a-sub">{{ tenancy.property }} - {{ tenancy.unit }}</div>
                   </div>
-                  <div class="a-amount pos">Tzs {{ formatCurrency(bill.amount) }} <span>▲</span></div>
+                  <div class="a-amount pos">Tzs {{ formatCurrency(tenancy.rent_amount) }} <span>▲</span></div>
                 </div>
               </template>
               <template v-else>
                 <div v-for="pay in recentPayments.slice(0,3)" :key="pay.id" class="a-item">
                   <div class="a-icon"><VaIcon name="payments" size="small" color="#22c55e" /></div>
                   <div class="a-details">
-                    <div class="a-title">{{ pay.tenant_name || 'Tenant' }}</div>
-                    <div class="a-sub">Payment: #{{ pay.id }}</div>
+                    <div class="a-title">{{ pay.tenant || 'Tenant' }}</div>
+                    <div class="a-sub">{{ pay.property }} - {{ pay.unit }}</div>
                   </div>
-                  <div class="a-amount pos">Tzs {{ formatCurrency(pay.amount_paid) }} <span>▲</span></div>
+                  <div class="a-amount pos">Tzs {{ formatCurrency(pay.amount) }} <span>▲</span></div>
                 </div>
               </template>
             </div>
@@ -231,8 +254,8 @@
             <div class="p-list">
               <div v-for="pay in recentPayments.slice(0,4)" :key="pay.id" class="p-item">
                 <div class="p-avatar"><VaIcon name="person" size="14px" /></div>
-                <div class="p-name">{{ pay.tenant_name || 'Tenant' }}</div>
-                <div class="p-amt">Tzs {{ formatCurrency(pay.amount_paid) }}</div>
+                <div class="p-name">{{ pay.tenant || 'Tenant' }}</div>
+                <div class="p-amt">Tzs {{ formatCurrency(pay.amount) }}</div>
               </div>
             </div>
           </div>
@@ -253,24 +276,39 @@ import { ref, onMounted, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import {
-  billingAPI,
-  paymentsAPI,
-  propertiesAPI,
-  tenanciesAPI,
-  unitsAPI,
-  // @ts-ignore
-} from "@/services/api";
+  useProfilesStore,
+  useSubscriptionsStore,
+  useDashboardStore,
+} from "@/stores";
 import { useSubscription } from "@/composables/useSubscription";
-import { useProfilesStore, useSubscriptionsStore } from "@/stores";
 
 const router = useRouter();
 const profilesStore = useProfilesStore();
 const subscriptionsStore = useSubscriptionsStore();
+const dashboardStore = useDashboardStore();
 const { hasPaymentTracking, hasReportsAnalytics } = useSubscription();
 
 const profile = computed(() => profilesStore.profile);
 const smsUsage = computed(() => subscriptionsStore.smsUsage);
 const canSendSMS = computed(() => smsUsage.value?.can_send ?? true);
+
+const summary = computed(() => dashboardStore.summary);
+const financial = computed(() => dashboardStore.financial);
+const recentActivity = computed(() => dashboardStore.recentActivity);
+
+const totalProperties = computed(() => summary.value.total_properties || 0);
+const totalUnits = computed(() => summary.value.total_units || 0);
+const vacantUnits = computed(() => summary.value.vacant_units || 0);
+const occupancyRate = computed(() => summary.value.occupancy_rate || 0);
+
+const totalRevenue = computed(() => financial.value.total_revenue || 0);
+const monthlyRevenue = computed(() => financial.value.current_month_revenue || 0);
+const lastMonthRevenue = computed(() => financial.value.last_month_revenue || 0);
+const outstandingAmount = computed(() => financial.value.outstanding_amount || 0);
+const overdueAmount = computed(() => financial.value.overdue_amount || 0);
+
+const recentPayments = computed(() => recentActivity.value.recent_payments || []);
+const recentTenancies = computed(() => recentActivity.value.recent_tenancies || []);
 
 const subscriptionAlert = computed(() => {
   const sub = profile.value?.subscription;
@@ -305,9 +343,8 @@ const goToUpgrade = (feature: string) => {
 
 const { t } = useI18n({ useScope: 'global' });
 
-const loading = ref(false);
 const dateRange = ref("last_28_days");
-const activeTab = ref("bills");
+const activeTab = ref("tenancies");
 const dateRangeOptions = [
   { value: "last_7_days", text: "Last 7 days" },
   { value: "last_28_days", text: "Last 28 days" },
@@ -315,28 +352,6 @@ const dateRangeOptions = [
   { value: "this_month", text: "This month" },
   { value: "last_month", text: "Last month" },
 ];
-
-
-const totalProperties = ref(0);
-const activeTenancies = ref(0);
-const unpaidBills = ref(0);
-const totalRevenue = ref(0);
-const monthlyRevenue = ref(0);
-const lastMonthRevenue = ref(0);
-const occupiedUnits = ref(0);
-const vacantUnits = ref(0);
-const totalUnits = ref(0);
-const maintenanceUnits = ref(0);
-const recentBills = ref<any[]>([]);
-const recentPayments = ref<any[]>([]);
-
-
-
-const occupancyRate = computed(() => {
-  if (totalUnits.value === 0) return 0;
-  return Math.round((occupiedUnits.value / totalUnits.value) * 100);
-});
-
 
 const revenueChartData = computed(() => {
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
@@ -355,7 +370,6 @@ const maxChartRevenue = computed(() => {
   return max > 0 ? max : 10000000;
 });
 
-
 const formatCurrency = (value: any) => {
   return parseFloat(value || 0).toLocaleString("en-US", {
     minimumFractionDigits: 2,
@@ -371,71 +385,14 @@ const formatCompact = (value: number) => {
   }).format(value);
 };
 
-
-
-
 const loadDashboardData = async () => {
-  loading.value = true;
   try {
-    const now = new Date();
-    const currentMonth = `${now.getFullYear()}-${("0" + (now.getMonth() + 1)).slice(-2)}`;
-    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const lastMonthStr = `${lastMonth.getFullYear()}-${("0" + (lastMonth.getMonth() + 1)).slice(-2)}`;
-
-    const [
-      propertiesRes,
-      tenanciesRes,
-      billsRes,
-      paymentsRes,
-      allPaymentsRes,
-      unitsRes,
-    ] = await Promise.all([
-      propertiesAPI.list(),
-      tenanciesAPI.list({ status: "active" }),
-      billingAPI.list({ status: "unpaid" }),
-      paymentsAPI.list({ ordering: "-created_at" }),
-      paymentsAPI.list(),
-      unitsAPI.list(),
-    ]);
-
-    totalProperties.value =
-      propertiesRes.data.count || propertiesRes.data.results?.length || 0;
-    activeTenancies.value =
-      tenanciesRes.data.count || tenanciesRes.data.results?.length || 0;
-    unpaidBills.value =
-      billsRes.data.count || billsRes.data.results?.length || 0;
-
-    const allPayments =
-      allPaymentsRes.data.results || allPaymentsRes.data || [];
-    totalRevenue.value = allPayments.reduce(
-      (sum:any, p:any) => sum + parseFloat(p.amount_paid || 0),
-      0,
-    );
-
-    monthlyRevenue.value = allPayments
-      .filter((p:any) => p.payment_date?.startsWith(currentMonth))
-      .reduce((sum:any, p:any) => sum + parseFloat(p.amount_paid || 0), 0);
-
-    lastMonthRevenue.value = allPayments
-      .filter((p:any) => p.payment_date?.startsWith(lastMonthStr))
-      .reduce((sum:any, p:any) => sum + parseFloat(p.amount_paid || 0), 0);
-
-    const units = unitsRes.data.results || unitsRes.data || [];
-    totalUnits.value = units.length;
-    occupiedUnits.value = units.filter((u:any) => u.status === "occupied").length;
-    vacantUnits.value = units.filter((u:any) => u.status === "vacant").length;
-    maintenanceUnits.value = units.filter(
-      (u:any) => u.status === "maintenance",
-    ).length;
-
-    recentBills.value = billsRes.data.results?.slice(0, 5) || [];
-    recentPayments.value = paymentsRes.data.results?.slice(0, 5) || [];
+    await dashboardStore.fetchStats({ range: dateRange.value });
   } catch (error) {
     console.error("Error loading dashboard data:", error);
-  } finally {
-    loading.value = false;        
   }
 };
+
 
 watch([activeTab, dateRange], () => {
   loadDashboardData();
@@ -456,6 +413,19 @@ onMounted(() => {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   color: var(--va-text-primary);
   transition: all 0.3s ease;
+  position: relative;
+}
+
+.dashboard-loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(var(--va-background-primary-rgb), 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
 }
 
 /* Alert Banner */
@@ -519,11 +489,14 @@ onMounted(() => {
 .mock-card-body { padding: 0 1.5rem 1.5rem; flex: 1; }
 
 /* Properties Stats */
-.prop-stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+.prop-stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
 .m-stat { display: flex; align-items: center; gap: .75rem; }
 .m-stat-icon { width: 36px; height: 36px; border-radius: 8px; background: rgba(34,197,94,0.15); color: #22c55e; display: flex; align-items: center; justify-content: center; }
+.prop-icon { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+.unit-icon { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+.vacant-icon { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
 .sms-stat-icon { background: rgba(14, 165, 233, 0.15); color: #0ea5e9; }
-.m-val { font-size: 1.25rem; font-weight: 600; color: var(--va-text-primary); line-height: 1.2; }
+.m-val { font-size: 1.15rem; font-weight: 600; color: var(--va-text-primary); line-height: 1.2; }
 .m-lbl { font-size: .75rem; color: var(--va-text-secondary); margin: .15rem 0; }
 .m-chg { font-size: .7rem; }
 .m-chg.pos { color: #22c55e; }
@@ -544,6 +517,33 @@ onMounted(() => {
 .rev-chart-area { flex: 1; position: relative; height: 160px; }
 .trend-curve { width: 100%; height: 100%; display: block; overflow: visible; }
 .chart-x-axis { display: flex; justify-content: space-between; font-size: .7rem; color: var(--va-text-secondary); margin-top: 0.5rem; }
+
+.rev-footer {
+  display: flex;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--va-background-border);
+  gap: 2rem;
+}
+.rev-stat-item {
+  display: flex;
+  flex-direction: column;
+}
+.rev-stat-lbl {
+  font-size: 0.75rem;
+  color: var(--va-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+.rev-stat-val {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--va-text-primary);
+}
+.rev-stat-val.danger {
+  color: #ef4444;
+}
 
 /* Activity */
 .activity-filters { display: flex; gap: .5rem; margin-bottom: 1rem; }

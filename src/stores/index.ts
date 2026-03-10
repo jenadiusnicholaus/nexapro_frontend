@@ -15,3 +15,4 @@ export { usePaymentsStore } from "./payments";
 export { useNotificationsStore } from "./notifications";
 export { useProfilesStore } from "./profiles";
 export { useSubscriptionsStore } from "./subscriptions";
+export { useDashboardStore } from "./dashboard";

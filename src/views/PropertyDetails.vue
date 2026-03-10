@@ -163,6 +163,15 @@
                   Send SMS
                 </VaButton>
                 <VaButton
+                  v-if="!rowData.deposit_paid"
+                  icon="account_balance_wallet"
+                  size="small"
+                  color="warning"
+                  @click="openConfirmDepositModal(rowData)"
+                >
+                  Confirm Deposit
+                </VaButton>
+                <VaButton
                   v-if="rowData.status === 'active'"
                   icon="logout"
                   size="small"
@@ -324,13 +333,7 @@
             class="mb-3"
           />
 
-          <VaAlert
-            v-if="!tenancyFormData.deposit_paid"
-            color="warning"
-            class="mb-3"
-          >
-            ⚠️ Receipt SMS will not be sent to tenant
-          </VaAlert>
+
 
           <VaSelect
             v-if="tenancyFormData.deposit_paid"
@@ -505,6 +508,14 @@
       size="medium"
       hide-default-actions
     >
+        <VaAlert
+          v-if="!selectedTenancyForView.deposit_paid"
+          color="warning"
+          icon="warning"
+          class="mb-4"
+        >
+          <strong>Reservation Mode:</strong> Awaiting deposit confirmation. SMS reminder sent to tenant.
+        </VaAlert>
         <div class="tenancy-premium-header">
           <div class="tenant-avatar-large">
             {{ selectedTenancyForView.tenant_name?.charAt(0) || 'T' }}
@@ -595,6 +606,16 @@
             :loading="generatingContractId === selectedTenancyForView.id"
           >
             Unsigned Contract
+          </VaButton>
+          <VaButton
+            v-if="!selectedTenancyForView.deposit_paid"
+            preset="primary"
+            icon="account_balance_wallet"
+            color="warning"
+            class="premium-btn shadow-sm"
+            @click="openConfirmDepositModal(selectedTenancyForView)"
+          >
+            Confirm Deposit
           </VaButton>
           <VaButton preset="secondary" @click="closeTenancyDetailsModal" class="premium-btn">
             Close
@@ -762,6 +783,50 @@
         </div>
       </div>
     </VaModal>
+
+    <!-- Confirm Deposit Modal -->
+    <VaModal
+      v-model="showConfirmDepositModal"
+      title="Confirm Deposit Payment"
+      hide-default-actions
+      size="small"
+    >
+      <VaForm ref="confirmDepositForm" @submit.prevent="confirmDeposit">
+        <p class="mb-4">
+          Confirming deposit for <strong>{{ currentTenancyForConfirm?.tenant_name }}</strong>.
+          This will auto-create a payment record and activate the tenancy billing.
+        </p>
+
+        <VaSelect
+          v-model="confirmDepositData.deposit_payment_method"
+          label="Payment Method"
+          :options="[
+            { value: 'cash', text: 'Cash' },
+            { value: 'bank', text: 'Bank Transfer' },
+            { value: 'mobile_money', text: 'Mobile Money (M-Pesa/Airtel/Tigo)' },
+            { value: 'cheque', text: 'Cheque' },
+            { value: 'other', text: 'Other' },
+          ]"
+          text-by="text"
+          value-by="value"
+          :rules="[(v: any) => !!v || 'Required']"
+          placeholder="Select payment method"
+          class="mb-4"
+        />
+
+        <VaInput
+          v-model="confirmDepositData.deposit_payment_reference"
+          label="Payment Reference (Optional)"
+          placeholder="e.g. TXN123456"
+          class="mb-4"
+        />
+
+        <div class="modal-actions">
+          <VaButton preset="secondary" @click="showConfirmDepositModal = false">Cancel</VaButton>
+          <VaButton type="submit" :loading="saving">Confirm & Activate</VaButton>
+        </div>
+      </VaForm>
+    </VaModal>
   </div>
 </template>
 
@@ -805,6 +870,14 @@ const movingOut = ref(false);
 const uploadingSignatures = ref(false);
 const generatingContractId = ref<number | null>(null);
 const sendingReminderId = ref<number | null>(null);
+
+const confirmDepositForm = ref<{ validate: () => Promise<boolean> } | null>(null);
+const showConfirmDepositModal = ref(false);
+const currentTenancyForConfirm = ref<any>(null);
+const confirmDepositData = ref({
+  deposit_payment_method: "mobile_money",
+  deposit_payment_reference: "",
+});
 const showSmsModal = ref(false);
 const currentTenancyForContract = ref<Record<string, unknown> | null>(null);
 const currentTenancyForSms = ref<Record<string, unknown> | null>(null);
@@ -953,11 +1026,12 @@ const getStatusColor = (status: unknown) => {
   return colors[String(status)] || "secondary";
 };
 
-const getTenancyStatusColor = (status: unknown) => {
+const getTenancyStatusColor = (status: any) => {
   const colors: Record<string, string> = {
     active: "success",
-    ended: "secondary",
-    pending: "warning",
+    completed: "info",
+    terminated: "danger",
+    pending_payment: "warning",
   };
   return colors[String(status)] || "secondary";
 };
@@ -1263,13 +1337,38 @@ const closeTenancyDetailsModal = () => {
   selectedTenancyForView.value = null;
 };
 
-const calculateDuration = (startDate: string, endDate: string) => {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const diffTime = Math.abs(end.getTime() - start.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  const months = Math.round(diffDays / 30.44); // More accurate month calculation
-  return `${months} months`;
+// calculateDuration was unused and causing lint warnings
+
+
+const openConfirmDepositModal = (tenancy: any) => {
+  currentTenancyForConfirm.value = tenancy;
+  confirmDepositData.value = {
+    deposit_payment_method: "mobile_money",
+    deposit_payment_reference: "",
+  };
+  showConfirmDepositModal.value = true;
+};
+
+const confirmDeposit = async () => {
+  const isValid = await confirmDepositForm.value?.validate();
+  if (!isValid || !currentTenancyForConfirm.value) return;
+
+  saving.value = true;
+  try {
+    await tenanciesStore.updateItem(currentTenancyForConfirm.value.id, {
+      deposit_paid: true,
+      ...confirmDepositData.value,
+    });
+    showConfirmDepositModal.value = false;
+    success("Deposit confirmed and tenancy activated!");
+    // Refresh the property detail view to reflect changes
+    await loadPropertyData(); // Changed from fetchPropertyDetails to loadPropertyData
+  } catch (err: any) {
+    console.error("Error confirming deposit:", err);
+    error(err.response?.data?.detail || "Failed to confirm deposit");
+  } finally {
+    saving.value = false;
+  }
 };
 
 const downloadUnsignedContract = async (tenancy: Record<string, unknown>) => {
@@ -1608,13 +1707,7 @@ const saveTenancy = async () => {
   const isValid = await tenancyForm.value?.validate();
   if (!isValid) return;
 
-  // Validation: Confirm payment if deposit_paid is checked
-  if (!tenancyFormData.value.deposit_paid) {
-    const confirmProceed = confirm(
-      "Payment not confirmed. Receipt SMS will not be sent to tenant. Continue?",
-    );
-    if (!confirmProceed) return;
-  }
+
 
   // Validation: Payment method required if deposit is paid
   if (
@@ -1627,13 +1720,10 @@ const saveTenancy = async () => {
 
   saving.value = true;
   try {
-    // Calculate total deposit amount (rent × duration)
-    const durationValue =
-      parseInt(tenancyFormData.value.stay_duration_value) ||
-      tenancyFormData.value.duration_months ||
-      6;
+    const stayDurationValue = parseInt(String(tenancyFormData.value.stay_duration_value)) || tenancyFormData.value.duration_months || 6;
+    const stayDurationUnit = tenancyFormData.value.stay_duration_unit || "month";
     const rentAmount = parseFloat(tenancyFormData.value.rent_amount);
-    const calculatedDeposit = rentAmount * durationValue;
+    const calculatedDeposit = rentAmount * stayDurationValue;
 
     // Build robust payload according to new billing system
     const tenancyPayload: any = {
@@ -1646,6 +1736,11 @@ const saveTenancy = async () => {
       deposit_amount: tenancyFormData.value.deposit_amount || calculatedDeposit,
       deposit_paid: tenancyFormData.value.deposit_paid,
       currency: tenancyFormData.value.currency || "TZS",
+      status: tenancyFormData.value.status || "active",
+      // Synchronize both fields to ensure backend receives correct duration
+      duration_months: stayDurationUnit === 'month' ? stayDurationValue : Math.ceil(stayDurationValue / 30),
+      stay_duration_value: stayDurationValue,
+      stay_duration_unit: stayDurationUnit,
     };
 
     // Add payment method only if deposit is paid
@@ -1657,32 +1752,12 @@ const saveTenancy = async () => {
         tenancyFormData.value.deposit_payment_method;
     }
 
-    // Add duration - prefer duration_months for clarity
-    if (tenancyFormData.value.duration_months) {
-      tenancyPayload.duration_months = Number(
-        tenancyFormData.value.duration_months,
-      );
-    } else if (tenancyFormData.value.stay_duration_value) {
-      tenancyPayload.stay_duration_value = parseInt(
-        String(tenancyFormData.value.stay_duration_value),
-      );
-      tenancyPayload.stay_duration_unit =
-        tenancyFormData.value.stay_duration_unit || "month";
-    }
-
     console.log("Creating tenancy with payload:", tenancyPayload);
 
     await tenanciesStore.createItem(tenancyPayload);
     closeTenancyModal();
 
-    // Show appropriate success message
-    if (tenancyFormData.value.deposit_paid) {
-      success("Tenancy created successfully! Receipt SMS sent to tenant.");
-    } else {
-      success(
-        "Tenancy created successfully. No receipt SMS sent (payment not confirmed).",
-      );
-    }
+    success("Tenancy created successfully!");
 
     // Refresh data
     await tenanciesStore.fetchList({ property: propertyId.value });
@@ -1788,6 +1863,13 @@ watch(
     }
 
     tenancyFormData.value.deposit_amount = String(rentNumber * durationNumber);
+
+    // Sync duration_months for backend consistency
+    if (tenancyFormData.value.stay_duration_unit === "month") {
+      tenancyFormData.value.duration_months = Math.floor(durationNumber);
+    } else {
+      tenancyFormData.value.duration_months = Math.ceil(durationNumber / 30);
+    }
   },
 );
 </script>

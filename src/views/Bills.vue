@@ -87,7 +87,7 @@
           <template #cell(status)="{ rowData }">
             <div 
               class="status-badge-premium" 
-              :class="rowData.status"
+              :class="rowData.status.toLowerCase()"
             >
               <span class="dot"></span>
               {{ rowData.status }}
@@ -178,7 +178,7 @@ const filterStatus = ref("");
 const filterPeriod = ref("");
 const generateForm = ref<{ validate: () => Promise<boolean> } | null>(null);
 
-const statusOptions = ["unpaid", "paid", "partially_paid", "overdue"];
+const statusOptions = ["unpaid", "paid", "partially_paid", "overdue", "pending_payment"];
 
 const generateData = ref({
   billing_period: "",
@@ -449,6 +449,14 @@ watch([searchQuery, filterStatus, filterPeriod], () => {
   border: 1px solid rgba(56, 189, 248, 0.2);
 }
 .status-badge-premium.partially_paid .dot { background: #38bdf8; }
+
+.status-badge-premium.pending_payment {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.1);
+}
+.status-badge-premium.pending_payment .dot { background: #f59e0b; box-shadow: 0 0 5px #f59e0b; }
 
 /* Modal Premium */
 .premium-modal {

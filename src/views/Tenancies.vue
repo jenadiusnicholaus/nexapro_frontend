@@ -86,6 +86,15 @@
                 Send SMS
               </VaButton>
               <VaButton
+                v-if="!rowData.deposit_paid"
+                icon="account_balance_wallet"
+                size="small"
+                color="warning"
+                @click="openConfirmDepositModal(rowData)"
+              >
+                Confirm Deposit
+              </VaButton>
+              <VaButton
                 v-if="rowData.status === 'active'"
                 icon="exit_to_app"
                 size="small"
@@ -185,9 +194,7 @@
           class="mb-3"
         />
 
-        <VaAlert v-if="!moveInData.deposit_paid" color="warning" class="mb-3">
-          ⚠️ Receipt SMS will not be sent to tenant
-        </VaAlert>
+
 
         <VaSelect
           v-if="moveInData.deposit_paid"
@@ -383,6 +390,50 @@
         </div>
       </div>
     </VaModal>
+
+    <!-- Confirm Deposit Modal -->
+    <VaModal
+      v-model="showConfirmDepositModal"
+      title="Confirm Deposit Payment"
+      hide-default-actions
+      size="small"
+    >
+      <VaForm ref="confirmDepositForm" @submit.prevent="confirmDeposit">
+        <p class="mb-4">
+          Confirming deposit for <strong>{{ currentTenancyForConfirm?.tenant_name }}</strong>.
+          This will auto-create a payment record and activate the tenancy billing.
+        </p>
+
+        <VaSelect
+          v-model="confirmDepositData.deposit_payment_method"
+          label="Payment Method"
+          :options="[
+            { value: 'cash', text: 'Cash' },
+            { value: 'bank', text: 'Bank Transfer' },
+            { value: 'mobile_money', text: 'Mobile Money (M-Pesa/Airtel/Tigo)' },
+            { value: 'cheque', text: 'Cheque' },
+            { value: 'other', text: 'Other' },
+          ]"
+          text-by="text"
+          value-by="value"
+          :rules="[validators.required]"
+          placeholder="Select payment method"
+          class="mb-4"
+        />
+
+        <VaInput
+          v-model="confirmDepositData.deposit_payment_reference"
+          label="Payment Reference (Optional)"
+          placeholder="e.g. TXN123456"
+          class="mb-4"
+        />
+
+        <div class="modal-actions">
+          <VaButton preset="secondary" @click="showConfirmDepositModal = false">Cancel</VaButton>
+          <VaButton type="submit" :loading="saving">Confirm & Activate</VaButton>
+        </div>
+      </VaForm>
+    </VaModal>
   </div>
 </template>
 
@@ -429,7 +480,15 @@ const filterUnit = ref("");
 const filterStatus = ref("");
 const moveInForm = ref<{ validate: () => Promise<boolean> } | null>(null);
 const moveOutForm = ref<{ validate: () => Promise<boolean> } | null>(null);
+const confirmDepositForm = ref<{ validate: () => Promise<boolean> } | null>(null);
 const moveOutDate = ref("");
+
+const showConfirmDepositModal = ref(false);
+const currentTenancyForConfirm = ref<Record<string, unknown> | null>(null);
+const confirmDepositData = ref({
+  deposit_payment_method: "mobile_money",
+  deposit_payment_reference: "",
+});
 
 // Signature upload refs
 const ownerSignatureInput = ref<HTMLInputElement | null>(null);
@@ -442,7 +501,7 @@ const ownerSignaturePreview = ref<string | null>(null);
 const ownerStampPreview = ref<string | null>(null);
 const tenantSignaturePreview = ref<string | null>(null);
 
-const statusOptions = ["active", "completed", "terminated"];
+const statusOptions = ["active", "completed", "terminated", "pending_payment"];
 
 const moveInData = ref({
   tenant: null,
@@ -498,6 +557,7 @@ const getStatusColor = (status: unknown) => {
     active: "success",
     completed: "info",
     terminated: "danger",
+    pending_payment: "warning",
   };
   return colors[String(status)] || "secondary";
 };
@@ -515,13 +575,7 @@ const saveMoveIn = async () => {
   const isValid = await moveInForm.value?.validate();
   if (!isValid) return;
 
-  // Validation: Confirm payment if deposit_paid is checked
-  if (!moveInData.value.deposit_paid) {
-    const confirmProceed = confirm(
-      "Payment not confirmed. Receipt SMS will not be sent to tenant. Continue?",
-    );
-    if (!confirmProceed) return;
-  }
+
 
   // Validation: Payment method required if deposit is paid
   if (
@@ -535,12 +589,10 @@ const saveMoveIn = async () => {
   saving.value = true;
   try {
     // Calculate total deposit amount (rent × duration)
-    const durationValue =
-      parseInt(moveInData.value.stay_duration_value) ||
-      moveInData.value.duration_months ||
-      6;
+    const stayDurationValue = parseInt(String(moveInData.value.stay_duration_value)) || moveInData.value.duration_months || 6;
+    const stayDurationUnit = moveInData.value.stay_duration_unit || "month";
     const rentAmount = parseFloat(moveInData.value.rent_amount);
-    const calculatedDeposit = rentAmount * durationValue;
+    const calculatedDeposit = rentAmount * stayDurationValue;
 
     // Build robust payload according to new billing system
     const tenancyPayload: any = {
@@ -554,41 +606,18 @@ const saveMoveIn = async () => {
       deposit_paid: moveInData.value.deposit_paid,
       currency: moveInData.value.currency || "TZS",
       status: moveInData.value.status || "active",
+      // Synchronize both fields to ensure backend receives correct duration
+      duration_months: stayDurationUnit === 'month' ? stayDurationValue : Math.ceil(stayDurationValue / 30),
+      stay_duration_value: stayDurationValue,
+      stay_duration_unit: stayDurationUnit,
     };
-
-    // Add payment method only if deposit is paid
-    if (
-      moveInData.value.deposit_paid &&
-      moveInData.value.deposit_payment_method
-    ) {
-      tenancyPayload.deposit_payment_method =
-        moveInData.value.deposit_payment_method;
-    }
-
-    // Add duration - prefer duration_months for clarity
-    if (moveInData.value.duration_months) {
-      tenancyPayload.duration_months = Number(moveInData.value.duration_months);
-    } else if (moveInData.value.stay_duration_value) {
-      tenancyPayload.stay_duration_value = parseInt(
-        String(moveInData.value.stay_duration_value),
-      );
-      tenancyPayload.stay_duration_unit =
-        moveInData.value.stay_duration_unit || "month";
-    }
 
     console.log("Creating tenancy with payload:", tenancyPayload);
 
     await tenanciesStore.createItem(tenancyPayload);
     closeMoveInModal();
 
-    // Show appropriate success message
-    if (moveInData.value.deposit_paid) {
-      success("Tenant moved in successfully! Receipt SMS sent to tenant.");
-    } else {
-      success(
-        "Tenant moved in successfully. No receipt SMS sent (payment not confirmed).",
-      );
-    }
+    success("Tenant moved in successfully!");
 
     await unitsStore.fetchList({ status: "vacant" });
   } catch (err: any) {
@@ -942,6 +971,35 @@ const confirmSendReminder = async () => {
   }
 };
 
+const openConfirmDepositModal = (tenancy: Record<string, unknown>) => {
+  currentTenancyForConfirm.value = tenancy;
+  confirmDepositData.value = {
+    deposit_payment_method: "mobile_money",
+    deposit_payment_reference: "",
+  };
+  showConfirmDepositModal.value = true;
+};
+
+const confirmDeposit = async () => {
+  const isValid = await confirmDepositForm.value?.validate();
+  if (!isValid || !currentTenancyForConfirm.value) return;
+
+  saving.value = true;
+  try {
+    await tenanciesStore.updateItem(currentTenancyForConfirm.value.id as number, {
+      deposit_paid: true,
+      ...confirmDepositData.value,
+    });
+    showConfirmDepositModal.value = false;
+    success("Deposit confirmed and tenancy activated!");
+  } catch (err: any) {
+    console.error("Error confirming deposit:", err);
+    error(err.response?.data?.detail || "Failed to confirm deposit");
+  } finally {
+    saving.value = false;
+  }
+};
+
 onMounted(() => {
   loadTenancies().catch((err) =>
     console.error("Error loading tenancies:", err),
@@ -952,6 +1010,31 @@ onMounted(() => {
 });
 
 let searchDebounce: ReturnType<typeof setTimeout> | null = null;
+watch(
+  [
+    () => moveInData.value.rent_amount,
+    () => moveInData.value.stay_duration_value,
+  ],
+  ([rent, duration]) => {
+    const rentNumber = parseFloat(String(rent));
+    const durationNumber = parseFloat(String(duration));
+
+    if (!rentNumber || !durationNumber) {
+      moveInData.value.deposit_amount = "";
+      return;
+    }
+
+    moveInData.value.deposit_amount = String(rentNumber * durationNumber);
+
+    // Sync duration_months for backend consistency
+    if (moveInData.value.stay_duration_unit === "month") {
+      moveInData.value.duration_months = Math.floor(durationNumber);
+    } else {
+      moveInData.value.duration_months = Math.ceil(durationNumber / 30);
+    }
+  },
+);
+
 watch(searchQuery, () => {
   if (searchDebounce) clearTimeout(searchDebounce);
   searchDebounce = setTimeout(() => {
