@@ -356,10 +356,14 @@ const dateRangeOptions = [
 const revenueChartData = computed(() => {
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
   const baseValue = monthlyRevenue.value > 0 ? monthlyRevenue.value : 10000000;
-  return months.map((month) => ({
+  // Use a fixed trend instead of Math.random() to avoid unnecessary re-renders
+  const trend = [0.65, 0.72, 0.68, 0.85, 0.78, 0.92];
+  const secondaryTrend = [0.45, 0.52, 0.48, 0.65, 0.58, 0.72];
+  
+  return months.map((month, index) => ({
     label: month,
-    primary: Math.floor(Math.random() * (baseValue * 0.4)) + (baseValue * 0.6), 
-    secondary: Math.floor(Math.random() * (baseValue * 0.4)) + (baseValue * 0.4),
+    primary: baseValue * trend[index],
+    secondary: baseValue * secondaryTrend[index],
   }));
 });
 
@@ -394,7 +398,7 @@ const loadDashboardData = async () => {
 };
 
 
-watch([activeTab, dateRange], () => {
+watch([dateRange], () => {
   loadDashboardData();
 });
 
