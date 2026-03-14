@@ -57,53 +57,76 @@
             </VaChip>
           </template>
           <template #cell(actions)="{ rowData }">
-            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap">
-              <VaButton
-                icon="visibility"
-                size="small"
-                preset="secondary"
-                @click="viewTenancyDetails(rowData)"
-              >
-                View Details
-              </VaButton>
-              <VaButton
-                icon="description"
-                size="small"
-                color="primary"
-                @click="generateContract(rowData)"
-                :loading="generatingContractId === rowData.id"
-              >
-                Contract
-              </VaButton>
-              <VaButton
-                v-if="rowData.status === 'active'"
-                icon="sms"
-                size="small"
-                color="success"
-                @click="sendReminder(rowData)"
-                :loading="sendingReminderId === rowData.id"
-              >
-                Send SMS
-              </VaButton>
-              <VaButton
-                v-if="!rowData.deposit_paid"
-                icon="account_balance_wallet"
-                size="small"
-                color="warning"
-                @click="openConfirmDepositModal(rowData)"
-              >
-                Confirm Deposit
-              </VaButton>
-              <VaButton
-                v-if="rowData.status === 'active'"
-                icon="exit_to_app"
-                size="small"
-                color="danger"
-                @click="openMoveOutModal(rowData)"
-              >
-                Move Out
-              </VaButton>
-            </div>
+            <VaDropdown placement="bottom-end" :offset="[0, 10]">
+              <template #anchor>
+                <VaButton icon="more_vert" preset="secondary" />
+              </template>
+              <VaDropdownContent>
+                <div class="dropdown-actions-list">
+                  <VaButton
+                    preset="plain"
+                    icon="visibility"
+                    size="small"
+                    class="dropdown-action-item"
+                    @click="viewTenancyDetails(rowData)"
+                  >
+                    View Details
+                  </VaButton>
+                  <VaButton
+                    preset="plain"
+                    icon="edit"
+                    size="small"
+                    class="dropdown-action-item"
+                    color="info"
+                    @click="openUpdateModal(rowData)"
+                  >
+                    Update Tenancy / Duration
+                  </VaButton>
+                  <VaButton
+                    preset="plain"
+                    icon="description"
+                    size="small"
+                    class="dropdown-action-item"
+                    @click="generateContract(rowData)"
+                    :loading="generatingContractId === rowData.id"
+                  >
+                    Contract
+                  </VaButton>
+                  <VaButton
+                    v-if="rowData.status === 'active'"
+                    preset="plain"
+                    icon="sms"
+                    size="small"
+                    class="dropdown-action-item"
+                    @click="sendReminder(rowData)"
+                    :loading="sendingReminderId === rowData.id"
+                  >
+                    Send SMS
+                  </VaButton>
+                  <VaButton
+                    v-if="!rowData.deposit_paid"
+                    preset="plain"
+                    icon="account_balance_wallet"
+                    size="small"
+                    class="dropdown-action-item"
+                    @click="openConfirmDepositModal(rowData)"
+                  >
+                    Confirm Deposit
+                  </VaButton>
+                  <VaButton
+                    v-if="rowData.status === 'active'"
+                    preset="plain"
+                    icon="exit_to_app"
+                    size="small"
+                    class="dropdown-action-item"
+                    color="danger"
+                    @click="openMoveOutModal(rowData)"
+                  >
+                    Move Out
+                  </VaButton>
+                </div>
+              </VaDropdownContent>
+            </VaDropdown>
           </template>
         </AppDataTable>
       </VaCardContent>
@@ -434,6 +457,54 @@
         </div>
       </VaForm>
     </VaModal>
+    <!-- Update Tenancy Modal -->
+    <VaModal
+      v-model="showUpdateModal"
+      title="Update Tenancy"
+      hide-default-actions
+      size="medium"
+    >
+      <VaForm ref="updateForm" @submit.prevent="saveUpdate">
+        <div class="mb-4">
+          <p>Update tenancy details for <strong>{{ currentTenancyForUpdate?.tenant_name }}</strong></p>
+        </div>
+
+        <VaInput
+          v-model="updateData.rent_amount"
+          label="Rent Amount"
+          type="number"
+          :rules="[validators.required]"
+          class="mb-4"
+        />
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem" class="mb-4">
+          <VaInput
+            v-model="updateData.duration_months"
+            label="Duration (Months)"
+            type="number"
+            :rules="[validators.required]"
+          />
+          <VaSelect
+            v-model="updateData.status"
+            label="Status"
+            :options="['active', 'completed', 'terminated', 'pending_payment']"
+            :rules="[validators.required]"
+          />
+        </div>
+
+        <VaInput
+          v-model="updateData.move_in_date"
+          label="Move-In Date"
+          type="date"
+          class="mb-4"
+        />
+
+        <div class="modal-actions">
+          <VaButton preset="secondary" @click="showUpdateModal = false">Cancel</VaButton>
+          <VaButton type="submit" :loading="saving">Update Tenancy</VaButton>
+        </div>
+      </VaForm>
+    </VaModal>
   </div>
 </template>
 
@@ -449,7 +520,6 @@ import {
   usePropertiesStore,
 } from "@/stores";
 import { tenanciesAPI, ownersAPI, tenantsAPI } from "@/services/api";
-import { buildPayload } from "@/utils/apiPayload";
 import { validators } from "@/utils/validators";
 
 const router = useRouter();
@@ -484,11 +554,20 @@ const confirmDepositForm = ref<{ validate: () => Promise<boolean> } | null>(null
 const moveOutDate = ref("");
 
 const showConfirmDepositModal = ref(false);
+const showUpdateModal = ref(false);
 const currentTenancyForConfirm = ref<Record<string, unknown> | null>(null);
+const currentTenancyForUpdate = ref<Record<string, unknown> | null>(null);
 const confirmDepositData = ref({
   deposit_payment_method: "mobile_money",
   deposit_payment_reference: "",
 });
+const updateData = ref({
+  rent_amount: "",
+  duration_months: 6,
+  status: "active",
+  move_in_date: "",
+});
+const updateForm = ref<{ validate: () => Promise<boolean> } | null>(null);
 
 // Signature upload refs
 const ownerSignatureInput = ref<HTMLInputElement | null>(null);
@@ -526,7 +605,7 @@ const columns = [
   { key: "move_in_date", label: "Move-In Date", sortable: true },
   { key: "rent_amount", label: "Rent", sortable: true },
   { key: "status", label: "Status", sortable: true },
-  { key: "actions", label: "Actions", width: 450 },
+  { key: "actions", label: "Actions", width: 80 },
 ];
 
 const tenantOptions = computed(() =>
@@ -692,6 +771,45 @@ const closeMoveInModal = () => {
     deposit_payment_method: "",
     duration_months: 6,
   };
+};
+
+const openUpdateModal = (tenancy: any) => {
+  currentTenancyForUpdate.value = tenancy;
+  updateData.value = {
+    rent_amount: String(tenancy.rent_amount || ""),
+    duration_months: (tenancy.duration_months as number) || (tenancy.stay_duration_display?.months as number) || 6,
+    status: (tenancy.status as string) || "active",
+    move_in_date: (tenancy.move_in_date as string) || "",
+  };
+  showUpdateModal.value = true;
+};
+
+const saveUpdate = async () => {
+  const isValid = await updateForm.value?.validate();
+  if (!isValid || !currentTenancyForUpdate.value) return;
+
+  saving.value = true;
+  try {
+    const duration = parseInt(String(updateData.value.duration_months));
+    const payload = {
+      rent_amount: parseFloat(updateData.value.rent_amount),
+      duration_months: duration,
+      edit_duration_months: duration,
+      stay_duration_value: duration,
+      stay_duration_unit: 'month',
+      status: updateData.value.status,
+      move_in_date: updateData.value.move_in_date,
+    };
+
+    await tenanciesStore.updateItem(currentTenancyForUpdate.value.id as number, payload);
+    showUpdateModal.value = false;
+    success("Tenancy updated successfully!");
+  } catch (err: any) {
+    console.error("Error updating tenancy:", err);
+    error(err.response?.data?.detail || "Failed to update tenancy");
+  } finally {
+    saving.value = false;
+  }
 };
 
 const closeMoveOutModal = () => {
@@ -1000,6 +1118,7 @@ const confirmDeposit = async () => {
   }
 };
 
+
 onMounted(() => {
   loadTenancies().catch((err) =>
     console.error("Error loading tenancies:", err),
@@ -1171,5 +1290,17 @@ watch([filterProperty, filterUnit, filterStatus], () => {
   font-size: 0.875rem;
   color: #718096;
   margin: 0.25rem 0 0 0;
+}
+
+.dropdown-actions-list {
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem;
+}
+
+.dropdown-action-item {
+  justify-content: flex-start !important;
+  width: 100%;
+  text-align: left;
 }
 </style>
