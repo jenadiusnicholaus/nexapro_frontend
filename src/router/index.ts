@@ -125,6 +125,16 @@ const routes: RouteRecordRaw[] = [
     redirect: { name: "login" },
   },
   {
+    path: "/privacy-policy",
+    name: "privacy-policy",
+    component: () => import("@/views/docs/PrivacyPolicy.vue"),
+  },
+  {
+    path: "/terms-of-service",
+    name: "terms-of-service",
+    component: () => import("@/views/docs/TermsOfService.vue"),
+  },
+  {
     path: "/:pathMatch(.*)*",
     redirect: { name: "home" },
   },

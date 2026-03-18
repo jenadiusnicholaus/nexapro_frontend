@@ -77,6 +77,7 @@ export default {
       services: 'Huduma',
       testimonials: 'Shuhuda',
       contact: 'Wasiliana',
+      backToHome: 'Rudi Nyumbani',
     },
     hero: {
       badge: "🚀 Baadaye ya Usimamizi wa Nyumba",
@@ -165,7 +166,7 @@ export default {
       col2Title: 'Kampuni',
       col2Links: ['Kuhusu Sisi', 'Kazi', 'Blogu', 'Nyaraka kwa Waandishi'],
       col3Title: 'Msaada',
-      col3Links: ['Kituo cha Msaada', 'Wasiliana Nasi', 'Nyaraka', 'Hali ya Mfumo'],
+      col3Links: ['Kituo cha Msaada', 'Wasiliana Nasi: +255770622045', 'Barua Pepe: quantumvisionlimited@quantumvision-tech.com', 'Nyingine: jnichoraus3@gmail.com'],
       col4Title: 'Sheria',
       col4Links: ['Sera ya Faragha', 'Sheria na Masharti', 'Usalama', 'Sera ya Vidakuzi'],
     }

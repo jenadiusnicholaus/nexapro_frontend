@@ -11,26 +11,49 @@
           </div>
         </div>
         <div class="navbar-menu" :class="{ active: mobileMenuOpen }">
-          <a v-for="link in navLinks" :key="link.id" :href="'#' + link.id" @click="scrollToSection(link.id)" class="nav-link">
-            {{ link.label }}
-            <span class="nav-link-underline"></span>
-          </a>
+          <template v-for="link in navLinks" :key="link.id">
+            <template v-if="link.id === 'legal'">
+              <VaDropdown :offset="[0, 10]" trigger="hover" transition="fade-down">
+                <template #anchor>
+                  <a href="javascript:void(0)" class="nav-link dropdown-trigger">
+                    {{ link.label }} <VaIcon name="expand_more" size="small" />
+                    <span class="nav-link-underline"></span>
+                  </a>
+                </template>
+                <VaDropdownContent class="nav-dropdown-content">
+                  <div
+                    v-for="sub in (link.subLinks as any[])"
+                    :key="sub.id"
+                    class="dropdown-item"
+                    @click="router.push(sub.route)"
+                  >
+                    {{ sub.label }}
+                  </div>
+                </VaDropdownContent>
+              </VaDropdown>
+            </template>
+            <a v-else-if="!link.route" :href="'#' + link.id" @click.prevent="scrollToSection(link.id)" class="nav-link">
+              {{ link.label }}
+              <span class="nav-link-underline"></span>
+            </a>
+            <a v-else href="javascript:void(0)" @click.prevent="router.push(link.route)" class="nav-link">
+              {{ link.label }}
+              <span class="nav-link-underline"></span>
+            </a>
+          </template>
         </div>
         <div class="navbar-actions flex items-center">
-          <!-- Relocated Language Switcher -->
-          <div class="nav-lang-switcher mr-4">
-            <button @click="changeLanguage(locale === 'en' ? 'sw' : 'en')" class="lang-toggle-btn">
-              {{ currentLocaleFlag }} {{ locale.toUpperCase() }}
+          <div class="lang-switcher-wrapper mr-6">
+            <button @click="changeLanguage(locale === 'en' ? 'sw' : 'en')" class="lang-toggle-link">
+              <span class="mr-1">{{ currentLocaleFlag }}</span>
+              {{ locale.toUpperCase() }}
             </button>
           </div>
-          <button class="nav-login-btn-plain" @click="goToLogin">{{ t('home.nav.login') }}</button>
-          <VaButton @click="getStarted" class="nav-btn-solid ml-3">
-            {{ t('home.nav.getStarted') }}
-          </VaButton>
+          <a href="javascript:void(0)" @click.prevent="goToLogin" class="nav-link login-link mr-4">{{ t('home.nav.login') }}</a>
+          <button class="mobile-menu-btn" @click="toggleMobileMenu">
+            <VaIcon :name="mobileMenuOpen ? 'close' : 'menu'" />
+          </button>
         </div>
-        <button class="mobile-menu-btn" @click="mobileMenuOpen = !mobileMenuOpen">
-          <VaIcon :name="mobileMenuOpen ? 'close' : 'menu'" />
-        </button>
       </div>
     </nav>
 
@@ -370,10 +393,79 @@
         <div class="cta-content reveal" :class="{ 'reveal-visible': ctaVisible }">
           <h2 class="cta-title">{{ t('home.cta.bottomTitle') }}</h2>
           <p class="cta-subtitle">{{ t('home.cta.bottomSubtitle') }}</p>
+          <div class="cta-info-wrapper" style="margin-top: 32px; margin-bottom: 32px; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+            <a href="tel:+255770622045" style="color: #22c55e; font-size: 1.4rem; font-weight: 800; text-decoration: none; display: flex; align-items: center; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'">
+              <VaIcon name="phone" size="24px" style="margin-right: 12px;" /> +255 770 622 045
+            </a>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+              <a href="mailto:quantumvisionlimited@quantumvision-tech.com" style="color: rgba(255,255,255,0.9); font-size: 1.1rem; text-decoration: none; display: flex; align-items: center; opacity: 0.8;" onmouseover="this.style.opacity='1'" onmouseleave="this.style.opacity='0.8'">
+                <VaIcon name="mail" size="20px" style="margin-right: 10px;" /> quantumvisionlimited@quantumvision-tech.com
+              </a>
+              <a href="mailto:jnichoraus3@gmail.com" style="color: rgba(255,255,255,0.9); font-size: 1.1rem; text-decoration: none; display: flex; align-items: center; opacity: 0.8;" onmouseover="this.style.opacity='1'" onmouseleave="this.style.opacity='0.8'">
+                <VaIcon name="mail" size="20px" style="margin-right: 10px;" /> jnichoraus3@gmail.com
+              </a>
+            </div>
+          </div>
           <div class="cta-actions">
             <VaButton size="large" @click="getStarted" class="hero-btn-solid cta-primary-glow">{{ t('home.cta.primary') }}</VaButton>
             <VaButton preset="secondary" size="large" @click="contactSales" class="btn-outlined btn-secondary-outline">{{ t('home.cta.secondary') }}</VaButton>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Legal & Contact Section -->
+    <section id="legal-info" class="section-light" style="padding: 100px 0; background: #ffffff; border-top: 1px solid #eee;">
+      <div class="container">
+        <div class="section-header reveal reveal-visible" style="text-align: center; margin-bottom: 60px;">
+          <span class="section-tag" style="background: rgba(34, 197, 94, 0.1); color: #166534; padding: 6px 16px; border-radius: 50px; font-weight: 700; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.05em; margin-bottom: 16px; display: inline-block;">{{ t('home.footer.col4Title') }}</span>
+          <h2 class="section-title" style="font-size: 2.5rem; font-weight: 850; color: #022c22; margin-bottom: 16px; letter-spacing: -0.02em;">Legal & Contact Information</h2>
+          <p class="section-subtitle" style="font-size: 1.1rem; color: #64748b; max-width: 600px; margin: 0 auto;">Everything you need to know about our policies and how to reach us.</p>
+        </div>
+        
+        <div class="legal-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 32px;">
+          <!-- Privacy Policy Card -->
+          <VaCard class="pa-4 hover-card" style="border-radius: 12px; transition: all 0.3s; border: 1px solid #eee; background: #fff; cursor: pointer;" @click="router.push('/privacy-policy')">
+            <VaCardContent>
+              <div style="background: rgba(34, 197, 94, 0.1); width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
+                <VaIcon name="verified_user" size="32px" color="#22c55e" />
+              </div>
+              <h3 style="font-size: 1.4rem; font-weight: 750; color: #022c22; margin-bottom: 12px;">{{ (tm('home.footer.col4Links') as string[])[0] || 'Privacy Policy' }}</h3>
+              <p style="color: #64748b; line-height: 1.6; font-size: 1rem;">Detailed information on how we collect, use, and protect your personal and property data.</p>
+              <VaButton preset="plain" color="#22c55e" style="margin-top: 24px; font-weight: 700; padding: 0;">Learn More →</VaButton>
+            </VaCardContent>
+          </VaCard>
+
+          <!-- Terms Card -->
+          <VaCard class="pa-4 hover-card" style="border-radius: 12px; transition: all 0.3s; border: 1px solid #eee; background: #fff; cursor: pointer;" @click="router.push('/terms-of-service')">
+            <VaCardContent>
+              <div style="background: rgba(34, 197, 94, 0.1); width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
+                <VaIcon name="gavel" size="32px" color="#22c55e" />
+              </div>
+              <h3 style="font-size: 1.4rem; font-weight: 750; color: #022c22; margin-bottom: 12px;">{{ (tm('home.footer.col4Links') as string[])[1] || 'Terms of Service' }}</h3>
+              <p style="color: #64748b; line-height: 1.6; font-size: 1rem;">The rules, guidelines, and legal terms that govern your professional use of our platform.</p>
+              <VaButton preset="plain" color="#22c55e" style="margin-top: 24px; font-weight: 700; padding: 0;">Learn More →</VaButton>
+            </VaCardContent>
+          </VaCard>
+
+          <!-- Contact Card -->
+          <VaCard class="pa-4 hover-card" style="border-radius: 12px; transition: all 0.3s; border: 1px solid #eee; background: #fff;">
+            <VaCardContent>
+              <div style="background: rgba(34, 197, 94, 0.1); width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
+                <VaIcon name="contact_support" size="32px" color="#22c55e" />
+              </div>
+              <h3 style="font-size: 1.4rem; font-weight: 750; color: #022c22; margin-bottom: 12px;">Get in Touch</h3>
+              <p style="color: #64748b; line-height: 1.6; font-size: 1rem;">Need help or have questions? Our support team is available 24/7 to assist you.</p>
+              <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 8px;">
+                <a href="tel:+255770622045" style="color: #022c22; font-weight: 600; text-decoration: none; display: flex; align-items: center; font-size: 0.95rem;">
+                  <VaIcon name="phone" size="20px" color="#22c55e" style="margin-right: 8px;" /> +255 770 622 045
+                </a>
+                <a href="mailto:jnichoraus3@gmail.com" style="color: #022c22; font-weight: 600; text-decoration: none; display: flex; align-items: center; font-size: 0.95rem;">
+                  <VaIcon name="mail" size="20px" color="#22c55e" style="margin-right: 8px;" /> jnichoraus3@gmail.com
+                </a>
+              </div>
+            </VaCardContent>
+          </VaCard>
         </div>
       </div>
     </section>
@@ -395,13 +487,17 @@
           <div v-for="col in footerCols" :key="col.title" class="footer-column">
             <h4 class="footer-heading">{{ col.title }}</h4>
             <ul class="footer-links">
-              <li v-for="link in col.links" :key="link"><a :href="'#' + link.toLowerCase().replace(/\s/g,'')">{{ link }}</a></li>
+              <li v-for="link in col.links" :key="link">
+                <a @click.prevent="handleFooterLink(col.title, link)" href="javascript:void(0)" class="cursor-pointer">{{ link }}</a>
+              </li>
             </ul>
           </div>
         </div>
         <div class="footer-bottom">
           <p class="footer-copyright">{{ t('home.footer.copyright') }}</p>
           <div class="footer-bottom-links">
+            <a href="/privacy-policy" @click.prevent="router.push('/privacy-policy')">{{ (tm('home.footer.col4Links') as string[])[0] || 'Privacy Policy' }}</a>
+            <a href="/terms-of-service" @click.prevent="router.push('/terms-of-service')">{{ (tm('home.footer.col4Links') as string[])[1] || 'Terms of Service' }}</a>
             <a href="#sitemap">{{ t('home.footer.sitemap') }}</a>
             <a href="#accessibility">{{ t('home.footer.accessibility') }}</a>
           </div>
@@ -424,6 +520,39 @@ const currentLocaleFlag = computed(() => locale.value === 'sw' ? '🇹🇿' : '�
 const changeLanguage = (lang: string) => setGlobalLocale(lang as Locale);
 
 const mobileMenuOpen = ref(false);
+const toggleMobileMenu = () => { mobileMenuOpen.value = !mobileMenuOpen.value; };
+
+const handleFooterLink = (colTitle: string, linkLabel: string) => {
+  const legalTitle = t('home.footer.col4Title');
+  const legalLinks = tm('home.footer.col4Links') as string[];
+  const supportTitle = t('home.footer.col3Title');
+  
+  if (colTitle === legalTitle) {
+    if (linkLabel === legalLinks[0]) return router.push('/privacy-policy');
+    if (linkLabel === legalLinks[1]) return router.push('/terms-of-service');
+  }
+
+  // Handle Support column links (Contact info)
+  if (colTitle === supportTitle) {
+    if (linkLabel.includes('+')) {
+      const phone = linkLabel.split(':').pop()?.trim() || linkLabel;
+      return window.location.href = `tel:${phone.replace(/\s+/g, '')}`;
+    }
+    if (linkLabel.includes('@')) {
+      const email = linkLabel.split(':').pop()?.trim() || linkLabel;
+      return window.location.href = `mailto:${email}`;
+    }
+  }
+  
+  // Default anchor behavior for other links
+  const id = linkLabel.toLowerCase().replace(/\s/g, '');
+  const el = document.getElementById(id);
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth' });
+  } else {
+    router.push('/#' + id);
+  }
+};
 const isScrolled = ref(false);
 const statsValues = reactive({
   properties: "0+",
@@ -445,12 +574,21 @@ const ctaVisible = ref(false);
 
 const navLinks = computed(() => {
   locale.value; // Explicitly track locale changes
+  const legalLinks = tm('home.footer.col4Links') as string[];
   return [
     { id: "home", label: t('home.nav.home', 'Home') },
     { id: "automation", label: t('home.nav.features') },
     { id: "how-it-works", label: t('home.nav.howItWorks') },
     { id: "testimonials", label: t('home.nav.testimonials') },
     { id: "contact", label: t('home.nav.contact') },
+    {
+      id: "legal",
+      label: t('home.footer.col4Title'),
+      subLinks: [
+        { id: "privacy", label: legalLinks[0] || 'Privacy Policy', route: "/privacy-policy" },
+        { id: "terms", label: legalLinks[1] || 'Terms of Service', route: "/terms-of-service" },
+      ]
+    },
   ];
 });
 
@@ -859,6 +997,7 @@ onUnmounted(() => {
   font-size: 0.9rem;
   color: var(--c-text-muted);
   line-height: 1.5;
+  margin: 0;
 }
 .time-desc strong {
   color: var(--c-accent3);
@@ -983,6 +1122,30 @@ onUnmounted(() => {
   }
 }
 
+/* Dropdown Improvements */
+.nav-dropdown-content {
+  background: #01160d !important;
+  border: 1px solid rgba(34, 197, 94, 0.2) !important;
+  border-radius: 12px !important;
+  padding: 8px !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
+  min-width: 200px;
+  z-index: 10001 !important;
+}
+.dropdown-item {
+  padding: 12px 20px;
+  color: #e2e8f0;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.dropdown-item:hover {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
 /* ═══════════════════════ SERVICES ═══════════════════════ */
 .landing-navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: #022c22; backdrop-filter: blur(12px); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); transition: all .4s var(--ease); border-bottom: 1px solid rgba(255,255,255,0.1); }
 .navbar-container { max-width: 1400px; margin: 0 auto; padding: 0.75rem 2rem; display: flex; align-items: center; justify-content: space-between; }
@@ -1017,12 +1180,78 @@ onUnmounted(() => {
   position: relative; 
   cursor: pointer; 
 }
+.lang-toggle-link {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: opacity 0.3s;
+}
+.lang-toggle-link:hover { opacity: 0.7; }
+
+.login-link {
+  color: #22c55e !important;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  padding: 0.4rem 1.2rem;
+  border-radius: 50px;
+  background: rgba(34, 197, 94, 0.05);
+}
+.login-link:hover {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: #22c55e;
+  opacity: 1 !important;
+}
 .nav-link-underline { position: absolute; bottom: -4px; left: 0; width: 0; height: 2px; background: #22c55e; border-radius: 1px; transition: width .3s var(--ease); }
-.nav-link:hover { opacity: 0.7; }
-.nav-link:hover .nav-link-underline { width: 100%; }
 .navbar-actions { display: flex; gap: 1rem; align-items: center; }
-/* Navbar Buttons */
-.mobile-menu-btn { display: none; background: none; border: none; cursor: pointer; padding: .5rem; color: #fff; }
+.lang-switcher-wrapper { display: flex; align-items: center; }
+
+/* Navbar Dropdown Style */
+:deep(.va-dropdown-content) {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(0,0,0,0.08) !important;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+  border-radius: 12px !important;
+  min-width: 200px;
+}
+
+/* Mobile Menu Logic */
+.mobile-menu-btn { 
+  display: none; 
+  background: none; 
+  border: none; 
+  cursor: pointer; 
+  padding: .5rem; 
+  color: #fff; 
+  font-size: 1.5rem;
+}
+
+@media (max-width: 900px) {
+  .mobile-menu-btn { display: block; }
+  .navbar-menu {
+    position: fixed;
+    top: 70px;
+    left: 0;
+    right: 0;
+    background: #022c22;
+    flex-direction: column;
+    padding: 2rem;
+    gap: 1.5rem;
+    transform: translateY(-150%);
+    transition: transform 0.4s var(--ease);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .navbar-menu.active {
+    transform: translateY(0);
+  }
+  .navbar-actions .auth-btns {
+    display: none;
+  }
+}
 
 /* ═══════════════════════ HERO ═══════════════════════ */
 /* ═══════════════════════ HERO REFINEMENTS ═══════════════════════ */
@@ -1305,35 +1534,7 @@ onUnmounted(() => {
   border-color: #ffffff !important;
 }
 
-/* Plain native button for navbar login - bypasses VaButton overrides */
-.nav-login-btn-plain {
-  background: transparent;
-  border: 2px solid rgba(255, 255, 255, 0.4); 
-  color: #ffffff;
-  font-size: 0.95rem;
-  font-weight: 800;
-  padding: 0.55rem 1.6rem;
-  border-radius: 50px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-family: inherit;
-  letter-spacing: 0.01em;
-}
-.landing-navbar.scrolled .nav-login-btn-plain {
-  color: #ffffff !important;
-  border-color: #22c55e !important;
-  background: rgba(34, 197, 94, 0.1) !important;
-}
-.nav-login-btn-plain:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-  border-color: #ffffff;
-}
-.landing-navbar.scrolled .nav-login-btn-plain:hover {
-  background: #22c55e;
-  border-color: #22c55e;
-  color: #01160d;
-}
+/* Plain native button for navbar login - bypasses VaButton overrides - REMOVED AS PER USER REQUEST */
 
 /* Divider Styles */
 .section-divider-curved {

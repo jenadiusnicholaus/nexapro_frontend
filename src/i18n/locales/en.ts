@@ -79,6 +79,7 @@ export default {
       howItWorks: "How It Works",
       testimonials: "Testimonials",
       contact: "Contact",
+      backToHome: "Back to Home",
     },
     hero: {
       badge: "🚀 The Future of Property Management",
@@ -232,7 +233,7 @@ export default {
       col2Title: "Company",
       col2Links: ["About Us", "Careers", "Blog", "Press Kit"],
       col3Title: "Support",
-      col3Links: ["Help Center", "Contact Us", "Documentation", "System Status"],
+      col3Links: ["Help Center", "Contact Us: +255770622045", "Email: quantumvisionlimited@quantumvision-tech.com", "Alt Email: jnichoraus3@gmail.com"],
       col4Title: "Legal",
       col4Links: ["Privacy Policy", "Terms of Service", "Security", "Cookie Policy"],
     },
